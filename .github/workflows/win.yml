@@ -32,7 +32,7 @@ jobs:
 
     - name: Build with Nuitka
       run: |
-        nuitka --standalone --onefile --enable-plugin=pyqt6 --lto=yes --output-dir=dist --icon=assets/favicon.ico CHMLFRP_UI.py
+        nuitka --standalone --onefile --enable-plugin=pyqt6 --lto=yes --output-dir=dist --windows-icon-from-ico=assets/favicon.ico CHMLFRP_UI.py
 
     - name: Upload the executable as artifact
       uses: actions/upload-artifact@v3
