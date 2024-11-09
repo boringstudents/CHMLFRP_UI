@@ -2,9 +2,9 @@ name: Build Optimized ChmlFrp UI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
   release:
     types: [created]
   workflow_dispatch:
@@ -82,3 +82,5 @@ jobs:
         asset_path: ./${{ env.APP_NAME }}_${{ github.event.inputs.version || env.VERSION }}_by_${{ github.event.inputs.author || env.AUTHOR }}.zip
         asset_name: ${{ env.APP_NAME }}_${{ github.event.inputs.version || env.VERSION }}_by_${{ github.event.inputs.author || env.AUTHOR }}.zip
         asset_content_type: application/zip
+
+
