@@ -48,7 +48,7 @@ jobs:
         Compress-Archive -Path * -DestinationPath "${{ env.APP_NAME }}_${{ github.event.inputs.version || env.VERSION }}_by_${{ github.event.inputs.author || env.AUTHOR }}.zip"  # 压缩 exe 文件为 zip 格式
 
     - name: Upload the build artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3  # 更新为 v3
       with:
         name: app-build
         path: dist/${{ env.APP_NAME }}_${{ github.event.inputs.version || env.VERSION }}_by_${{ github.event.inputs.author || env.AUTHOR }}.zip  # 上传压缩包
