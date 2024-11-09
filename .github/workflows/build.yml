@@ -2,9 +2,9 @@ name: Build Optimized ChmlFrp UI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
   release:
     types: [created]
   workflow_dispatch:
@@ -12,7 +12,7 @@ on:
       version:
         description: 'Version number'
         required: true
-        default: '2.1.0'
+        default: '2.2.0'
       author:
         description: 'Author name'
         required: true
