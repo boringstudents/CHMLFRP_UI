@@ -3,6 +3,5 @@ frps_full.ini
 credentials.json
 CHMLFRP_UI.log
 Dynamic_tunneling.json
-dist/
 .idea/
 
