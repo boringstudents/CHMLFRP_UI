@@ -1,0 +1,84 @@
+name: Build Optimized ChmlFrp UI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number'
+        required: true
+        default: '2.1.0'
+      author:
+        description: 'Author name'
+        required: true
+        default: 'boring_student'
+
+env:
+  APP_NAME: ChmlFrp_UI
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install nuitka
+        pip install -r requirements.txt
+
+    - name: Build with Nuitka (optimized)
+      run: |
+        python -m nuitka --onefile --windows-icon-from-ico=favicon.ico --windows-disable-console --company-name="${{ github.event.inputs.author || env.AUTHOR }}" --product-version="${{ github.event.inputs.version || env.VERSION }}" --product-name="${{ env.APP_NAME }}" --file-version="${{ github.event.inputs.version || env.VERSION }}" --include-package-data=PyQt6 --include-package-data=PyQt6-WebEngine --include-qt-plugins=styles,platforms --plugin-enable=pyqt6 --output-dir=dist --compress-level=3 --remove-output --assume-yes-for-downloads --nofollow-imports --follow-import-to=PyQt6,PyQt6.QtCore,PyQt6.QtGui,PyQt6.QtWidgets,PyQt6.QtWebEngineWidgets --output-filename=${{ env.APP_NAME }}_${{ github.event.inputs.version || env.VERSION }}_by_${{ github.event.inputs.author || env.AUTHOR }}.exe CHMLFRP_UI.py
+
+    - name: Install UPX
+      run: |
+        choco install upx
+        upx --version
+
+    - name: Compress with UPX
+      run: |
+        upx --best --lzma dist/${{ env.APP_NAME }}_${{ github.event.inputs.version || env.VERSION }}_by_${{ github.event.inputs.author || env.AUTHOR }}.exe
+
+    - name: Create distribution package
+      run: |
+        mkdir dist_package
+        copy dist\${{ env.APP_NAME }}_${{ github.event.inputs.version || env.VERSION }}_by_${{ github.event.inputs.author || env.AUTHOR }}.exe dist_package\
+        copy favicon.ico dist_package\
+        copy README.md dist_package\
+        copy LICENSE dist_package\
+        echo Author: ${{ github.event.inputs.author || env.AUTHOR }} > dist_package\AUTHOR.txt
+        echo Version: ${{ github.event.inputs.version || env.VERSION }} >> dist_package\AUTHOR.txt
+
+    - name: Create ZIP archive
+      run: |
+        Compress-Archive -Path dist_package\* -DestinationPath ${{ env.APP_NAME }}_${{ github.event.inputs.version || env.VERSION }}_by_${{ github.event.inputs.author || env.AUTHOR }}.zip
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ env.APP_NAME }}_${{ github.event.inputs.version || env.VERSION }}_by_${{ github.event.inputs.author || env.AUTHOR }}
+        path: ${{ env.APP_NAME }}_${{ github.event.inputs.version || env.VERSION }}_by_${{ github.event.inputs.author || env.AUTHOR }}.zip
+
+    - name: Upload release asset
+      if: github.event_name == 'release'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./${{ env.APP_NAME }}_${{ github.event.inputs.version || env.VERSION }}_by_${{ github.event.inputs.author || env.AUTHOR }}.zip
+        asset_name: ${{ env.APP_NAME }}_${{ github.event.inputs.version || env.VERSION }}_by_${{ github.event.inputs.author || env.AUTHOR }}.zip
+        asset_content_type: application/zip
