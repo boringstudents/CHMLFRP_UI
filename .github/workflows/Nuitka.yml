@@ -32,7 +32,7 @@ jobs:
 
     - name: Install Nuitka
       run: |
-        pip install nuitka
+        pip install nuitka==2.3.11
 
     - name: Build with Nuitka (optimized)
       run: |
