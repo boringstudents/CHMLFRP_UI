@@ -42,6 +42,11 @@ jobs:
       run: |
         pip install nuitka ordered-set zstandard
 
+    - name: Install UPX
+      run: |
+        choco install upx
+        upx --version
+
     - name: Build with Nuitka (optimized)
       run: |
         python -m nuitka --onefile `
@@ -58,12 +63,16 @@ jobs:
           --nofollow-imports `
           --follow-import-to=PyQt6,PyQt6.QtCore,PyQt6.QtGui,PyQt6.QtWidgets `
           --enable-plugin=upx `
-          --upx `
-          --upx-options="--best" `
+          --upx-binary=upx.exe `
           --jobs=4 `
           --lto=yes `
           --output-filename=ChmlFrp_UI.exe `
           CHMLFRP_UI.py
+
+    - name: Compress with UPX
+      continue-on-error: true
+      run: |
+        upx --best --lzma dist/ChmlFrp_UI.exe
 
     - name: Create distribution package
       run: |
