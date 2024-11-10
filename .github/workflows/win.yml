@@ -38,6 +38,6 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: CHMLFRP_UI
-        path: dist/CHMLFRP_UI*
+        path: dist/CHMLFRP_UI.exe
 
         
