@@ -15,7 +15,7 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -24,28 +24,46 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.12'
+        
+    - name: Cache pip packages
+      uses: actions/cache@v3
+      with:
+        path: ~\AppData\Local\pip\Cache
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-
+        
     - name: Install Nuitka
       run: |
-        pip install nuitka
+        pip install nuitka ordered-set zstandard
 
     - name: Build with Nuitka (optimized)
       run: |
-        python -m nuitka --onefile --windows-force-stdout-spec=./static/log/build.out.txt --windows-force-stderr-spec=./static/log/build.err.txt --windows-icon-from-ico=favicon1.ico --windows-disable-console --include-package-data=PyQt6 --include-qt-plugins=styles,platforms,qml --plugin-enable=pyqt6 --output-dir=dist --remove-output --assume-yes-for-downloads --nofollow-imports --follow-import-to=PyQt6,PyQt6.QtCore,PyQt6.QtGui,PyQt6.QtWidgets --output-filename=ChmlFrp_UI.exe CHMLFRP_UI.py
-
-    - name: Install UPX
-      run: |
-        choco install upx
-        upx --version
-
-    - name: Compress with UPX
-      run: |
-        upx --best --lzma dist/ChmlFrp_UI.exe
+        python -m nuitka --onefile `
+          --windows-force-stdout-spec=./static/log/build.out.txt `
+          --windows-force-stderr-spec=./static/log/build.err.txt `
+          --windows-icon-from-ico=favicon1.ico `
+          --windows-disable-console `
+          --include-package-data=PyQt6 `
+          --include-qt-plugins=styles,platforms,qml `
+          --plugin-enable=pyqt6 `
+          --output-dir=dist `
+          --remove-output `
+          --assume-yes-for-downloads `
+          --nofollow-imports `
+          --follow-import-to=PyQt6,PyQt6.QtCore,PyQt6.QtGui,PyQt6.QtWidgets `
+          --enable-plugin=upx `
+          --upx `
+          --upx-options="--best" `
+          --jobs=4 `
+          --lto=yes `
+          --output-filename=ChmlFrp_UI.exe `
+          CHMLFRP_UI.py
 
     - name: Create distribution package
       run: |
