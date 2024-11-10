@@ -32,11 +32,11 @@ jobs:
 
     - name: Install Nuitka
       run: |
-        pip install nuitka==2.3.11
+        pip install nuitka
 
     - name: Build with Nuitka (optimized)
       run: |
-        python -m nuitka --onefile --windows-icon-from-ico=favicon.ico --windows-disable-console --include-package-data=PyQt6 --include-qt-plugins=styles,platforms,qml --plugin-enable=pyqt6 --output-dir=dist --remove-output --assume-yes-for-downloads --nofollow-imports --follow-import-to=PyQt6,PyQt6.QtCore,PyQt6.QtGui,PyQt6.QtWidgets --output-filename=ChmlFrp_UI.exe CHMLFRP_UI.py
+        python -m nuitka --onefile --windows-force-stdout-spec = ./static/log/build.out.txt --windows-force-stderr-spec = ./static/log/build.err.txt --windows-icon-from-ico=favicon.ico --windows-disable-console --include-package-data=PyQt6 --include-qt-plugins=styles,platforms,qml --plugin-enable=pyqt6 --output-dir=dist --remove-output --assume-yes-for-downloads --nofollow-imports --follow-import-to=PyQt6,PyQt6.QtCore,PyQt6.QtGui,PyQt6.QtWidgets --output-filename=ChmlFrp_UI.exe CHMLFRP_UI.py
 
     - name: Install UPX
       run: |
