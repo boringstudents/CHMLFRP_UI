@@ -1,0 +1,132 @@
+name: Build with Nuitka
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Install Nuitka
+      run: |
+        pip install nuitka
+
+    - name: Build with Nuitka
+      run: |
+        nuitka --standalone --onefile --follow-imports --enable-plugin=pyqt6 --lto=yes -o CHMLFRP_UI.exe --output-dir=build --windows-icon-from-ico=favicon.ico CHMLFRP_UI.py
+
+    - name: Upload the executable as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: CHMLFRP_UI
+        path: build/CHMLFRP_UI.exe
+
+          copy
+
+          
+Changes Made:
+Removed the env section entirely since it was no longer needed.
+Kept only the essential steps for checking out the code, setting up Python, installing dependencies, building with Nuitka, and uploading the artifact.
+Updated the upload path in the final step to specifically point to the built executable, build/CHMLFRP_UI.exe.
+This workflow is now streamlined, focusing only on the build process without any additional configurations.
+
+功能要和第一个一样
+To achieve the same functionality as your first GitHub Actions workflow while removing the version and author inputs, here’s the modified workflow. It retains the same build process, compression with UPX, packaging, and uploading of the artifact:
+
+name: Build Optimized ChmlFrp UI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  release:
+    types: [created]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Install Nuitka
+      run: |
+        pip install nuitka
+
+    - name: Build with Nuitka (optimized)
+      run: |
+        python -m nuitka --onefile --windows-icon-from-ico=favicon.ico --windows-disable-console --include-package-data=PyQt6 --include-package-data=PyQt6-WebEngine --include-qt-plugins=styles,platforms --plugin-enable=pyqt6 --output-dir=dist --compress-level=3 --remove-output --assume-yes-for-downloads --nofollow-imports --follow-import-to=PyQt6,PyQt6.QtCore,PyQt6.QtGui,PyQt6.QtWidgets,PyQt6.QtWebEngineWidgets --output-filename=ChmlFrp_UI.exe CHMLFRP_UI.py
+
+    - name: Install UPX
+      run: |
+        choco install upx
+        upx --version
+
+    - name: Compress with UPX
+      run: |
+        upx --best --lzma dist/ChmlFrp_UI.exe
+
+    - name: Create distribution package
+      run: |
+        mkdir dist_package
+        copy dist\ChmlFrp_UI.exe dist_package\
+        copy favicon.ico dist_package\
+        copy README.md dist_package\
+        copy LICENSE dist_package\
+        echo Author: boring_student > dist_package\AUTHOR.txt
+        echo Version: 2.1.0 >> dist_package\AUTHOR.txt
+
+    - name: Create ZIP archive
+      run: |
+        Compress-Archive -Path dist_package\* -DestinationPath ChmlFrp_UI.zip
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ChmlFrp_UI
+        path: ChmlFrp_UI.zip
+
+    - name: Upload release asset
+      if: github.event_name == 'release'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./ChmlFrp_UI.zip
+        asset_name: ChmlFrp_UI.zip
+        asset_content_type: application/zip
