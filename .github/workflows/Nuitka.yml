@@ -1,64 +1,71 @@
+name: Build Optimized ChmlFrp UI
+
+on:
   push:
- branches:
+    branches:
       - master
   pull_request:
- branches:
+    branches:
       - master
- :
-   : [created]
- _dispatchjobs:
+  release:
+    types: 
+      - created
+  workflow_dispatch:  # Allows manual triggering of the workflow
+
+jobs:
   build:
     runs-on: windows-latest
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses actions/checkout@v4
 
-    - name: Set up Python 3.12
-      uses: actions/setup-pythonv5
-      with:
-        python-version: '3.12'
+    - name: Set Python 312
+ uses: actions/setup-python5      with:
+ python-version: '3.12'
 
-    -: Install dependencies
+    - name: Install dependencies
       run: |
- pythonm pip install --upgrade
+        python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Install Nuitka
-      run: |
-        pip install nuitka    name: Build with Nuitka (optimized)
-      run: |
-        python - nuitka --onefile --windows-icon-from-ico=favicon.ico --windows-disable-console --include-package-data=PyQt6 --include-package-data=PyQt6-WebEngineinclude-qt-plugins=styles,platforms --plugin-enable=pyqt6 --output-dir=dist --remove-output --assume-yes-for-downloads --nofollow-imports --follow-import-to=PyQt6,PyQt6.Qt,PyQt6.QtGui,PyQt6.QtWidgets,PyQt6.QtWebEngineWidgets --output-filename=ChmlFr_UI.exe CHMLFRP_UI.py
+    - name: Installka
+     : |
+        pip install nuitka
 
-    - name: Install UPX      run: |
-        ch install up
+    - name: with Nuitka (optimized)
+      run: |
+        python -m nuitka --onefile --windows-icon-from-ico=favicon.ico --windows-disable-console --include-package-data=PyQt6 --include-package-data=PyQt6-WebEngine --include-qt-plugins=styles,platforms --plugin-enable=pyqt6 --output-dir=dist --remove-output --assume-yes-for-downloads --nofollow-imports --follow-import-to=PyQt6,PyQt6.QtCorePyQt6.QtGui,PyQt6.QtWidgets,PyQt6.QtWebEngineWidgets --output-filename=ChmlFrp_UI.exe CHMLFRP_UI.py
+
+    - name: Install UPX
+      run: |
+        choco install upx
         upx --version
 
-    - name: Compress with UPX
-      run: |
-        upx --best --lzma/ChmlFrp_UI.exe
+    - name Compress with UPX
+ run: |
+        upx --best --lzma dist/ChmlFrp_UI.exe
 
     - name: Create distribution package
       run: |
         mkdir dist_package
         copy dist\ChmlFrp_UI.exe dist_package\
-        copy favicon.ico dist_package\
-        copy README.md dist_package\
+        copy favicon dist_package\
+ copy README.md dist_package\
         copy LICENSE dist_package\
         echo Author: boring_student > dist_package\AUTHOR.txt
         echo Version: 2.1.0 >> dist_package\AUTHOR.txt
 
     - name: Create ZIP archive
-      run:       -Archive -Path dist_package\* -DestinationPath Chmlp_UI.zip
-
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
+      run: |
+        Compress-Archive -Path dist_package\* -Pathmlp_UI.zip    - name: Upload artifact
+      uses: actions-artifact@v4
       with:
         name: ChmlFrp_UI
-        path: ChmlFrp_UI.zip
+        path: ChmlFr_UI.zip
 
     - name: Upload release asset
-      if: github.event_name == 'release'
+     : github.event_name == 'release'
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
