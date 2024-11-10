@@ -19,7 +19,7 @@ jobs:
     - name: Set up Python 3.12
       uses: actions/setup-python@v5
       with:
-        python-version: '3.12.7'
+        python-version: '3.12'
 
     - name: Install dependencies
       run: |
@@ -32,10 +32,10 @@ jobs:
 
     - name: Build with Nuitka
       run: |
-        nuitka --standalone --onefile --follow-imports --enable-plugin=pyqt6 --lto=yes -o CHMLFRP_UI.exe --output-dir=dist --windows-icon=favicon.ico --output-dir=dist --windows-disable-console CHMLFRP_UI.py
+        nuitka --standalone --onefile --follow-imports --enable-plugin=pyqt6 --lto=yes -o CHMLFRP_UI.exe --output-dir=build --windows-icon-from-ico=favicon.ico--output-dir=dist --windows-disable-console CHMLFRP_UI.py
 
     - name: Upload the executable as artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: CHMLFRP_UI
-        path: dist/
+        path: build/
