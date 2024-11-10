@@ -36,7 +36,7 @@ jobs:
 
     - name: Build with Nuitka (optimized)
       run: |
-        python -m nuitka --onefile --windows-icon-from-ico=favicon.ico --windows-disable-console --include-package-data=PyQt6 --include-package-data=PyQt6-WebEngine --include-qt-plugins=styles,platforms --plugin-enable=pyqt6 --output-dir=dist --remove-output --assume-yes-for-downloads --nofollow-imports --follow-import-to=PyQt6,PyQt6.QtCore,PyQt6.QtGui,PyQt6.QtWidgets,PyQt6.QtWebEngineWidgets --output-filename=ChmlFrp_UI.exe CHMLFRP_UI.py
+        python -m nuitka --onefile --windows-icon-from-ico=favicon.ico --windows-disable-console --include-package-data=PyQt6 --include-qt-plugins=styles,platforms --plugin-enable=pyqt6 --output-dir=dist --remove-output --assume-yes-for-downloads --nofollow-imports --follow-import-to=PyQt6,PyQt6.QtCore,PyQt6.QtGui,PyQt6.QtWidgets,PyQt6.QtWebEngineWidgets --output-filename=ChmlFrp_UI.exe CHMLFRP_UI.py
 
     - name: Install UPX
       run: |
