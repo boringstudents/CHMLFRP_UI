@@ -1,4 +1,4 @@
-name: Build Optimized ChmlFrp UI
+name: Build Nuitka Standalone Executable
 
 on:
   push:
@@ -7,88 +7,70 @@ on:
   pull_request:
     branches:
       - master
-  release:
-    types: 
-      - created
-  workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Set up Python 3.12
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
-        
-    - name: Cache pip packages
-      uses: actions/cache@v3
-      with:
-        path: ~\AppData\Local\pip\Cache
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        
-    - name: Install Nuitka
-      run: |
-        pip install nuitka ordered-set zstandard
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install nuitka upx PyQt6 mcstatus requests psutil pyperclip ipaddress
 
-    - name: Build with Nuitka (optimized)
-      run: |
-        python -m nuitka --onefile `
-          --windows-force-stdout-spec=./static/log/build.out.txt `
-          --windows-force-stderr-spec=./static/log/build.err.txt `
-          --windows-icon-from-ico=favicon1.ico `
-          --windows-disable-console `
-          --include-package-data=PyQt6 `
-          --include-qt-plugins=styles,platforms,qml `
-          --plugin-enable=pyqt6 `
-          --output-dir=dist `
-          --remove-output `
-          --assume-yes-for-downloads `
-          --nofollow-imports `
-          --follow-import-to=PyQt6,PyQt6.QtCore,PyQt6.QtGui,PyQt6.QtWidgets `
-          --jobs=4 `
-          --lto=yes `
-          --output-filename=ChmlFrp_UI.exe `
-          CHMLFRP_UI.py
+      - name: Download UPX
+        run: |
+          Invoke-WebRequest -Uri https://github.com/upx/upx/releases/latest/download/upx-4.2.4-win64.zip -OutFile upx.zip
+          Expand-Archive -Path upx.zip -DestinationPath ./upx
+        shell: pwsh
 
-    - name: Create distribution package
-      run: |
-        mkdir dist_package
-        copy dist\ChmlFrp_UI.exe dist_package\
-        copy favicon.ico dist_package\
-        copy README.md dist_package\
-        copy LICENSE dist_package\
-        echo Author: boring_student > dist_package\AUTHOR.txt
-        echo Version: 2.1.0 >> dist_package\AUTHOR.txt
+      - name: Build executable with Nuitka
+        run: |
+          nuitka --standalone --onefile --python-flag=-O --upx-dir=./upx --include-package=PyQt6 \
+          --include-package=mcstatus --include-package=requests --include-package=psutil --include-package=pyperclip \
+          --include-package=ipaddress --include-package=re --windows-disable-console CHNLFRP_UI.py
 
-    - name: Create ZIP archive
-      run: |
-        Compress-Archive -Path dist_package\* -DestinationPath ChmlFrp_UI.zip
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: CHNLFRP_UI-executable
+          path: ./CHNLFRP_UI.dist/
 
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: ChmlFrp_UI
-        path: ChmlFrp_UI.zip
+      - name: Upload to cloud storage
+        run: |
+          import requests
+          import json
+          
+          # Step 1: Login to get the token
+          url = "http://chmlfrp_ui.frp.wtf/api/auth/login"#云盘地址
+          payload = json.dumps({
+              "username": "{{boring_student}}",
+              "password": "{{12345678}}" #密码
+          })
+          headers = {'Content-Type': 'application/json'}
+          response = requests.post(url, headers=headers, data=payload)
+          token = response.json().get('token')
 
-    - name: Upload release asset
-      if: github.event_name == 'release'
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ./ChmlFrp_UI.zip
-        asset_name: ChmlFrp_UI.zip
-        asset_content_type: application/zip
+          # Step 2: Upload the file using the token
+          upload_url = "http://chmlfrp_ui.frp.wtf/api/fs/form" #云盘地址
+          file_path = "./CHNLFRP_UI.dist/CHNLFRP_UI.exe"  # Adjust if needed
+          headers = {
+              'Authorization': token,
+              'Content-Length': str(len(open(file_path, 'rb').read())),
+              'CHMLFRP_UI': 'desired/remote/path/CHNLFRP_UI.exe',  #File-Path=云盘文件地址
+              'As-Task': 'true',
+              'Content-Type': 'multipart/form-data'
+          }
+          with open(file_path, 'rb') as file:
+              files = {'file': file}
+              response = requests.put(upload_url, headers=headers, files=files)
+
+          print(response.text)
