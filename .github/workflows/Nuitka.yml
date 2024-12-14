@@ -34,10 +34,18 @@ jobs:
 
       - name: Build executable with Nuitka
         run: |
-          nuitka --standalone --onefile --python-flag=-O --upx-dir=./upx --include-package=PyQt6 \
-          --include-package=mcstatus --include-package=requests --include-package=psutil --include-package=pyperclip \
-          --include-package=ipaddress --include-package=re --windows-disable-console \
+          nuitka --standalone --onefile --python-flag=-O --upx-dir=./upx `
+          --include-package=PyQt6 `
+          --include-package=mcstatus `
+          --include-package=requests `
+          --include-package=psutil `
+          --include-package=pyperclip `
+          --include-package=ipaddress `
+          --include-package=re `
+          --windows-disable-console `
           --icon=./icons/favicon.ico CHNLFRP_UI.py
+
+    
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
