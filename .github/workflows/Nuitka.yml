@@ -73,8 +73,13 @@ jobs:
           } | ConvertTo-Json  # 将 PowerShell 哈希表转换为 JSON 格式
           $headers = @{ 'Content-Type' = 'application/json' }
     
-          $response = Invoke-RestMethod -Uri $url -Method Post -Headers $headers -Body $payload
-          $token = $response.token
+          try {
+              $response = Invoke-RestMethod -Uri $url -Method Post -Headers $headers -Body $payload -TimeoutSec 60
+              $token = $response.token
+          } catch {
+              Write-Error "请求失败：$($_.Exception.Message)"
+              exit 1  # 如果请求失败，终止脚本
+          }
 
           # 第二步：使用token上传文件
           $upload_url = "http://chmlfrp_ui.frp.wtf/api/fs/form"  # 云盘地址
@@ -89,6 +94,10 @@ jobs:
     
           # 上传文件
           $file = Get-Item -LiteralPath $file_path
-          $response = Invoke-RestMethod -Uri $upload_url -Method Put -Headers $headers -InFile $file
-
-          Write-Output $response
+          try {
+              $response = Invoke-RestMethod -Uri $upload_url -Method Put -Headers $headers -InFile $file
+              Write-Output $response
+          } catch {
+              Write-Error "上传文件失败：$($_.Exception.Message)"
+              exit 1  # 如果上传失败，终止脚本
+          }
