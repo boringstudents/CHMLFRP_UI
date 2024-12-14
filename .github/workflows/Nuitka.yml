@@ -47,7 +47,7 @@ jobs:
 
       - name: Check if build directory exists
         run: |
-          if (Test-Path ./CHNLFRP_UI.dist) {
+          if (Test-Path /CHNLFRP_UI.dist/CHNLFRP_UI.exe) {
             Write-Output "构建目录存在."
           } else {
             Write-Output "构建目录不存在."
@@ -57,7 +57,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: CHNLFRP_UI-executable
-          path: ./CHNLFRP_UI.dist/
+          path: ./CHNLFRP_UI.dist/CHNLFRP_UI.exe
 
       - name: Upload to cloud storage
         if: success()  # 仅在构建成功时执行
