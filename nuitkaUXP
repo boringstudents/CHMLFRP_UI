@@ -1,0 +1,1 @@
+nuitka --standalone --onefile --python-flag=-O --upx-dir=path/to/upx --include-package=PyQt6 --include-package=mcstatus --include-package=requests --include-package=psutil --include-package=pyperclip --include-package=ipaddress --include-package=re --windows-disable-console CHNLFRP_UI.py
