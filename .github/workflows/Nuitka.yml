@@ -24,7 +24,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install nuitka upx PyQt6 mcstatus requests psutil pyperclip ipaddress
+          pip install nuitka PyQt6 mcstatus requests psutil pyperclip ipaddress
 
       - name: Download UPX
         run: |
@@ -36,7 +36,8 @@ jobs:
         run: |
           nuitka --standalone --onefile --python-flag=-O --upx-dir=./upx --include-package=PyQt6 \
           --include-package=mcstatus --include-package=requests --include-package=psutil --include-package=pyperclip \
-          --include-package=ipaddress --include-package=re --windows-disable-console CHNLFRP_UI.py
+          --include-package=ipaddress --include-package=re --windows-disable-console \
+          --icon=./icons/favicon.ico CHNLFRP_UI.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
