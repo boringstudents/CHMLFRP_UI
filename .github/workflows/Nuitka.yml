@@ -57,24 +57,24 @@ jobs:
         run: |
           import requests
           import json
-          
+    
           # Step 1: Login to get the token
-          url = "http://chmlfrp_ui.frp.wtf/api/auth/login"#云盘地址
+          url = "http://chmlfrp_ui.frp.wtf/api/auth/login"  # 云盘地址
           payload = json.dumps({
-              "username": "{{boring_student}}",
-              "password": "{{12345678}}" #密码
+              "username": "boring_student",  # 直接使用用户名
+              "password": "12345678"  # 直接使用密码
           })
           headers = {'Content-Type': 'application/json'}
           response = requests.post(url, headers=headers, data=payload)
           token = response.json().get('token')
 
           # Step 2: Upload the file using the token
-          upload_url = "http://chmlfrp_ui.frp.wtf/api/fs/form" #云盘地址
+          upload_url = "http://chmlfrp_ui.frp.wtf/api/fs/form"  # 云盘地址
           file_path = "./CHNLFRP_UI.dist/CHNLFRP_UI.exe"  # Adjust if needed
           headers = {
               'Authorization': token,
               'Content-Length': str(len(open(file_path, 'rb').read())),
-              'CHMLFRP_UI': 'desired/remote/path/CHNLFRP_UI.exe',  #File-Path=云盘文件地址
+              'CHMLFRP_UI': 'desired/remote/path/CHNLFRP_UI.exe',  # 文件保存路径
               'As-Task': 'true',
               'Content-Type': 'multipart/form-data'
           }
