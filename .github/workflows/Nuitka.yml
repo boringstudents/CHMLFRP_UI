@@ -26,15 +26,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install nuitka PyQt6 mcstatus requests psutil pyperclip ipaddress
 
-      - name: Download UPX
-        run: |
-          Invoke-WebRequest -Uri https://github.com/upx/upx/releases/latest/download/upx-4.2.4-win64.zip -OutFile upx.zip
-          Expand-Archive -Path upx.zip -DestinationPath ./upx
-        shell: pwsh
-
       - name: Build executable with Nuitka
         run: |
-          nuitka --standalone --onefile --python-flag=-O --upx-dir=./upx `
+          nuitka --standalone --onefile --python-flag=-O `
           --include-package=PyQt6 `
           --include-package=mcstatus `
           --include-package=requests `
