@@ -38,12 +38,7 @@ jobs:
           --include-package=re `
           --windows-console-mode=disable `
           --assume-yes-for-downloads `
-          --windows-icon-from-ico=./favicon.ico `
-          --include-enable=PyQt6.QtGui `
-          --include-enable=PyQt6.QtCore `
-          --include-enable=PyQt6.QtWidgets `
-          --include-enable=PyQt6.QtPlatformSupport `
-          --include-enable=PyQt6.QtPlatformPlugin ./CHMLFRP_UI.py
+          --windows-icon-from-ico=./favicon.ico ./CHMLFRP_UI.py
 
       - name: Check if executable exists
         run: |
