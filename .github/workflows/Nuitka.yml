@@ -37,7 +37,7 @@ jobs:
           --include-package=ipaddress `
           --include-package=re `
           --windows-disable-console `
-          --windows-icon-from-ico=./icons/favicon.ico CHNLFRP_UI.py
+          --windows-icon-from-ico=./favicon.ico CHNLFRP_UI.py
 
       - name: Check if build directory exists
         run: |
