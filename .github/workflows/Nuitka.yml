@@ -73,9 +73,3 @@ jobs:
           path: ./build_output/CHMLFRP_UI_*.exe
           retention-days: 7
 
-      - name: Clean up temporary directories
-        run: |
-          Remove-Item -Recurse -Force ./build_output
-          Remove-Item -Recurse -Force ./build_output\\CHMLFRP_UI.build
-          Remove-Item -Recurse -Force ./build_output\\CHMLFRP_UI.dist
-          Remove-Item -Recurse -Force ./build_output\\CHMLFRP_UI.onefile-build
