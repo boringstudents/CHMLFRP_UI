@@ -37,6 +37,7 @@ jobs:
           --include-package=ipaddress `
           --include-package=re `
           --windows-console-mode=disable `
+          --assume-yes-for-downloads `
           --windows-icon-from-ico=./favicon.ico ./CHMLFRP_UI.py
 
       - name: Check if build directory exists
