@@ -38,11 +38,12 @@ jobs:
           --include-package=re `
           --windows-console-mode=disable `
           --assume-yes-for-downloads `
+          --output-dir=./build_output `
           --windows-icon-from-ico=./favicon.ico ./CHMLFRP_UI.py
 
       - name: Check if executable exists
         run: |
-          $exePath = "./build_output"
+          $exePath = "./CHMLFRP_UI.dist/CHMLFRP_UI.exe"  # or `./CHMLFRP_UI.onefile-build/CHMLFRP_UI.exe`
           if (Test-Path $exePath) {
             Write-Host "Executable exists, proceeding with rename."
           } else {
@@ -53,9 +54,9 @@ jobs:
       - name: Rename executable with date
         run: |
           $currentDate = (Get-Date -Format "yyyyMMdd")
-          $originalPath = "./build_output/CHMLFRP_UI.exe"
+          $originalPath = "./CHMLFRP_UI.dist/CHMLFRP_UI.exe"  # or `./CHMLFRP_UI.onefile-build/CHMLFRP_UI.exe`
           if (Test-Path $originalPath) {
-            $newPath = "./build_output/CHMLFRP_UI_$currentDate.exe"
+            $newPath = "./CHMLFRP_UI.dist/CHMLFRP_UI_$currentDate.exe"  # or `./CHMLFRP_UI.onefile-build/CHMLFRP_UI_$currentDate.exe`
             Rename-Item -Path $originalPath -NewName $newPath
             Write-Output "Renamed file to $newPath"
           } else {
