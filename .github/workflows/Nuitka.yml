@@ -74,49 +74,6 @@ jobs:
             exit 1
           }
 
-      - name: Upload to cloud storage
-        if: success()  # 仅在构建成功时执行
-        run: |
-          $username = "boring_student"  # 直接使用用户名
-          $password = "12345678"  # 直接使用密码
-
-          # 第一步：登录获取token
-          $url = "http://chmlfrp_ui.frp.wtf/api/auth/login"  # 云盘地址
-          $payload = @{
-              username = $username
-              password = $password
-          } | ConvertTo-Json  # 将 PowerShell 哈希表转换为 JSON 格式
-          $headers = @{ 'Content-Type' = 'application/json' }
-    
-          try {
-              $response = Invoke-RestMethod -Uri $url -Method Post -Headers $headers -Body $payload -TimeoutSec 60
-              $token = $response.token
-          } catch {
-              Write-Error "请求失败：$($_.Exception.Message)"
-              exit 1  # 如果请求失败，终止脚本
-          }
-
-          # 第二步：使用token上传文件
-          $upload_url = "http://chmlfrp_ui.frp.wtf/api/fs/form"  # 云盘地址
-          $file_path = Get-ChildItem -Filter "CHMLFRP_UI_*.exe" | Select-Object -ExpandProperty FullName
-          $headers = @{
-              Authorization = $token
-              'Content-Length' = (Get-Content $file_path -Raw).Length
-              'CHMLFRP_UI' = "desired/remote/path/$(Split-Path $file_path -Leaf)"
-              'As-Task' = 'true'
-              'Content-Type' = 'multipart/form-data'
-          }
-
-          # 上传文件
-          try {
-              $response = Invoke-RestMethod -Uri $upload_url -Method Put -Headers $headers -InFile $file_path
-              Write-Output $response
-          } catch {
-              Write-Error "上传文件失败：$($_.Exception.Message)"
-              exit 1  # 如果上传失败，终止脚本
-          }
-
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
