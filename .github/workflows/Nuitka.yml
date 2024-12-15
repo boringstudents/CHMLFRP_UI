@@ -46,10 +46,6 @@ jobs:
           --output-dir=./build_output `
           --nofollow-import-to=psutil.tests.test_testutils `
           --windows-icon-from-ico=./favicon.ico `
-          --version-info-os=Windows `
-          --version-info-product="CHMLFRP UI" `
-          --version-info-description="Author: boring_student" `
-          --version-info-version=1.0.0 `
           ./CHMLFRP_UI.py
 
       - name: Check if executable exists
