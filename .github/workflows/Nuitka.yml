@@ -36,7 +36,7 @@ jobs:
           --include-package=pyperclip `
           --include-package=ipaddress `
           --include-package=re `
-          --windows-disable-console `
+          --windows-console-mode=disable `
           --windows-icon-from-ico=./favicon.ico ./CHMLFRP_UI.py
 
       - name: Check if build directory exists
