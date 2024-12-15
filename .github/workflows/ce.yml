@@ -1,0 +1,64 @@
+name: Build Nuitka Standalone Executable
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install nuitka PyQt6 mcstatus requests psutil pyperclip ipaddress
+
+      - name: Build executable with Nuitka
+        run: |
+          nuitka --standalone --onefile --python-flag=-O `
+          --include-package=PyQt6 `
+          --include-package=mcstatus `
+          --include-package=requests `
+          --include-package=psutil `
+          --include-package=pyperclip `
+          --include-package=ipaddress `
+          --include-package=re `
+          --windows-console-mode=disable `
+          --assume-yes-for-downloads `
+          --show-memory `
+          --show-progress `
+          --windows-icon-from-ico=./favicon.ico ./CHMLFRP_UI.py
+
+      - name: Rename executable with date
+        run: |
+          $currentDate = (Get-Date -Format "yyyyMMdd")
+          $originalPath = "./CHMLFRP_UI.exe"
+          $newPath = "./CHMLFRP_UI_$currentDate.exe"
+          Rename-Item -Path $originalPath -NewName $newPath
+          Write-Output "Renamed file to $newPath"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: CHMLFRP_UI-executable
+          path: ./CHMLFRP_UI_*.exe
+          retention-days: 7  # 产物将保留 7 天
+
+      - name: Clean up temporary directories
+        run: |
+          Remove-Item -Recurse -Force ./CHMLFRP_UI.build
+          Remove-Item -Recurse -Force ./CHMLFRP_UI.dist
+          Remove-Item -Recurse -Force ./CHMLFRP_UI.onefile-build
