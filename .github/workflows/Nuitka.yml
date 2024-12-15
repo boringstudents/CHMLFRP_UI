@@ -30,6 +30,13 @@ jobs:
         run: |
           nuitka --standalone --onefile --python-flag=-O `
           --include-package=PyQt6 `
+          --include-package-data=PyQt6 `
+          --include-qt-plugins=styles,platforms `
+          --plugin-enable=pyqt6 `
+          --remove-output `
+          --follow-import-to=PyQt6,PyQt6.QtCore,PyQt6.QtGui,PyQt6.QtWidgets `
+          --nofollow-imports `
+          --compress-level=9 `
           --include-package=mcstatus `
           --include-package=requests `
           --include-package=psutil `
@@ -40,6 +47,9 @@ jobs:
           --assume-yes-for-downloads `
           --output-dir=./build_output `
           --nofollow-import-to=psutil.tests.test_testutils `
+          --company-name=boringstudents ` # 设置产品版本
+          --product-name=CHMLFRP_UI ` # 设置产品名称
+          --file-version=0.0.0 ` # 设置文件版本
           --windows-icon-from-ico=./favicon.ico ./CHMLFRP_UI.py
 
       - name: Check if executable exists
