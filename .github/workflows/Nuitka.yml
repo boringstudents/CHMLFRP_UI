@@ -39,9 +39,9 @@ jobs:
           --windows-console-mode=disable `
           --assume-yes-for-downloads `
           --windows-icon-from-ico=./favicon.ico `
-          --include-package=Qt6.QtWidgets `
-          --include-package=Qt6.QtPlatformSupport `
-          --include-package=Qt6.QtPlatformPlugin ./CHMLFRP_UI.py
+          --include-package=PyQt6.QtWidgets `
+          --include-package=PyQt6.QtPlatformSupport `
+          --include-package=PyQt6.QtPlatformPlugin ./CHMLFRP_UI.py
 
       - name: Check if executable exists
         run: |
