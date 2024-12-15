@@ -39,7 +39,7 @@ jobs:
           --windows-console-mode=disable `
           --assume-yes-for-downloads `
           --output-dir=./build_output `
-          --nofollow-import-to=psutil.tests `
+          --nofollow-import-to=psutil.tests.test_testutils `
           --windows-icon-from-ico=./favicon.ico ./CHMLFRP_UI.py
 
       - name: Check if executable exists
@@ -57,8 +57,9 @@ jobs:
           $currentDate = (Get-Date -Format "yyyyMMdd")
           $originalPath = "./build_output/CHMLFRP_UI.exe"
           if (Test-Path $originalPath) {
-            $newPath = "./build_output/CHMLFRP_UI_$currentDate.exe"
-            Rename-Item -Path $originalPath -NewName $newPath
+            $newFileName = "CHMLFRP_UI_$currentDate.exe"
+            $newPath = Join-Path -Path (Split-Path $originalPath) -ChildPath $newFileName
+            Move-Item -Path $originalPath -Destination $newPath
             Write-Output "Renamed file to $newPath"
           } else {
             Write-Error "Executable not found at $originalPath"
