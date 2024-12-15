@@ -43,8 +43,7 @@ jobs:
           --include-package=Qt6.QtCore `
           --include-package=Qt6.QtWidgets `
           --include-package=Qt6.QtPlatformSupport `
-          --include-package=Qt6.QtPlatformPlugin `
-          --plugin-enable=qt-plugins ./CHMLFRP_UI.py
+          --include-package=Qt6.QtPlatformPlugin ./CHMLFRP_UI.py
 
       - name: Check if executable exists
         run: |
