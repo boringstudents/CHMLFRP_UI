@@ -44,7 +44,7 @@ jobs:
 
       - name: Check if build directory exists
         run: |
-          if (Test-Path /CHMLFRP_UI.build/CHNLFRP_UI.exe) {
+          if (Test-Path .\CHMLFRP_UI.build\CHNLFRP_UI.exe) {
             Write-Output "构建文件存在."
           } else {
             Write-Output "构建文件不存在."
