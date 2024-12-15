@@ -44,7 +44,7 @@ jobs:
 
       - name: Check if executable exists
         run: |
-          $exePath = "./CHMLFRP_UI.dist/CHMLFRP_UI.exe"  # or `./CHMLFRP_UI.onefile-build/CHMLFRP_UI.exe`
+          $exePath = "./build_output/CHMLFRP_UI.exe"
           if (Test-Path $exePath) {
             Write-Host "Executable exists, proceeding with rename."
           } else {
@@ -55,9 +55,9 @@ jobs:
       - name: Rename executable with date
         run: |
           $currentDate = (Get-Date -Format "yyyyMMdd")
-          $originalPath = "./CHMLFRP_UI.dist/CHMLFRP_UI.exe"  # or `./CHMLFRP_UI.onefile-build/CHMLFRP_UI.exe`
+          $originalPath = "./build_output/CHMLFRP_UI.exe"
           if (Test-Path $originalPath) {
-            $newPath = "./CHMLFRP_UI.dist/CHMLFRP_UI_$currentDate.exe"  # or `./CHMLFRP_UI.onefile-build/CHMLFRP_UI_$currentDate.exe`
+            $newPath = "./build_output/CHMLFRP_UI_$currentDate.exe"
             Rename-Item -Path $originalPath -NewName $newPath
             Write-Output "Renamed file to $newPath"
           } else {
@@ -70,11 +70,11 @@ jobs:
         with:
           name: CHMLFRP_UI-executable
           path: ./build_output/CHMLFRP_UI_*.exe
-          retention-days: 7  # 产物将保留 7 天
+          retention-days: 7
 
       - name: Clean up temporary directories
         run: |
           Remove-Item -Recurse -Force ./build_output
-          Remove-Item -Recurse -Force ./CHMLFRP_UI.build
-          Remove-Item -Recurse -Force ./CHMLFRP_UI.dist
-          Remove-Item -Recurse -Force ./CHMLFRP_UI.onefile-build
+          Remove-Item -Recurse -Force ./build_output\\CHMLFRP_UI.build
+          Remove-Item -Recurse -Force ./build_output\\CHMLFRP_UI.dist
+          Remove-Item -Recurse -Force ./build_output\\CHMLFRP_UI.onefile-build
