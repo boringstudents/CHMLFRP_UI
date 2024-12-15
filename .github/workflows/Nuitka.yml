@@ -26,15 +26,19 @@ jobs:
           python -m pip install --upgrade pip
           pip install nuitka PyQt6 mcstatus requests psutil pyperclip ipaddress
 
+      - name: Copy additional files
+        run: |
+          copy favicon.ico ./build_output/
+          copy frpc.exe ./build_output/
+          copy frpc_full.ini ./build_output/
+
       - name: Build executable with Nuitka
         run: |
           nuitka --standalone --onefile --python-flag=-O `
           --include-package=PyQt6 `
           --include-package-data=PyQt6 `
-          --include-qt-plugins=styles,platforms `
+          --include-qt-plugins=styles,platforms,qml `
           --plugin-enable=pyqt6 `
-          --remove-output `
-          --mingw64 --module `
           --follow-import-to=PyQt6,PyQt6.QtCore,PyQt6.QtGui,PyQt6.QtWidgets `
           --nofollow-imports `
           --include-package=mcstatus `
@@ -47,8 +51,12 @@ jobs:
           --assume-yes-for-downloads `
           --output-dir=./build_output `
           --nofollow-import-to=psutil.tests.test_testutils `
-          --include-qt-plugins=qml `
-          --windows-icon-from-ico=./favicon.ico ./CHMLFRP_UI.py
+          --windows-icon-from-ico=./favicon.ico `
+          --version-info-os=Windows `
+          --version-info-product="CHMLFRP UI" `
+          --version-info-description="Author: boring_student" `
+          --version-info-version=0.0.0 `
+          ./CHMLFRP_UI.py
 
       - name: Check if executable exists
         run: |
@@ -80,4 +88,3 @@ jobs:
           name: CHMLFRP_UI-executable
           path: ./build_output/CHMLFRP_UI_*.exe
           retention-days: 7
-
