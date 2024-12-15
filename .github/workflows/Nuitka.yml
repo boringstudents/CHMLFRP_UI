@@ -29,6 +29,7 @@ jobs:
       - name: Build executable with Nuitka
         run: |
           nuitka --standalone --onefile --python-flag=-O `
+          --output-dir=./build_output `
           --include-package=PyQt6 `
           --include-package=mcstatus `
           --include-package=requests `
@@ -38,31 +39,41 @@ jobs:
           --include-package=re `
           --windows-console-mode=disable `
           --assume-yes-for-downloads `
-          --windows-icon-from-ico=./favicon.ico `
-          --include-package=Qt6.QtGui `
-          --include-package=Qt6.QtCore `
-          --include-package=Qt6.QtWidgets `
-          --include-package=Qt6.QtPlatformSupport `
-          --include-package=Qt6.QtPlatformPlugin `
-          --plugin-enable=qt-plugins ./CHMLFRP_UI.py
+          --windows-icon-from-ico=./favicon.ico ./CHMLFRP_UI.py
+
+      - name: Check if executable exists
+        run: |
+          $exePath = "./build_output/CHMLFRP_UI.exe"
+          if (Test-Path $exePath) {
+            Write-Host "Executable exists, proceeding with rename."
+          } else {
+            Write-Error "Executable not found at $exePath"
+            exit 1
+          }
 
       - name: Rename executable with date
         run: |
           $currentDate = (Get-Date -Format "yyyyMMdd")
-          $originalPath = "./CHMLFRP_UI.exe"
-          $newPath = "./CHMLFRP_UI_$currentDate.exe"
-          Rename-Item -Path $originalPath -NewName $newPath
-          Write-Output "Renamed file to $newPath"
+          $originalPath = "./build_output/CHMLFRP_UI.exe"
+          if (Test-Path $originalPath) {
+            $newPath = "./build_output/CHMLFRP_UI_$currentDate.exe"
+            Rename-Item -Path $originalPath -NewName $newPath
+            Write-Output "Renamed file to $newPath"
+          } else {
+            Write-Error "Executable not found at $originalPath"
+            exit 1
+          }
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: CHMLFRP_UI-executable
-          path: ./CHMLFRP_UI_*.exe
+          path: ./build_output/CHMLFRP_UI_*.exe
           retention-days: 7  # 产物将保留 7 天
 
       - name: Clean up temporary directories
         run: |
+          Remove-Item -Recurse -Force ./build_output
           Remove-Item -Recurse -Force ./CHMLFRP_UI.build
           Remove-Item -Recurse -Force ./CHMLFRP_UI.dist
           Remove-Item -Recurse -Force ./CHMLFRP_UI.onefile-build
