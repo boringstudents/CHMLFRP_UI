@@ -39,7 +39,6 @@ jobs:
           --windows-console-mode=disable `
           --assume-yes-for-downloads `
           --windows-icon-from-ico=./favicon.ico `
-          --include-package=Qt6.QtCore `
           --include-package=Qt6.QtWidgets `
           --include-package=Qt6.QtPlatformSupport `
           --include-package=Qt6.QtPlatformPlugin ./CHMLFRP_UI.py
