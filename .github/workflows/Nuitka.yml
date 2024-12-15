@@ -44,7 +44,7 @@ jobs:
 
       - name: Check if build directory exists
         run: |
-          if (Test-Path /CHNLFRP_UI.dist/CHNLFRP_UI.exe) {
+          if (Test-Path /CHMLFRP_UI.build/CHNLFRP_UI.exe) {
             Write-Output "构建文件存在."
           } else {
             Write-Output "构建文件不存在."
@@ -54,7 +54,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: CHNLFRP_UI-executable
-          path: ./CHNLFRP_UI.dist/CHNLFRP_UI.exe
+          path: ./CHMLFRP_UI.build/CHNLFRP_UI.exe
 
       - name: Upload to cloud storage
         if: success()  # 仅在构建成功时执行
@@ -80,7 +80,7 @@ jobs:
 
           # 第二步：使用token上传文件
           $upload_url = "http://chmlfrp_ui.frp.wtf/api/fs/form"  # 云盘地址
-          $file_path = "./CHNLFRP_UI.dist/CHNLFRP_UI.exe"  # 调整路径，如果需要的话
+          $file_path = "./CHMLFRP_UI.build/CHNLFRP_UI.exe"  # 调整路径，如果需要的话
           $headers = @{
               Authorization = $token
               'Content-Length' = (Get-Content $file_path -Raw).Length
