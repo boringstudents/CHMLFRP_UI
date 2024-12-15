@@ -38,7 +38,13 @@ jobs:
           --include-package=re `
           --windows-console-mode=disable `
           --assume-yes-for-downloads `
-          --windows-icon-from-ico=./favicon.ico ./CHMLFRP_UI.py
+          --windows-icon-from-ico=./favicon.ico `
+          --include-package=Qt6.QtGui `
+          --include-package=Qt6.QtCore `
+          --include-package=Qt6.QtWidgets `
+          --include-package=Qt6.QtPlatformSupport `
+          --include-package=Qt6.QtPlatformPlugin `
+          --plugin-enable=qt-plugins ./CHMLFRP_UI.py
 
       - name: Rename executable with date
         run: |
