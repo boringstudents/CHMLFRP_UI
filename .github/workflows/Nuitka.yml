@@ -42,7 +42,7 @@ jobs:
 
       - name: Check if executable exists
         run: |
-          $exePath = "./build_output/CHMLFRP_UI.exe"
+          $exePath = "./build_output"
           if (Test-Path $exePath) {
             Write-Host "Executable exists, proceeding with rename."
           } else {
