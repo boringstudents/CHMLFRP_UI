@@ -47,8 +47,6 @@ jobs:
           --assume-yes-for-downloads `
           --output-dir=./build_output `
           --nofollow-import-to=psutil.tests.test_testutils `
-          --company-name=0.0.0 ` # 设置产品版本
-          --file-version=0.0.0 ` # 设置文件版本
           --windows-icon-from-ico=./favicon.ico ./CHMLFRP_UI.py
 
       - name: Check if executable exists
