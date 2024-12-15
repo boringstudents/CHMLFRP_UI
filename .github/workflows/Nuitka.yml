@@ -34,6 +34,7 @@ jobs:
           --include-qt-plugins=styles,platforms `
           --plugin-enable=pyqt6 `
           --remove-output `
+          --mingw64 --module `
           --follow-import-to=PyQt6,PyQt6.QtCore,PyQt6.QtGui,PyQt6.QtWidgets `
           --nofollow-imports `
           --include-package=mcstatus `
