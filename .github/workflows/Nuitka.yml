@@ -39,6 +39,7 @@ jobs:
           --windows-console-mode=disable `
           --assume-yes-for-downloads `
           --output-dir=./build_output `
+          --nofollow-import-to=psutil.tests.test_testutils `
           --windows-icon-from-ico=./favicon.ico ./CHMLFRP_UI.py
 
       - name: Check if executable exists
