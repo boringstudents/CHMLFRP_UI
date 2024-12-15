@@ -43,9 +43,9 @@ jobs:
       - name: Check if build directory exists
         run: |
           if (Test-Path /CHNLFRP_UI.dist/CHNLFRP_UI.exe) {
-            Write-Output "构建目录存在."
+            Write-Output "构建文件存在."
           } else {
-            Write-Output "构建目录不存在."
+            Write-Output "构建文件不存在."
           }
 
       - name: Upload artifact
