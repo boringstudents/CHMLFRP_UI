@@ -28,9 +28,9 @@ jobs:
 
       - name: Copy additional files
         run: |
-          copy favicon.ico ./build_output/
-          copy frpc.exe ./build_output/
-          copy frpc_full.ini ./build_output/
+          Copy-Item -Path favicon.ico -Destination ./build_output/
+          Copy-Item -Path frpc.exe -Destination ./build_output/
+          Copy-Item -Path frpc_full.ini -Destination ./build_output/
 
       - name: Build executable with Nuitka
         run: |
@@ -55,7 +55,7 @@ jobs:
           --version-info-os=Windows `
           --version-info-product="CHMLFRP UI" `
           --version-info-description="Author: boring_student" `
-          --version-info-version=0.0.0 `
+          --version-info-version=1.0.0 `
           ./CHMLFRP_UI.py
 
       - name: Check if executable exists
