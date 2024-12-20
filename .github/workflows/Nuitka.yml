@@ -43,6 +43,8 @@ jobs:
         run: |
           python -m nuitka --standalone --onefile --python-flag=-O `
           --include-package=PyQt6 `
+          --plugin-enable=python `
+          --no-pyi `
           --upx-binary=$UPX_PATH `
           --include-package-data=PyQt6 `
           --include-qt-plugins=styles,platforms,qml `
