@@ -33,7 +33,7 @@ jobs:
           --include-package=PyQt6 `
           --include-package-data=PyQt6 `
           --include-qt-plugins=styles,platforms,qml `
-          --plugin-enable=pyqt6 `
+          --plugin-enable=pyqt6,upx `
           --follow-import-to=PyQt6,PyQt6.QtCore,PyQt6.QtGui,PyQt6.QtWidgets `
           --nofollow-imports `
           --remove-output `
@@ -47,6 +47,7 @@ jobs:
           --assume-yes-for-downloads `
           --output-dir=./build_output `
           --nofollow-import-to=psutil.tests.test_testutils `
+          --nofollow-import-to=psutil.tests `
           --windows-icon-from-ico=./favicon.ico `
           ./CHMLFRP_UI.py
 
