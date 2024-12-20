@@ -28,20 +28,6 @@ jobs:
           pip install upx
           pip install -r requirements.txt
 
-          pip install re
-          pip install socket
-          pip install threading
-          pip install json
-          pip install random
-          pip install shutil
-          pip install sys
-          pip install zipfile
-          pip install ast
-          pip install logging
-          pip install time
-          pip install subprocess
-          pip install concurrent.futures
-
       # Install UPX using Chocolatey on Windows
       - name: Install UPX
         run: |
@@ -70,21 +56,6 @@ jobs:
           --include-package=psutil `
           --include-package=pyperclip `
           --include-package=ipaddress `
-          --include-package=re `
-          
-          --include-package=socket `
-          --include-package=threading `
-          --include-package=json `
-          --include-package=random `
-          --include-package=shutil `
-          --include-package=sys `
-          --include-package=zipfile `
-          --include-package=ast `
-          --include-package=logging `
-          --include-package=time `
-          --include-package=subprocess `
-          --include-package=concurrent.futures `
-
           --assume-yes-for-downloads `
           --output-dir=./build_output `
           --nofollow-import-to=psutil.tests.test_testutils `
