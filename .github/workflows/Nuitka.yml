@@ -40,7 +40,7 @@ jobs:
 
       - name: Build executable with Nuitka
         run: |
-          nuitka --standalone --onefile --python-flag=-O `
+          python -m nuitka --standalone --onefile --python-flag=-O `
           --include-package=PyQt6 `
           --upx-binary=$UPX_PATH `
           --include-package-data=PyQt6 `
