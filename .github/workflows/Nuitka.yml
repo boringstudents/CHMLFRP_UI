@@ -35,13 +35,14 @@ jobs:
           --plugin-enable=pyqt6 `
           --follow-import-to=PyQt6,PyQt6.QtCore,PyQt6.QtGui,PyQt6.QtWidgets `
           --nofollow-imports `
+          --remove-output `
           --include-package=mcstatus `
           --include-package=requests `
           --include-package=psutil `
           --include-package=pyperclip `
           --include-package=ipaddress `
           --include-package=re `
-          --windows-console-mode=disable `
+
           --assume-yes-for-downloads `
           --output-dir=./build_output `
           --nofollow-import-to=psutil.tests.test_testutils `
