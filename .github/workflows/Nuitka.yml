@@ -42,7 +42,6 @@ jobs:
           --include-package=pyperclip `
           --include-package=ipaddress `
           --include-package=re `
-
           --assume-yes-for-downloads `
           --output-dir=./build_output `
           --nofollow-import-to=psutil.tests.test_testutils `
