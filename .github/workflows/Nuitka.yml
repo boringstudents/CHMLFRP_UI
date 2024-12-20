@@ -37,7 +37,7 @@ jobs:
           --follow-import-to=PyQt6,PyQt6.QtCore,PyQt6.QtGui,PyQt6.QtWidgets `
           --nofollow-imports `
           --remove-output `
-          --windows-console-mode=disable
+          --windows-console-mode=disable `
           --include-package=mcstatus `
           --include-package=requests `
           --include-package=psutil `
