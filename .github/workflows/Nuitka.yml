@@ -41,9 +41,8 @@ jobs:
 
       - name: Build executable with Nuitka
         run: |
-          python -m nuitka --standalone --onefile --python-flag=-O `
+          python -m nuitka --standalone --python-flag=-O `
           --include-package=PyQt6 `
-          --plugin-enable=python `
           --no-pyi `
           --upx-binary=$UPX_PATH `
           --include-package-data=PyQt6 `
@@ -52,7 +51,7 @@ jobs:
           --follow-import-to=PyQt6,PyQt6.QtCore,PyQt6.QtGui,PyQt6.QtWidgets `
           --nofollow-imports `
           --remove-output `
-          --windows-console-mode=disable `
+          #--windows-console-mode=disable `
           --include-package=mcstatus `
           --include-package=requests `
           --include-package=psutil `
