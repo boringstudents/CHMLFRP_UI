@@ -27,14 +27,16 @@ jobs:
           pip install nuitka upx
           pip install -r requirements.txt
 
+      # Install UPX using Chocolatey on Windows
       - name: Install UPX
         run: |
-          sudo apt-get update
-          sudo apt-get install upx-ucl  # 安装 UPX
+          choco install upx -y  # 安装 UPX，-y 表示自动确认安装
 
+      # Get UPX binary path and set it as environment variable
       - name: Get UPX binary path
         run: |
-          echo "UPX_PATH=$(which upx)" >> $GITHUB_ENV  # 将 UPX 路径存入 GitHub 环境变量
+          $UPXPath = (Get-Command upx).Source
+          echo "UPX_PATH=$UPXPath" >> $GITHUB_ENV  # 将 UPX 路径存入 GitHub 环境变量
 
       - name: Build executable with Nuitka
         run: |
