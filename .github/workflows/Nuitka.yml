@@ -38,7 +38,7 @@ jobs:
         run: |
           $UPXPath = (Get-Command upx).Source
           echo "UPX_PATH=$UPXPath" >> $GITHUB_ENV  # 将 UPX 路径存入 GitHub 环境变量
-
+      # --windows-console-mode=disable `
       - name: Build executable with Nuitka
         run: |
           python -m nuitka --standalone --python-flag=-O `
@@ -51,7 +51,6 @@ jobs:
           --follow-import-to=PyQt6,PyQt6.QtCore,PyQt6.QtGui,PyQt6.QtWidgets `
           --nofollow-imports `
           --remove-output `
-          #--windows-console-mode=disable `
           --include-package=mcstatus `
           --include-package=requests `
           --include-package=psutil `
