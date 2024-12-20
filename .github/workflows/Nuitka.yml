@@ -24,7 +24,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install nuitka PyQt6 mcstatus requests psutil pyperclip ipaddress
+          pip install nuitka
+          pip install -r requirements.txt
 
       - name: Build executable with Nuitka
         run: |
@@ -36,6 +37,7 @@ jobs:
           --follow-import-to=PyQt6,PyQt6.QtCore,PyQt6.QtGui,PyQt6.QtWidgets `
           --nofollow-imports `
           --remove-output `
+          --windows-console-mode=disable
           --include-package=mcstatus `
           --include-package=requests `
           --include-package=psutil `
