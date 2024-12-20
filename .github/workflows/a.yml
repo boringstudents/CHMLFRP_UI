@@ -68,6 +68,7 @@ jobs:
           } else {
             Write-Error "Output directory not found at $outputDir"
             exit 1
+          }
 
       - name: Compress build output
         run: |
