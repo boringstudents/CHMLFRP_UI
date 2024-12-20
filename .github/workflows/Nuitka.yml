@@ -41,7 +41,7 @@ jobs:
       # --windows-console-mode=disable `
       - name: Build executable with Nuitka
         run: |
-          python -m nuitka --standalone --python-flag=-O `
+          python -m nuitka --standalone --onefile --python-flag=-O `
           --include-package=PyQt6 `
           --upx-binary=$UPX_PATH `
           --include-package-data=PyQt6 `
