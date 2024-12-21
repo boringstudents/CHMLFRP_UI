@@ -776,5 +776,52 @@ print(response.text)
 }
 ```
 
+## 删除隧道
+请求方式post
+
+请求链接http://cf-v2.uapis.cn/deletetunnel
+
+请求参数：
+
+
+
+| token | 用户token |
+| ------- | ------- |
+| tunnelid | 隧道id |
+
+
+python示例代码：
+
+```
+import requests
+
+url = "http://cf-v2.uapis.cn/deletetunnel?token=iwoa123WODshaod&tunnelid=17"
+payload={}
+headers = {}
+response = requests.request("POST", url, headers=headers, data=payload)
+print(response.text)
+```
+
+
+
+请求成功返回：
+
+```
+chaoji到现在还没修好都好几个月了(
+可以去使用v1的api但是v1api可能在以后失效
+```
+
+
+请求失败返回：
+
+```
+{
+    "msg": "无效的Token",
+    "code": 401,
+    "state": "fail"
+}
+```
+
+
 
 
