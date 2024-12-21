@@ -585,3 +585,99 @@ print(response.text)
     "state": "error"
 }
 ```
+
+## 隧道列表
+请求方式GET
+
+请求链接http://cf-v2.uapis.cn/tunnel
+
+请求参数：
+
+| token | 用户Token |
+| ------- | ------- |
+
+
+
+
+
+python示例代码：
+
+```
+import requests
+
+url = "http://cf-v2.uapis.cn/tunnel?token=wasf21479haHWON"
+payload={}
+headers = {}
+response = requests.request("GET", url, headers=headers, data=payload)
+print(response.text)
+```
+
+
+
+请求成功返回：
+
+```
+#这里按照官方要求vip节点ip不外传以***代替
+{
+    "msg": "获取隧道数据成功",
+    "code": 200,
+    "data": [
+        {
+            "id": 76427,
+            "name": "3I40Au4X",
+            "localip": "127.0.0.1",
+            "type": "tcp",
+            "nport": 5244,
+            "dorp": "65500",
+            "node": "中国香港CN2-4",
+            "state": "false",
+            "userid": 227,
+            "encryption": "true",
+            "compression": "true",
+            "ap": "",
+            "uptime": null,
+            "client_version": "尚未启动",
+            "today_traffic_in": 0,
+            "today_traffic_out": 0,
+            "cur_conns": 0,
+            "nodestate": "offline",
+            "ip": "**********"
+        },
+        {
+            "id": 81329,
+            "name": "230vZqUp",
+            "localip": "127.0.0.1",
+            "type": "tcp",
+            "nport": 222,
+            "dorp": "56078",
+            "node": "日本东京直连-2",
+            "state": "true",
+            "userid": 227,
+            "encryption": "false",
+            "compression": "false",
+            "ap": "",
+            "uptime": "2024-12-21T01:38:19.000+00:00",
+            "client_version": "尚未启动",
+            "today_traffic_in": 0,
+            "today_traffic_out": 0,
+            "cur_conns": 0,
+            "nodestate": "online",
+            "ip": "*******"
+        }
+    ],
+    "state": "success"
+}
+```
+
+
+请求失败返回：
+
+```
+{
+    "msg": "无效的Token",
+    "code": 401,
+    "state": "fail"
+}
+```
+
+
