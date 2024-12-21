@@ -1209,6 +1209,241 @@ print(response.text)
 }
 ```
 
+## 节点状态
+请求方式GET
+
+请求链接http://cf-v2.uapis.cn/nodeinfo
+
+请求参数：
+
+
+无
+
+
+
+python示例代码：
+
+```
+import requests
+
+url = "http://cf-v2.uapis.cn/node_stats"
+
+payload={}
+headers = {}
+
+response = requests.request("GET", url, headers=headers, data=payload)
+
+print(response.text)
+```
+
+
+
+请求成功返回：
+
+```
+{
+    "msg": "节点统计数据获取成功",
+    "code": 200,
+    "data": [
+        {
+            "total_traffic_in": 550093529,
+            "total_traffic_out": 14367772669,
+            "cur_counts": 54,
+            "node_name": "四川德阳电信",
+            "id": 2,
+            "state": "online",
+            "bandwidth_usage_percent": 12,
+            "cpu_usage": 11.913401,
+            "nodegroup": "vip",
+            "client_counts": 93,
+            "tunnel_counts": 190
+        },
+        {
+            "total_traffic_in": 42756780,
+            "total_traffic_out": 627716268,
+            "cur_counts": 0,
+            "node_name": "日本东京直连",
+            "id": 3,
+            "state": "offline",
+            "bandwidth_usage_percent": 0,
+            "cpu_usage": 0,
+            "nodegroup": "user",
+            "client_counts": 0,
+            "tunnel_counts": 0
+        },
+        {
+            "total_traffic_in": 4889547522,
+            "total_traffic_out": 23194219684,
+            "cur_counts": 78,
+            "node_name": "湖北十堰",
+            "id": 4,
+            "state": "online",
+            "bandwidth_usage_percent": 1,
+            "cpu_usage": 7.002964,
+            "nodegroup": "vip",
+            "client_counts": 81,
+            "tunnel_counts": 206
+        },
+        {
+            "total_traffic_in": 370133148,
+            "total_traffic_out": 1806032050,
+            "cur_counts": 14,
+            "node_name": "日本东京直连-2",
+            "id": 6,
+            "state": "online",
+            "bandwidth_usage_percent": 0,
+            "cpu_usage": 15.734785,
+            "nodegroup": "vip",
+            "client_counts": 52,
+            "tunnel_counts": 166
+        },
+        {
+            "total_traffic_in": 29645901,
+            "total_traffic_out": 185976760,
+            "cur_counts": 0,
+            "node_name": "英国伦敦",
+            "id": 8,
+            "state": "offline",
+            "bandwidth_usage_percent": 0,
+            "cpu_usage": 0,
+            "nodegroup": "user",
+            "client_counts": 0,
+            "tunnel_counts": 0
+        },
+        {
+            "total_traffic_in": 0,
+            "total_traffic_out": 0,
+            "cur_counts": 0,
+            "node_name": "江苏宿迁",
+            "id": 11,
+            "state": "online",
+            "bandwidth_usage_percent": 0,
+            "cpu_usage": 0.669085,
+            "nodegroup": "user",
+            "client_counts": 0,
+            "tunnel_counts": 0
+        },
+        {
+            "total_traffic_in": 102720193,
+            "total_traffic_out": 3505114345,
+            "cur_counts": 0,
+            "node_name": "中国台湾",
+            "id": 12,
+            "state": "offline",
+            "bandwidth_usage_percent": 0,
+            "cpu_usage": 0,
+            "nodegroup": "user",
+            "client_counts": 0,
+            "tunnel_counts": 0
+        },
+        {
+            "total_traffic_in": 3117717383,
+            "total_traffic_out": 19172556232,
+            "cur_counts": 133,
+            "node_name": "湖南娄底",
+            "id": 16,
+            "state": "online",
+            "bandwidth_usage_percent": 47,
+            "cpu_usage": 6.482438,
+            "nodegroup": "user",
+            "client_counts": 422,
+            "tunnel_counts": 590
+        },
+        {
+            "total_traffic_in": 3065984513,
+            "total_traffic_out": 26479783790,
+            "cur_counts": 147,
+            "node_name": "河北秦皇岛联通",
+            "id": 19,
+            "state": "online",
+            "bandwidth_usage_percent": 19,
+            "cpu_usage": 3.518275,
+            "nodegroup": "user",
+            "client_counts": 163,
+            "tunnel_counts": 216
+        },
+        {
+            "total_traffic_in": 7510489,
+            "total_traffic_out": 12531460,
+            "cur_counts": 0,
+            "node_name": "中国香港CN2-4",
+            "id": 24,
+            "state": "offline",
+            "bandwidth_usage_percent": 0,
+            "cpu_usage": 0,
+            "nodegroup": "vip",
+            "client_counts": 0,
+            "tunnel_counts": 0
+        },
+        {
+            "total_traffic_in": 6500049,
+            "total_traffic_out": 136115575,
+            "cur_counts": 0,
+            "node_name": "浙江宁波",
+            "id": 27,
+            "state": "offline",
+            "bandwidth_usage_percent": 0,
+            "cpu_usage": 0,
+            "nodegroup": "vip",
+            "client_counts": 0,
+            "tunnel_counts": 0
+        },
+        {
+            "total_traffic_in": 1108281131,
+            "total_traffic_out": 1046310738,
+            "cur_counts": 0,
+            "node_name": "美国洛杉矶-1",
+            "id": 29,
+            "state": "offline",
+            "bandwidth_usage_percent": 0,
+            "cpu_usage": 0,
+            "nodegroup": "user",
+            "client_counts": 0,
+            "tunnel_counts": 0
+        },
+        {
+            "total_traffic_in": 864098232,
+            "total_traffic_out": 7786697517,
+            "cur_counts": 71,
+            "node_name": "美国洛杉矶-2",
+            "id": 30,
+            "state": "online",
+            "bandwidth_usage_percent": 0,
+            "cpu_usage": 1.931229,
+            "nodegroup": "vip",
+            "client_counts": 37,
+            "tunnel_counts": 87
+        },
+        {
+            "total_traffic_in": 275058994,
+            "total_traffic_out": 765604230,
+            "cur_counts": 7,
+            "node_name": "呼和浩特电信",
+            "id": 31,
+            "state": "online",
+            "bandwidth_usage_percent": 1,
+            "cpu_usage": 2.929857,
+            "nodegroup": "user",
+            "client_counts": 10,
+            "tunnel_counts": 11
+        }
+    ],
+    "state": "success"
+}
+```
+
+
+请求失败返回：
+
+```
+{
+    "msg": "无法连接至服务器",
+    "code": 404,
+    "state": "fail"
+}
+```
+
+
 
 
 
