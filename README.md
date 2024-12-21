@@ -1902,6 +1902,77 @@ print(response.text)
 }
 ```
 
+## 创建免费二级域名
+
+请求方式POST
+
+请求链接http://cf-v2.uapis.cn/create_free_subdomain
+
+请求参数：
+
+
+
+| token | 用户Token |
+| ------- | ------- |
+| domain | 主域名 可用域名列表从list_available_domains获取 |
+| record | 假如主域名为frp.wtf，记录为chaoji，类型为CNAME，那最终的结果是chaoji.frp.wtf |
+| type | 类型，仅允许A、AAAA、CNAME、SRV(应该不需要我讲是啥了吧) |
+| target | 解析的最终目标ip/域名/ipv6 |
+| ttl | 仅允许1分钟、2分钟、5分钟、10分钟、15分钟、30分钟、1小时、2小时、5小时、12小时、1天。TTL并不是越快越好，较慢的TTL会提升解析稳定度。but..如果要当ddns或者有切换频率较高的需求还是调低一点好 |
+| remarks | 请根据规范提交，如果解析到ChmlFrp的某个隧道，请填写："解析隧道：ChmlFrp-Tunnel"，可以按需增加其他信息。我的评价是视乎没鸟用 |
+
+
+
+python示例代码：
+
+```
+import requests
+import json
+
+url = "http://cf-v2.uapis.cn/create_free_subdomain"
+
+payload = json.dumps({
+   "token": "string",
+   "domain": "string",
+   "record": "string",
+   "type": "string",
+   "target": "string",
+   "ttl": "string",
+   "remarks": "string"
+})
+headers = {
+   'Content-Type': 'application/json'
+}
+
+response = requests.request("POST", url, headers=headers, data=payload)
+
+print(response.text)
+```
+
+
+
+请求成功返回：
+
+```
+{
+    "msg": "免费二级域名创建成功",
+    "code": 200,
+    "state": "success"
+}
+```
+
+
+请求失败返回：
+
+```
+{
+    "msg": "无效的Token",
+    "code": 401,
+    "state": "fail"
+}
+```
+
+
 
 
 
