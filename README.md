@@ -317,3 +317,71 @@ print(response.text)
 }
 ```
 
+## 用户签到（如果没GeeTest服务器就别想了）
+请求方式POST
+
+请求链接http://cf-v2.uapis.cn/qiandao
+
+请求参数：
+
+| token | 用户token |
+| ------- | ------- |
+| code | 邮箱验证码 |
+| lot_number | GeeTest人机验证参数 |
+| captcha_output | GeeTest人机验证参数 |
+| pass_token | GeeTest人机验证参数 |
+| gen_time | GeeTest人机验证参数 |
+
+python示例代码：
+
+```
+import requests
+import json
+
+url = "http://cf-v2.uapis.cn/qiandao"
+
+payload = json.dumps({
+   "token": "string",
+   "lot_number": "string",
+   "captcha_output": "string",
+   "pass_token": "string",
+   "gen_time": "string"
+})
+headers = {
+   'Content-Type': 'application/json'
+}
+
+response = requests.request("POST", url, headers=headers, data=payload)
+
+print(response.text)
+```
+
+
+
+请求成功返回：
+
+```
+{
+    "msg": "签到成功, 获得9积分",
+    "code": 200,
+    "state": "success"
+}
+```
+
+```
+{
+    "msg": "请勿重复签到",
+    "code": 400,
+    "state": "fail"
+}
+```
+请求失败返回：
+
+```
+{
+    "msg": "string",
+    "code": 0,
+    "state": "string"
+}
+```
+
