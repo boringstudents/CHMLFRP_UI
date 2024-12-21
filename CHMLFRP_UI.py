@@ -307,8 +307,7 @@ class QtHandler(QObject, logging.Handler):
     new_record = pyqtSignal(str)
 
     def __init__(self, parent):
-        super().__init__(parent)
-        super(logging.Handler).__init__()
+        super(QtHandler, self).__init__(parent)  # 只调用一次 super()
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
         self.setFormatter(formatter)
 
