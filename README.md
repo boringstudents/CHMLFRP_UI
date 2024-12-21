@@ -385,3 +385,53 @@ print(response.text)
 }
 ```
 
+## 重置密码
+请求方式GET
+
+请求链接http://cf-v2.uapis.cn/reset_password
+
+请求参数：
+
+| original_password | 原来的密码 |
+| ------- | ------- |
+| new_password | 新的密码 |
+| token | 用户Token |
+
+
+
+
+python示例代码：
+
+```
+import requests
+
+url = "http://cf-v2.uapis.cn/reset_password?original_password=password&new_password=new_password&token=ChmlFrpTokenPreview"
+payload={}
+headers = {}
+response = requests.request("GET", url, headers=headers, data=payload)
+print(response.text)
+```
+
+
+
+请求成功返回：
+
+```
+我懒得重置密码了
+{
+    "code": 0,
+    "state": "string",
+    "msg": "string"
+}
+```
+
+请求失败返回：
+
+```
+{
+    "msg": "无效的Token",
+    "code": 401,
+    "state": "fail"
+}
+```
+
