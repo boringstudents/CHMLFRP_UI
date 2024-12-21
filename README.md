@@ -479,3 +479,52 @@ print(response.text)
     "state": "fail"
 }
 ```
+## 修改QQ
+请求方式GET
+
+请求链接http://cf-v2.uapis.cn/update_qq
+
+请求参数：
+
+| token | 用户Token |
+| ------- | ------- |
+| new_qq | 新的qq |
+
+
+
+
+python示例代码：
+
+```
+import requests
+
+url = "http://cf-v2.uapis.cn/update_qq?token=ChmlFrpToken&new_qq=242247494"
+payload={}
+headers = {}
+response = requests.request("GET", url, headers=headers, data=payload)
+print(response.text)
+```
+
+
+
+请求成功返回：
+
+```
+我懒，以后再补
+{
+    "code": 0,
+    "state": "string",
+    "msg": "string"
+}
+```
+
+
+请求失败返回：
+
+```
+{
+    "msg": "无效的Token",
+    "code": 401,
+    "state": "fail"
+}
+```
