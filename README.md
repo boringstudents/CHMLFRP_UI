@@ -2034,4 +2034,74 @@ print(response.text)
 }
 ```
 
+## 修改免费二级域名（这个API仅允许修改TTL和目标，其余均不可修改）
+
+请求方式POST
+
+请求链接http://cf-v2.uapis.cn/update_free_subdomain
+
+请求参数：
+
+
+
+| token | 用户Token |
+| ------- | ------- |
+| domain | 主域名 可用域名列表从list_available_domains获取 |
+| record | 假如你最终解析的域名为chaoji.frp.one，那这里就填写chaoji |
+| target | 解析的最终目标 |
+| ttl | 仅允许1分钟、2分钟、5分钟、10分钟、15分钟、30分钟、1小时、2小时、5小时、12小时、1天。TTL并不是越快越好，较慢的TTL会提升解析稳定度。 |
+| remarks | 请根据规范提交，如果解析到ChmlFrp的某个隧道，请填写："解析隧道：ChmlFrp-Tunnel"，可以按需增加其他信息 |
+
+
+
+python示例代码：
+
+```
+import requests
+import json
+
+url = "http://cf-v2.uapis.cn/update_free_subdomain"
+
+payload = json.dumps({
+   "token": "string",
+   "domain": "string",
+   "record": "string",
+   "target": "string",
+   "ttl": "string",
+   "remarks": "string"
+})
+headers = {
+   'Content-Type': 'application/json'
+}
+
+response = requests.request("POST", url, headers=headers, data=payload)
+
+print(response.text)
+```
+
+
+
+请求成功返回：
+
+```
+{
+    "msg": "免费二级域名修改成功",
+    "code": 200,
+    "state": "success"
+}
+```
+
+
+请求失败返回：
+
+```
+{
+    "msg": "无效的Token",
+    "code": 401,
+    "state": "fail"
+}
+```
+
+
+
 
