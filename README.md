@@ -2102,6 +2102,193 @@ print(response.text)
 }
 ```
 
+## 获取用户免费二级域名
+
+请求方式GET
+
+请求链接http://cf-v2.uapis.cn/get_user_free_subdomains
+
+请求参数：
+
+
+
+| token | 用户Token |
+| ------- | ------- |
+
+
+python示例代码：
+
+```
+import requests
+
+url = "http://cf-v2.uapis.cn/get_user_free_subdomains?token=ChmlFrpToken"
+
+payload={}
+headers = {}
+
+response = requests.request("GET", url, headers=headers, data=payload)
+
+print(response.text)
+```
+
+
+
+请求成功返回：
+
+```
+{
+    "msg": "用户所有已创建的免费二级域名获取成功",
+    "code": 200,
+    "data": [
+        {
+            "id": 6,
+            "userid": 227,
+            "domain": "frp.wtf",
+            "record": "boring",
+            "type": "A",
+            "target": "27.157.70.7",
+            "remarks": null,
+            "ttl": "1分钟"
+        },
+        {
+            "id": 7,
+            "userid": 227,
+            "domain": "frp.wtf",
+            "record": "MC",
+            "type": "A",
+            "target": "103.76.128.110",
+            "remarks": "",
+            "ttl": "1分钟"
+        },
+        {
+            "id": 8,
+            "userid": 227,
+            "domain": "frp.wtf",
+            "record": "chaoji",
+            "type": "A",
+            "target": "218.86.15.187",
+            "remarks": null,
+            "ttl": "1分钟"
+        },
+        {
+            "id": 11,
+            "userid": 227,
+            "domain": "owo.vin",
+            "record": "mc",
+            "type": "A",
+            "target": "218.86.15.187",
+            "remarks": null,
+            "ttl": "1分钟"
+        },
+        {
+            "id": 13,
+            "userid": 227,
+            "domain": "owo.vin",
+            "record": "boring",
+            "type": "A",
+            "target": "218.86.15.187",
+            "remarks": null,
+            "ttl": "1分钟"
+        },
+        {
+            "id": 17,
+            "userid": 227,
+            "domain": "frp.wtf",
+            "record": "Alist",
+            "type": "A",
+            "target": "194.147.16.88",
+            "remarks": "",
+            "ttl": "1分钟"
+        },
+        {
+            "id": 24,
+            "userid": 227,
+            "domain": "frp.wtf",
+            "record": "Minecraft",
+            "type": "A",
+            "target": "192.168.1.1",
+            "remarks": "解析隧道：alist11",
+            "ttl": "1分钟"
+        },
+        {
+            "id": 47,
+            "userid": 227,
+            "domain": "baozi.site",
+            "record": "mc",
+            "type": "A",
+            "target": "0.0.0.0",
+            "remarks": "自定义地址",
+            "ttl": "10分钟"
+        },
+        {
+            "id": 95,
+            "userid": 227,
+            "domain": "baozi.site",
+            "record": "boring",
+            "type": "A",
+            "target": "0.0.0.0",
+            "remarks": "自定义地址",
+            "ttl": "10分钟"
+        },
+        {
+            "id": 163,
+            "userid": 227,
+            "domain": "731250.xyz",
+            "record": "chaoji",
+            "type": "A",
+            "target": "0.0.0.0",
+            "remarks": "自定义地址",
+            "ttl": "10分钟"
+        },
+        {
+            "id": 332,
+            "userid": 227,
+            "domain": "映射.中国",
+            "record": "chaoji",
+            "type": "A",
+            "target": "0.0.0.0",
+            "remarks": "自定义地址",
+            "ttl": "10分钟"
+        },
+        {
+            "id": 333,
+            "userid": 227,
+            "domain": "frp.wtf",
+            "record": "chaoji",
+            "type": "A",
+            "target": "0.0.0.0",
+            "remarks": "自定义地址",
+            "ttl": "10分钟"
+        },
+        {
+            "id": 509,
+            "userid": 227,
+            "domain": "frp.wtf",
+            "record": "chmlfrp_ui",
+            "type": "CNAME",
+            "target": "baidu123.frp.one",
+            "remarks": "",
+            "ttl": "10分钟"
+        }
+    ],
+    "state": "success"
+}
+```
+
+
+请求失败返回：
+
+```
+{
+    "msg": "无效的Token",
+    "code": 401,
+    "state": "fail"
+}
+```
+
+
+
+
 
 
 
