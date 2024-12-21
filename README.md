@@ -1120,6 +1120,98 @@ print(response.text)
 ```
 
 
+## 节点详情
+请求方式GET
+
+请求链接http://cf-v2.uapis.cn/nodeinfo
+
+请求参数：
+
+
+| token | 用户Token |
+| ------- | ------- |
+| node  | 节点名 |
+
+
+
+
+
+python示例代码：
+
+```
+import requests
+
+url = "http://cf-v2.uapis.cn/nodeinfo?token&node"
+
+payload={}
+headers = {}
+
+response = requests.request("GET", url, headers=headers, data=payload)
+
+print(response.text)
+```
+
+
+
+请求成功返回：
+
+```
+{
+    "msg": "获取成功",
+    "code": 200,
+    "data": {
+        "udp": "true",
+        "total_traffic_in": 0,
+        "notes": "推荐游戏,web,ssh等服务",
+        "cpu_info": "Intel(R) Xeon(R) Gold 6146 CPU @ 3.20GHz",
+        "fangyu": "true",
+        "rport": "10000-65535",
+        "storage_total": 160801107968,
+        "nodegroup": "user",
+        "apitoken": "ChmlFrpToken|11",
+        "web": "no",
+        "ipv6": null,
+        "toowhite": false,
+        "uptime_seconds": 1286486,
+        "id": 11,
+        "state": "online",
+        "bandwidth_usage_percent": 0,
+        "memory_total": 16779546624,
+        "nodetoken": "ChmlFrpToken",
+        "load15": 0.03,
+        "area": "江苏宿迁",
+        "realIp": "***.***.***.**",
+        "ip": "sq.frp.one",
+        "num_cores": 8,
+        "coordinates": "118.295113,33.946709",
+        "load5": 0.02,
+        "version": "ChmlFrp-0.51.2_240715",
+        "load1": 0,
+        "china": "yes",
+        "port": 7000,
+        "total_traffic_out": 0,
+        "name": "江苏宿迁",
+        "adminPort": 8233,
+        "storage_used": 17889017856
+    },
+    "state": "success"
+}
+```
+
+
+请求失败返回：
+
+```
+{
+    "msg": "错误的token",
+    "code": 401,
+    "state": "fail"
+}
+```
+
+
+
+
 
 
 
