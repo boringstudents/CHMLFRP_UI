@@ -528,3 +528,60 @@ print(response.text)
     "state": "fail"
 }
 ```
+
+## 重置头像
+请求方式GET
+
+请求链接http://cf-v2.uapis.cn/update_userimg
+
+请求参数：
+
+| token | 用户Token |
+| ------- | ------- |
+| new_userimg | 头像图片链接 |
+
+
+
+
+python示例代码：
+
+```
+import requests
+
+url = "http://cf-v2.uapis.cn/update_userimg?token=ChmlFrpToken&new_userimg=https://www.chmlfrp.cn/favicon.ico"
+payload={}
+headers = {}
+response = requests.request("GET", url, headers=headers, data=payload)
+print(response.text)
+```
+
+
+
+请求成功返回：
+
+```
+{
+    "msg": "用户头像更新成功",
+    "code": 200,
+    "state": "success"
+}
+```
+
+
+请求失败返回：
+
+```
+{
+    "msg": "新头像不能与当前头像相同",
+    "code": 400,
+    "state": "fail"
+}
+```
+
+```
+{
+    "msg": "无效的链接",
+    "code": 400,
+    "state": "error"
+}
+```
