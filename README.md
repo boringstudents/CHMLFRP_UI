@@ -1765,6 +1765,60 @@ print(response.text)
 }
 ```
 
+## 版本获取（开发中...）
+反正好像是给我的世界服务器或链接做插件和mod用的.我也不知道
+请求方式GET
+
+请求链接http://cf-v2.uapis.cn/app_version
+
+请求参数：
+
+
+| Loader | 示例：Fabric |
+| ------- | ------- |
+| Minecraft  | 示例：1.20.1 |
+|   type |  示例：mcmod |
+
+
+
+
+
+python示例代码：
+
+```
+import requests
+
+url = "http://cf-v2.uapis.cn/app_version?Loader=Fabric&Minecraft=1.20.1&type=mcmod"
+
+payload={}
+headers = {}
+
+response = requests.request("GET", url, headers=headers, data=payload)
+
+print(response.text)
+```
+
+
+
+请求成功返回：
+
+```
+反正现在还不能用
+```
+
+
+请求失败返回：
+
+```
+{
+    "timestamp": "2024-12-21T11:07:30.682+00:00",
+    "status": 404,
+    "error": "Not Found",
+    "path": "/app_version"
+}
+```
+
+
 
 
 
