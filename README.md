@@ -680,4 +680,101 @@ print(response.text)
 }
 ```
 
+## 创建隧道
+请求方式post
+
+请求链接http://cf-v2.uapis.cn/create_tunnel
+
+请求参数：
+
+
+```
+token 用户Token 必需
+tunnelname 隧道名 必需
+node 节点名 必需
+localip 本地IP 可选，不传递则默认为127.0.0.1
+porttype 端口类型 必需 仅允许tcp、udp、http、https，可为大写，也可大小写混用
+localport 本地端口 必需
+remoteport 外网端口 可选 如果porttype参数为tcp、udp，则这个字段为必须，同时禁止传递banddomain
+banddomain 绑定域名 可选 如果porttype参数为http、https，则这个字段为必须，同时禁止传递remoteport
+encryption 数据加密 必需 传递true或false，可为string和boolean
+compression 数据压缩 必需 传递true或false，可为string和boolean
+extraparams 额外参数 可选 不传递则默认为空
+```
+
+python示例代码：
+
+```
+import requests
+import json
+
+url = "http://cf-v2.uapis.cn/create_tunnel"
+
+payload = json.dumps({
+   "token": "labore ut dolore",
+   "tunnelname": "志场度达到",
+   "node": "anim in",
+   "localip": "100.5.204.64",
+   "porttype": "sint cillum Duis non reprehenderit",
+   "localport": 70,
+   "remoteport": 93,
+   "banddomain": "u.japoen@qq.com",
+   "encryption": True,
+   "compression": True,
+   "extraparams": "culpa commodo"
+})
+headers = {
+   'Content-Type': 'application/json'
+}
+
+response = requests.request("POST", url, headers=headers, data=payload)
+
+print(response.text)
+```
+
+
+
+请求成功返回：
+
+```
+{
+    "msg": "隧道创建成功",
+    "code": 200,
+    "data": {
+        "id": null,
+        "name": "12424",
+        "localip": "127.0.0.1",
+        "type": "tcp",
+        "nport": 51,
+        "dorp": "36981",
+        "node": "日本东京直连-2",
+        "state": "false",
+        "userid": 227,
+        "encryption": "false",
+        "compression": "false",
+        "ap": "",
+        "uptime": null,
+        "client_version": "尚未启动",
+        "today_traffic_in": 0,
+        "today_traffic_out": 0,
+        "cur_conns": 0,
+        "nodestate": null,
+        "ip": null
+    },
+    "state": "success"
+}
+```
+
+
+请求失败返回：
+
+```
+{
+    "msg": "无效的Token",
+    "code": 401,
+    "state": "fail"
+}
+```
+
+
 
