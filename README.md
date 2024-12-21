@@ -1547,6 +1547,134 @@ print(response.text)
 }
 ```
 
+## 节点状态详情（emm..这个在请求的时候要注意一下网络环境和容器的大小不然...）
+请求方式GET
+
+数据返回量：总计1968259++ 个字符（还只是随机挑的节点）
+
+请求链接http://cf-v2.uapis.cn/node_status_info
+
+请求参数：
+
+
+
+| nodename | 节点名称 |
+| ------- | ------- |
+
+
+
+
+
+python示例代码：
+
+```
+import requests
+
+url = "http://cf-v2.uapis.cn/node_status_info?nodename=月球CN2"
+
+payload={}
+headers = {}
+
+response = requests.request("GET", url, headers=headers, data=payload)
+
+print(response.text)
+```
+
+
+
+请求成功返回：
+
+```
+{
+    "msg": "节点状态信息获取成功",
+    "code": 200,
+    "data": {
+        "node_details": {
+            "total_traffic_in": 4896385360,
+            "cpu_info": "Intel(R) Xeon(R) CPU E5-2682 v4 @ 2.50GHz",
+            "num_cores": 8,
+            "coordinates": "110.801237,32.637002",
+            "storage_total": 64412954624,
+            "load5": 0.28,
+            "version": "ChmlFrp-0.51.2_240715",
+            "load1": 0.23,
+            "total_traffic_out": 23334736890,
+            "uptime_seconds": 783376,
+            "memory_total": 8200454144,
+            "storage_used": 1539403776,
+            "load15": 0.39
+        },
+        "status_list": [
+            {
+                "proxy_https": 13,
+                "download_bandwidth_usage_percent": 2,
+                "cur_conns": 81,
+                "sent_packets": 728944173,
+                "memory_used": 301830144,
+                "active_conn": 164,
+                "recv_packets": 1378436111,
+                "proxy_tcp": 151,
+                "proxy_udp": 12,
+                "proxy_http": 30,
+                "upload_bandwidth_usage_percent": 1,
+                "cpu_usage": 7.531969,
+                "page_tables": 4030464,
+                "passive_conn": 0,
+                "timestamp": "2024-12-21T11:00:12.000+00:00",
+                "client_counts": 82
+            },
+            {
+                "proxy_https": 13,
+                "download_bandwidth_usage_percent": 2,
+                "cur_conns": 112,
+                "sent_packets": 728915959,
+                "memory_used": 305000448,
+                "active_conn": 197,
+                "recv_packets": 1378371662,
+                "proxy_tcp": 151,
+                "proxy_udp": 12,
+                "proxy_http": 30,
+                "upload_bandwidth_usage_percent": 1,
+                "cpu_usage": 5.059809,
+                "page_tables": 4993024,
+                "passive_conn": 1,
+                "timestamp": "2024-12-21T10:59:52.000+00:00",
+                "client_counts": 82
+            },
+            {
+                "proxy_https": 13,
+                "download_bandwidth_usage_percent": 1,
+                "cur_conns": 90,
+                "sent_packets": 728886995,
+                "memory_used": 301146112,
+                "active_conn": 184,
+                "recv_packets": 1378309035,
+                "proxy_tcp": 151,
+                "proxy_udp": 12,
+                "proxy_http": 30,
+                "upload_bandwidth_usage_percent": 1,
+                "cpu_usage": 5.213119,
+                "page_tables": 3891200,
+                "passive_conn": 0,
+                "timestamp": "2024-12-21T10:59:32.000+00:00",
+                "client_counts": 82
+            }
+```
+
+
+请求失败返回：
+
+```
+{
+    "msg": "无法连接至服务器",
+    "code": 404,
+    "state": "fail"
+}
+```
+
+
+
+
 
 
 
