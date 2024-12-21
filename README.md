@@ -435,3 +435,47 @@ print(response.text)
 }
 ```
 
+## 修改用户名
+请求方式GET
+
+请求链接http://cf-v2.uapis.cnupdate_username
+
+请求参数：
+
+| token | 用户Token |
+| ------- | ------- |
+| new_username | 新用户名 |
+
+
+
+
+python示例代码：
+
+```
+import requests
+
+url = "http://cf-v2.uapis.cnupdate_username?token=ChmlFrpToken&new_username=chaoji"
+payload={}
+headers = {}
+response = requests.request("GET", url, headers=headers, data=payload)
+print(response.text)
+```
+
+
+
+请求成功返回：
+
+```
+好像挂了emm...
+```
+
+
+请求失败返回：
+
+```
+{
+    "msg": "无效的Token",
+    "code": 401,
+    "state": "fail"
+}
+```
