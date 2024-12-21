@@ -72,8 +72,8 @@ jobs:
 
       - name: Compress build output
         run: |
-          $currentTimestamp = (Get-Date -Format "yyyyMMddHHmmss")
-          $zipFileName = "CHMLFRP_UI_$currentTimestamp.zip"
+          $currentDate = (Get-Date -Format "yyyy_MM_dd")
+          $zipFileName = "CHMLFRP_UI_$currentDate.zip"
           Compress-Archive -Path "./build_output/*" -DestinationPath $zipFileName
           Write-Output "Compressed build output to $zipFileName"
 
