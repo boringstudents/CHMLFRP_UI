@@ -1818,6 +1818,91 @@ print(response.text)
 }
 ```
 
+## 获取可用域名列表
+
+请求方式GET
+
+请求链接http://cf-v2.uapis.cn/list_available_domains
+
+请求参数：
+
+
+无
+
+
+
+python示例代码：
+
+```
+import requests
+
+url = "http://cf-v2.uapis.cn/list_available_domains"
+
+payload={}
+headers = {}
+
+response = requests.request("GET", url, headers=headers, data=payload)
+
+print(response.text)
+```
+
+
+
+请求成功返回：
+
+```
+{
+    "msg": "获取可用域名列表成功",
+    "code": 200,
+    "data": [
+        {
+            "id": 1,
+            "domain": "映射.中国",
+            "remarks": null,
+            "icpFiling": false
+        },
+        {
+            "id": 2,
+            "domain": "frp.wtf",
+            "remarks": null,
+            "icpFiling": false
+        },
+        {
+            "id": 3,
+            "domain": "owo.vin",
+            "remarks": null,
+            "icpFiling": false
+        },
+        {
+            "id": 4,
+            "domain": "baozi.site",
+            "remarks": null,
+            "icpFiling": false
+        },
+        {
+            "id": 5,
+            "domain": "731250.xyz",
+            "remarks": null,
+            "icpFiling": false
+        }
+    ],
+    "state": "success"
+}
+```
+
+
+请求失败返回：
+
+```
+{
+    "timestamp": "2024-12-21T11:08:30.682+00:00",
+    "status": 404,
+    "error": "Not Found",
+    "path": "/app_version"
+}
+```
+
+
 
 
 
