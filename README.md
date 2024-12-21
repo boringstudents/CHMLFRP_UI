@@ -979,6 +979,147 @@ print(response.text)
 }
 ```
 
+## 节点列表
+请求方式GET
+
+请求链接http://cf-v2.uapis.cn/node
+
+请求参数：
+
+无
+
+
+
+
+python示例代码：
+
+```
+import requests
+
+url = "http://cf-v2.uapis.cn/node"
+
+payload={}
+headers = {}
+
+response = requests.request("GET", url, headers=headers, data=payload)
+
+print(response.text)
+```
+
+
+
+请求成功返回：
+
+```
+{
+    "msg": "获取成功",
+    "code": 200,
+    "data": [
+        {
+            "id": 2,
+            "name": "四川德阳电信",
+            "area": "中国四川德阳",
+            "nodegroup": "vip",
+            "china": "yes",
+            "web": "yes",
+            "udp": "true",
+            "fangyu": "true",
+            "notes": "超大带宽，啥都能干"
+        },
+        {
+            "id": 4,
+            "name": "湖北十堰",
+            "area": "中国湖北十堰",
+            "nodegroup": "vip",
+            "china": "yes",
+            "web": "yes",
+            "udp": "true",
+            "fangyu": "true",
+            "notes": "超大带宽，啥都能干"
+        },
+        {
+            "id": 6,
+            "name": "日本东京直连-2",
+            "area": "日本东京",
+            "nodegroup": "vip",
+            "china": "no",
+            "web": "yes",
+            "udp": "true",
+            "fangyu": "true",
+            "notes": "超高带宽，干啥都行"
+        },
+        {
+            "id": 11,
+            "name": "江苏宿迁",
+            "area": "江苏宿迁",
+            "nodegroup": "user",
+            "china": "yes",
+            "web": "no",
+            "udp": "true",
+            "fangyu": "true",
+            "notes": "推荐游戏,web,ssh等服务"
+        },
+        {
+            "id": 16,
+            "name": "湖南娄底",
+            "area": "中国湖南娄底",
+            "nodegroup": "user",
+            "china": "yes",
+            "web": "yes",
+            "udp": "true",
+            "fangyu": "true",
+            "notes": "推荐游戏,web,ssh等服务"
+        },
+        {
+            "id": 19,
+            "name": "河北秦皇岛联通",
+            "area": "河北秦皇岛",
+            "nodegroup": "user",
+            "china": "yes",
+            "web": "no",
+            "udp": "true",
+            "fangyu": "true",
+            "notes": "推荐大带宽类服务"
+        },
+        {
+            "id": 30,
+            "name": "美国洛杉矶-2",
+            "area": "美国洛杉矶",
+            "nodegroup": "vip",
+            "china": "no",
+            "web": "yes",
+            "udp": "true",
+            "fangyu": "true",
+            "notes": "大带宽AS9929线路，晚高峰不卡顿"
+        },
+        {
+            "id": 31,
+            "name": "呼和浩特电信",
+            "area": "中国内蒙古呼和浩特",
+            "nodegroup": "user",
+            "china": "yes",
+            "web": "no",
+            "udp": "true",
+            "fangyu": "true",
+            "notes": "大带宽内蒙古，稳定性未知"
+        }
+    ],
+    "state": "success"
+}
+```
+
+
+请求失败返回：
+
+```
+{
+    "msg": "无法连接至服务器",
+    "code": 404,
+    "state": "fail"
+}
+```
+
+
 
 
 
