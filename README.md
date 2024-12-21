@@ -1972,20 +1972,66 @@ print(response.text)
 }
 ```
 
+## 删除免费二级域名
+
+请求方式POST
+
+请求链接http://cf-v2.uapis.cn/delete_free_subdomain
+
+请求参数：
 
 
 
+| token | 用户Token |
+| ------- | ------- |
+| domain | 主域名 可用域名列表从list_available_domains获取 |
+| record | 假如你最终解析的域名为chaoji.frp.one，那这里就填写chaoji |
 
 
 
+python示例代码：
+
+```
+import requests
+import json
+
+url = "http://cf-v2.uapis.cn/delete_free_subdomain"
+
+payload = json.dumps({
+   "token": "string",
+   "domain": "string",
+   "record": "string"
+})
+headers = {
+   'Content-Type': 'application/json'
+}
+
+response = requests.request("POST", url, headers=headers, data=payload)
+
+print(response.text)
+```
 
 
 
+请求成功返回：
+
+```
+{
+    "msg": "免费二级域名删除成功",
+    "code": 200,
+    "state": "success"
+}
+```
 
 
+请求失败返回：
 
-
-
-
+```
+{
+    "msg": "无效的Token",
+    "code": 401,
+    "state": "fail"
+}
+```
 
 
