@@ -148,7 +148,6 @@ print(response.text)
 
 请求失败返回：
 
-一、
 ```{
     "msg": "邮箱格式错误",
     "code": 400,
@@ -195,7 +194,6 @@ print(response.text)
 
 请求失败返回：
 
-一、
 ```
 {
     "msg": "验证码错误",
@@ -264,7 +262,6 @@ print(response.text)
 
 请求失败返回：
 
-一、
 ```
 {
     "msg": "无效的Token",
@@ -272,3 +269,51 @@ print(response.text)
     "state": "fail"
 }
 ```
+
+## 重置令牌（即用户token）
+请求方式GET
+
+请求链接http://cf-v2.uapis.cn/retoken
+
+请求参数：
+
+| token | 用户token |
+| ------- | ------- |
+| code | 邮箱验证码 |
+
+
+
+python示例代码：
+
+```
+import requests
+
+url = "http://cf-v2.uapis.cn/retoken?token=token1&code=666666"
+payload={}
+headers = {}
+response = requests.request("GET", url, headers=headers, data=payload)
+print(response.text)
+```
+
+
+
+请求成功返回：
+
+```
+{
+    "msg": "重置成功",
+    "code": 200,
+    "state": "success"
+}
+```
+
+请求失败返回：
+
+```
+{
+    "msg": "string",
+    "code": 0,
+    "state": "string"
+}
+```
+
