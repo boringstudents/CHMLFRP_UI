@@ -924,6 +924,62 @@ print(response.text)
 }
 ```
 
+## 获取配置文件
+请求方式GET
+
+请求链接http://cf-v2.uapis.cn/tunnel_config
+
+请求参数：
+
+
+| token | 用户Token |
+| ------- | ------- |
+| node  | 节点名称 |
+| tunnel_names  |要获取的隧道名，可为空，为空则输出此节点所有隧道配置文件。隧道名对应的隧道必须和节点名相同。如果要返回多个，则以","分割。|
+
+
+
+
+python示例代码：
+
+```
+import requests
+
+url = "http://cf-v2.uapis.cn/tunnel_config?token=ChmlFrpToken&node=月球CN2&tunnel_names=Tunnel1,Tunnel2"
+
+payload={}
+headers = {}
+
+response = requests.request("GET", url, headers=headers, data=payload)
+
+print(response.text)
+```
+
+
+
+请求成功返回：
+
+```
+{
+    "msg": "配置文件获取成功",
+    "code": 200,
+    "data": "[common]\nserver_addr = ***.***.***.***\nserver_port = 7000\ntls_enable = false\nuser = *****************************\ntoken = ChmlFrpToken\n\n[*******]\ntype = tcp\nlocal_ip = 127.0.0.1\nlocal_port = 132\nremote_port = 49736\n\n",
+    "state": "success"
+}
+```
+
+
+请求失败返回：
+
+```
+{
+    "msg": "无效的Token",
+    "code": 401,
+    "state": "fail"
+}
+```
+
+
 
 
 
