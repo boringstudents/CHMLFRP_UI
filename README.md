@@ -1672,6 +1672,100 @@ print(response.text)
 }
 ```
 
+## 面板信息
+这个简单来说是友链
+请求方式GET
+
+请求链接http://cf-v2.uapis.cn/panelinfo
+
+请求参数：
+
+无
+
+
+
+
+python示例代码：
+
+```
+import requests
+
+url = "http://cf-v2.uapis.cn/panelinfo"
+
+payload={}
+headers = {}
+
+response = requests.request("GET", url, headers=headers, data=payload)
+
+print(response.text)
+```
+
+
+
+请求成功返回：
+
+```
+{
+    "msg": "获取成功",
+    "code": 200,
+    "data": {
+        "tunnel_amount": 22905,
+        "friend_links": [
+            {
+                "name": "System爱好者-形象站",
+                "description": "System爱好者社区",
+                "url": "https://ahzsys.cn"
+            },
+            {
+                "name": "黑软小栈",
+                "description": "共享软件和技术",
+                "url": "https://www.ixmu.net/"
+            },
+            {
+                "name": "云术二级域名",
+                "description": null,
+                "url": "https://dom.cloudery.cn/"
+            },
+            {
+                "name": "零六云",
+                "description": null,
+                "url": "https://yun.01ii.cn/"
+            },
+            {
+                "name": "茶水晶MC生电服务器",
+                "description": "生电 建筑 养老 摸鱼 1.20.4生电服务器",
+                "url": "https://www.tacserver.top/"
+            },
+            {
+                "name": "liuzhen932",
+                "description": "只要愿意去做，人无所不通",
+                "url": "https://blog.liuzhen932.top/"
+            },
+            {
+                "name": "KaedeharaLu's Blog",
+                "description": "一个高中生的个人博客0.o",
+                "url": "https://www.kazuhalu.com/"
+            }
+        ],
+        "node_amount": 14,
+        "user_amount": 22203
+    },
+    "state": "success"
+}
+```
+
+
+请求失败返回：
+
+```
+{
+    "msg": "无法连接至服务器",
+    "code": 404,
+    "state": "fail"
+}
+```
+
+
 
 
 
