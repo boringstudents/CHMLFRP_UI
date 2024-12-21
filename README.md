@@ -1443,6 +1443,111 @@ print(response.text)
 }
 ```
 
+## 节点在线率
+请求方式GET
+
+请求链接http://cf-v2.uapis.cn/node_uptime
+
+请求参数：
+
+
+
+| time | 返回多少天的uptime数据，最大90天 |
+| ------- | ------- |
+| node  |可选，返回对应节点的uptime数据，不传递这个则返回所有节点的uptime数据|
+
+
+
+
+python示例代码：
+
+```
+import requests
+
+url = "http://cf-v2.uapis.cn/node_uptime?time=30&node=月球多线"
+
+payload={}
+headers = {}
+
+response = requests.request("GET", url, headers=headers, data=payload)
+
+print(response.text)
+```
+
+
+
+请求成功返回：
+
+```
+{
+    "msg": "获取节点uptime信息成功",
+    "code": 200,
+    "data": [
+        {
+            "node_name": "中国香港CN2-4",
+            "state": "offline",
+            "id": 24,
+            "history_uptime": [
+                {
+                    "recorded_at": "2024-12-12",
+                    "uptime": 0.1877
+                },
+                {
+                    "recorded_at": "2024-12-13",
+                    "uptime": 0
+                },
+                {
+                    "recorded_at": "2024-12-14",
+                    "uptime": 0
+                },
+                {
+                    "recorded_at": "2024-12-15",
+                    "uptime": 0
+                },
+                {
+                    "recorded_at": "2024-12-16",
+                    "uptime": 0
+                },
+                {
+                    "recorded_at": "2024-12-17",
+                    "uptime": 0
+                },
+                {
+                    "recorded_at": "2024-12-18",
+                    "uptime": 0
+                },
+                {
+                    "recorded_at": "2024-12-19",
+                    "uptime": 0
+                },
+                {
+                    "recorded_at": "2024-12-20",
+                    "uptime": 0
+                },
+                {
+                    "recorded_at": "2024-12-21",
+                    "uptime": 0
+                }
+            ],
+            "group": "vip"
+        }
+    ],
+    "state": "success"
+}
+```
+
+
+请求失败返回：
+
+```
+{
+    "msg": "无法连接至服务器",
+    "code": 404,
+    "state": "fail"
+}
+```
+
+
 
 
 
