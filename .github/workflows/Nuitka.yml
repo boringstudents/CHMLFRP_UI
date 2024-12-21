@@ -28,20 +28,18 @@ jobs:
           pip install upx
           pip install -r requirements.txt
 
-      # Install UPX using Chocolatey on Windows
       - name: Install UPX
         run: |
-          choco install upx -y  # 安装 UPX，-y 表示自动确认安装
+          choco install upx -y
 
-      # Get UPX binary path and set it as environment variable
       - name: Get UPX binary path
         run: |
           $UPXPath = (Get-Command upx).Source
-          echo "UPX_PATH=$UPXPath" >> $GITHUB_ENV  # 将 UPX 路径存入 GitHub 环境变量
-      # --windows-console-mode=disable `
+          echo "UPX_PATH=$UPXPath" >> $GITHUB_ENV
+
       - name: Build executable with Nuitka
         run: |
-          python -m nuitka --standalone --onefile --python-flag=-O `
+          python -m nuitka --standalone --python-flag=-O `
           --include-package=PyQt6 `
           --upx-binary=$UPX_PATH `
           --include-package-data=PyQt6 `
@@ -62,33 +60,26 @@ jobs:
           --windows-icon-from-ico=./favicon.ico `
           ./CHMLFRP_UI.py
 
-      - name: Check if executable exists
+      - name: Check if output directory exists
         run: |
-          $exePath = "./build_output/CHMLFRP_UI.exe"
-          if (Test-Path $exePath) {
-            Write-Host "Executable exists, proceeding with rename."
+          $outputDir = "./build_output"
+          if (Test-Path $outputDir) {
+            Write-Host "Output directory exists, proceeding with compression."
           } else {
-            Write-Error "Executable not found at $exePath"
+            Write-Error "Output directory not found at $outputDir"
             exit 1
           }
 
-      - name: Rename executable with date
+      - name: Compress build output
         run: |
-          $currentDate = (Get-Date -Format "yyyyMMdd")
-          $originalPath = "./build_output/CHMLFRP_UI.exe"
-          if (Test-Path $originalPath) {
-            $newFileName = "CHMLFRP_UI_$currentDate.exe"
-            $newPath = Join-Path -Path (Split-Path $originalPath) -ChildPath $newFileName
-            Move-Item -Path $originalPath -Destination $newPath
-            Write-Output "Renamed file to $newPath"
-          } else {
-            Write-Error "Executable not found at $originalPath"
-            exit 1
-          }
+          $currentTimestamp = (Get-Date -Format "yyyyMMddHHmmss")
+          $zipFileName = "CHMLFRP_UI_$currentTimestamp.zip"
+          Compress-Archive -Path "./build_output/*" -DestinationPath $zipFileName
+          Write-Output "Compressed build output to $zipFileName"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: CHMLFRP_UI-executable
-          path: ./build_output/CHMLFRP_UI_*.exe
+          name: CHMLFRP_UI-archive
+          path: ./*.zip
           retention-days: 7
