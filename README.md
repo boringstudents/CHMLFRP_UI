@@ -203,3 +203,72 @@ print(response.text)
     "state": "fail"
 }
 ```
+## 用户信息
+请求方式GET
+
+请求链接http://cf-v2.uapis.cn/userinfo
+
+请求参数：
+
+| token | 用户token |
+| ------- | ------- |
+
+
+python示例代码：
+
+```
+import requests
+
+url = "http://cf-v2.uapis.cn/userinfo?token"
+payload={}
+headers = {}
+response = requests.request("GET", url, headers=headers, data=payload)
+print(response.text)
+```
+
+
+
+请求成功返回：
+
+```
+{
+    "msg": "请求成功",
+    "code": 200,
+    "data": {
+        "id": ***
+        "username": "boring student",
+        "password": null,
+        "userimg": "https://q.qlogo.cn/g?b=qq&nk=QQ号&s=100",
+        "qq": "QQ号",
+        "email": "QQ邮箱",
+        "usertoken": "用户token",
+        "usergroup": "超级会员",
+        "bandwidth": 50,
+        "tunnel": 16,
+        "realname": "已实名",
+        "login_attempts": 0,
+        "integral": 15168,
+        "term": "9999-09-09",
+        "scgm": null,
+        "regtime": "2023-08-26",
+        "t_token": null,
+        "realname_count": 0,
+        "total_download": 150640674,
+        "total_upload": 3224701,
+        "tunnelCount": 2,
+        "totalCurConns": 0
+    },
+    "state": "success"
+}
+```
+
+请求失败返回：
+
+一、
+```
+{
+    "msg": "无效的Token",
+    "code": 401,
+    "state": "fail"
+}
+```
