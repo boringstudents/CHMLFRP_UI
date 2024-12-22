@@ -1585,9 +1585,13 @@ class StopWorker(QObject):
     def kill_remaining_frpc_processes(self):
         self.progress.emit("正在清理残留的 frpc.exe 进程...")
         killed_count = 0
-        for proc in psutil.process_iter(['name']):
+        current_directory = os.path.dirname(os.path.abspath(__file__))  # 获取当前脚本目录
+        frpc_path = os.path.join(current_directory, 'frpc.exe')  # 当前目录下的 frpc.exe 完整路径
+
+        for proc in psutil.process_iter(['name', 'exe']):
             try:
-                if proc.name().lower() == 'frpc.exe':
+                # 判断进程是否是 frpc.exe，且路径是否与当前目录下的 frpc.exe 完全一致
+                if proc.name().lower() == 'frpc.exe' and proc.exe().lower() == frpc_path.lower():
                     proc.terminate()
                     proc.wait(timeout=3)
                     if proc.is_running():
@@ -1606,8 +1610,11 @@ class StopWorker(QObject):
         # 使用 taskkill 确保所有 frpc 进程被终止（仅在 Windows 上）
         if psutil.WINDOWS:
             try:
-                subprocess.run(['taskkill', '/F', '/IM', 'frpc.exe'],
-                               stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+                # 使用 subprocess.Popen 以避免显示黑色命令行窗口
+                subprocess.Popen(['taskkill', '/F', '/IM', 'frpc.exe'],
+                                 stdout=subprocess.DEVNULL,
+                                 stderr=subprocess.DEVNULL,
+                                 creationflags=subprocess.CREATE_NO_WINDOW)
             except Exception as e:
                 self.logger.error(f"使用 taskkill 终止 frpc.exe 时发生错误: {str(e)}")
 
@@ -1618,7 +1625,6 @@ class StopWorker(QObject):
             self.progress.emit(f"警告：仍有 {len(remaining)} 个 frpc.exe 进程无法终止")
         else:
             self.progress.emit("所有 frpc.exe 进程已成功终止")
-
 
 class MainWindow(QMainWindow):
     """主窗口"""
