@@ -4234,42 +4234,22 @@ class MainWindow(QMainWindow):
         try:
             current_directory = os.path.dirname(os.path.abspath(__file__))  # 获取当前脚本目录
             frpc_path = os.path.join(current_directory, 'frpc.exe')  # 当前目录下的 frpc.exe 完整路径
-            killed_count = 0
 
-            # 遍历所有进程并终止当前目录下的 frpc.exe 进程
-            for proc in psutil.process_iter(['name', 'exe']):
-                try:
-                    if proc.name().lower() == 'frpc.exe' and proc.exe().lower() == frpc_path.lower():
-                        proc.terminate()
-                        proc.wait(timeout=5)
-                        killed_count += 1
-                except psutil.NoSuchProcess:
-                    pass
-                except Exception as e:
-                    self.logger.error(f"终止 frpc.exe 进程时发生错误: {str(e)}")
-    
-            if killed_count > 0:
-                self.logger.info(f"已终止 {killed_count} 个当前目录下的 frpc.exe 进程")
-            else:
-                self.logger.info("没有找到当前目录下的 frpc.exe 进程")
-    
-            # 使用 taskkill 确保所有 frpc 进程被终止（仅在 Windows 上）
-            if psutil.WINDOWS:
-                try:
-                    # 创建 STARTUPINFO 对象，确保不会弹出命令行窗口
-                    startupinfo = subprocess.STARTUPINFO()
-                    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-                    startupinfo.wShowWindow = subprocess.SW_HIDE  # 隐藏窗口
+            # 使用 PowerShell 命令终止指定路径下的 frpc.exe 进程
+            powershell_command = f'Get-Process | Where-Object {{ $_.Path -eq "{frpc_path}" }} | Stop-Process -Force'
 
-                    # 使用 subprocess.Popen 执行 taskkill 以避免黑框
-                    subprocess.Popen(['taskkill', '/F', '/IM', 'frpc.exe'],
-                                     stdout=subprocess.DEVNULL,
-                                     stderr=subprocess.DEVNULL,
-                                     startupinfo=startupinfo)
+            # 创建 STARTUPINFO 对象，确保不会弹出命令行窗口
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            startupinfo.wShowWindow = subprocess.SW_HIDE  # 隐藏窗口
 
-                    self.logger.info("已通过 taskkill 强制终止 frpc.exe 进程")
-                except Exception as e:
-                    self.logger.error(f"使用 taskkill 终止 frpc.exe 时发生错误: {str(e)}")
+            # 使用 subprocess.Popen 执行 PowerShell 命令
+            subprocess.Popen(['powershell', '-Command', powershell_command],
+                             stdout=subprocess.DEVNULL,
+                             stderr=subprocess.DEVNULL,
+                             startupinfo=startupinfo)
+
+            self.logger.info(f"已强制终止指定路径上的 frpc.exe 进程: {frpc_path}")
         except Exception as e:
             self.logger.error(f"强制终止 frpc.exe 进程时发生错误: {str(e)}")
 
