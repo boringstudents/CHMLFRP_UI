@@ -30,17 +30,20 @@
 | 日志的存放时间 | 明年六月 |
 
 ## 相关链接
-[https://github.com/Qianyiaz/ChmlFrp_Professional_Launcher]()
-[https://github.com/FengXiang2233/Xingcheng-Chmlfrp-Lanucher]()
-[https://github.com/boringstudents/CHMLFRP_UI]()
-[https://github.com/TechCat-Team/ChmlFrp-Frp]()
+[https://github.com/Qianyiaz/ChmlFrp_Professional_Launcher]()  #千依🅥的cpl
+
+[https://github.com/FengXiang2233/Xingcheng-Chmlfrp-Lanucher]()  #枫相的xcl2
+
+[https://github.com/boringstudents/CHMLFRP_UI]()  #我的"不道a"
+
+[https://github.com/TechCat-Team/ChmlFrp-Frp]()  #chmlfrp官方魔改的frpc
 
 
 ## **以下为chmlfrp的api文档**
 ### ChmlFrp-v3控制面板链接：[http://preview.panel.chmlfrp.cn]()
 
-开源链接：[https://github.com/TechCat-Team/ChmlFrp-Panel-v3
-]()
+开源链接：[https://github.com/TechCat-Team/ChmlFrp-Panel-v3]()
+
 更多TechCat开源代码请前往：[https://github.com/orgs/TechCat-Team]()
 
 ## api文档链接
