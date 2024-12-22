@@ -378,60 +378,6 @@ class PortScannerThread(QThread):
         self.open_ports = []
         self.lock = threading.Lock()
         self.output_lock = threading.Lock()
-
-    def scan_ports(self, ports):
-        local_open_ports = []
-        for port in ports:
-            try:
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                    s.settimeout(self.timeout)
-                    result = s.connect_ex((self.ip, port))
-                    if result == 0:
-                        local_open_ports.append(port)
-            except:
-                pass
-            finally:
-                with self.lock:
-                    self.scanned_ports += 1
-                    progress = min(99, int((self.scanned_ports / self.total_ports) * 100))
-                    self.progress_signal.emit(progress)
-
-        with self.output_lock:
-            for port in local_open_ports:
-                self.open_ports.append(port)
-                self.update_signal.emit(f"Port {port} is open")
-
-    def run(self):
-        self.total_ports = self.end_port - self.start_port + 1
-        self.scanned_ports = 0
-
-        ports_per_thread = max(1, int(10 / self.thread_multiplier))
-        num_threads = min(self.total_ports, max(1, int(self.total_ports / ports_per_thread)))
-
-        with ThreadPoolExecutor(max_workers=num_threads) as executor:
-            port_ranges = [range(i, min(i + ports_per_thread, self.end_port + 1))
-                           for i in range(self.start_port, self.end_port + 1, ports_per_thread)]
-
-            executor.map(self.scan_ports, port_ranges)
-
-        self.progress_signal.emit(100)
-        self.update_signal.emit(f"扫描完成。找到 {len(self.open_ports)} 个开放端口。")
-
-
-class PortScannerThread(QThread):
-    update_signal = pyqtSignal(str)
-    progress_signal = pyqtSignal(int)
-
-    def __init__(self, ip, start_port, end_port, thread_multiplier, timeout):
-        super().__init__()
-        self.ip = ip
-        self.start_port = start_port
-        self.end_port = end_port
-        self.thread_multiplier = thread_multiplier
-        self.timeout = timeout
-        self.open_ports = []
-        self.lock = threading.Lock()
-        self.output_lock = threading.Lock()
         self.stop_flag = threading.Event()
 
     def stop(self):
