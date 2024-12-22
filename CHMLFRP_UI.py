@@ -2299,6 +2299,16 @@ class MainWindow(QMainWindow):
         self.username_input.clear()
         self.password_input.clear()
         self.token_input.clear()
+
+        # 清空并格式化凭证文件
+        credentials_path = get_absolute_path('credentials.json')
+        try:
+            with open(credentials_path, 'w') as f:
+                json.dump({}, f)
+            self.logger.info("凭证文件已清空")
+        except Exception as e:
+            self.logger.error(f"清空凭证文件时发生错误: {str(e)}")
+
         self.clear_user_data()
         self.logger.info("已退出登录")
 
