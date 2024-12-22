@@ -12,6 +12,7 @@ import requests
 from PyQt6.QtCore import *
 from PyQt6.QtWidgets import *
 from PyQt6.QtGui import *
+from PyQt6.QtNetwork import *
 import socket
 import threading
 import json
@@ -1624,6 +1625,10 @@ class MainWindow(QMainWindow):
         self.selected_tunnels = []
         self.token = None
 
+        # 初始化api系统
+        self.network_manager = QNetworkAccessManager(self)
+        self.network_manager.finished.connect(self.on_network_response)
+
         # 初始化日志系统
         self.logger = logging.getLogger('CHMLFRP_UI')
         self.qt_handler = QtHandler(self)
@@ -2261,17 +2266,44 @@ class MainWindow(QMainWindow):
         if token:
             self.token = token
             self.logger.info("使用Token登录成功")
+            self.load_user_data_async()
         else:
             username = self.username_input.text()
             password = self.password_input.text()
-            self.token = login(username, password)
+            url = f"http://cf-v2.uapis.cn/login?username={username}&password={password}"
+            request = QNetworkRequest(QUrl(url))
+            self.network_manager.get(request)
 
-        if self.token:
-            self.logger.info("登录成功")
-            self.save_credentials()
-            self.login_success()
-        else:
-            self.logger.error("登录失败，请检查用户名、密码或Token")
+    def load_user_data_async(self):
+        """异步加载用户数据"""
+        url = f"http://cf-v2.uapis.cn/userinfo?token={self.token}"
+        request = QNetworkRequest(QUrl(url))
+        self.network_manager.get(request)
+
+    def on_network_response(self, reply):
+        url = reply.url().toString()
+        if "login" in url:
+            if reply.error() == QNetworkReply.NetworkError.NoError:
+                response_data = reply.readAll().data().decode()
+                data = json.loads(response_data)
+                self.token = data.get("data", {}).get("usertoken")
+                if self.token:
+                    self.logger.info("登录成功")
+                    self.save_credentials()
+                    self.login_success()
+                else:
+                    self.logger.warning("登录失败")
+            else:
+                self.logger.error(f"登录时发生错误: {reply.errorString()}")
+        elif "userinfo" in url:
+            if reply.error() == QNetworkReply.NetworkError.NoError:
+                response_data = reply.readAll().data().decode()
+                data = json.loads(response_data)
+                self.user_info = data.get("data")
+                self.display_user_info()
+            else:
+                self.logger.error(f"获取用户信息时发生错误: {reply.errorString()}")
+
 
     def login_success(self):
         """登录成功后的操作"""
@@ -2281,7 +2313,7 @@ class MainWindow(QMainWindow):
             self.username_input.setEnabled(False)
             self.password_input.setEnabled(False)
             self.token_input.setEnabled(False)
-            self.load_user_data()
+            self.load_user_data_async()
             self.load_user_domains()
             self.dt_load_tunnel_names()
             self.dt_load_domains()
