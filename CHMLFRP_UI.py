@@ -733,6 +733,9 @@ class IPToolsWidget(QWidget):
         QPushButton:hover {
             background-color: #1565C0;
         }
+        QPushButton:pressed {
+            background-color: #0D47A1;
+        }
         QPushButton:disabled {
             background-color: #CCCCCC;
             color: #666666;
@@ -768,6 +771,9 @@ class IPToolsWidget(QWidget):
         QPushButton:hover {
             background-color: #45a049;
         }
+        QPushButton:pressed {
+            background-color: #4CAF50;
+        }
         QPushButton:disabled {
             background-color: #CCCCCC;
             color: #666666;
@@ -785,11 +791,6 @@ class IPToolsWidget(QWidget):
         }
         """
         self.setStyleSheet(style)
-
-        # 更新所有子部件的样式
-        for i in range(self.tab_widget.count()):
-            tab = self.tab_widget.widget(i)
-            tab.setStyleSheet(style)
 
 class PingThread(QThread):
     update_signal = pyqtSignal(str, object)
