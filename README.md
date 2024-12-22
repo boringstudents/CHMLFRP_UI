@@ -4,6 +4,37 @@
 
 下载解压运行即可(仅支持win10以上版本)，如有bug请提出谢谢!
 
+# **target一周一个**
+| 目标 | 预计实现时间 |
+| ------- | ------- |
+| 隧道的http和https填写 | 明年六月 |
+| api请求进程与窗口分离 | 明年六月 |
+| 网络和隧道流量监控 | 明年六月 |
+| 简易的网络防御 | 明年六月 |
+| api的异步 | 2024/1/10 |
+| 找一个合适的程序名称，总不能一直叫CHMLFRP_UI吧 | 不道a |
+| 所有分页的重写 | 明年六月 |
+
+| 设置内容 | 预计实现 |
+| ------- | ------- |
+| 主题 | 明年六月 |
+| 程序自启动 | 明年六月 |
+| 启动时是为ui还是后台 | 明年六月 |
+| 最小化是状态栏还是任务栏 | 明年六月 |
+| 程序启动后启动的隧道 | 明年六月 |
+| 重置token | 明年六月 |
+| 兑换码 | 明年六月 |
+| 头像更换 | 明年六月 |
+| 更换用户名 | 明年六月 |
+| 更换qq号 | 明年六月 |
+| 日志的存放时间 | 明年六月 |
+
+## 相关链接
+https://github.com/Qianyiaz/ChmlFrp_Professional_Launcher
+https://github.com/FengXiang2233/Xingcheng-Chmlfrp-Lanucher
+https://github.com/boringstudents/CHMLFRP_UI
+https://github.com/TechCat-Team/ChmlFrp-Frp
+
 
 ## **以下为chmlfrp的api文档**
 ### ChmlFrp-v3控制面板链接：http://preview.panel.chmlfrp.cn
