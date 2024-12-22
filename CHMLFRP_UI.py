@@ -3577,6 +3577,10 @@ class MainWindow(QMainWindow):
 
     def check_and_download_files(self):
         """检查并下载所需文件"""
+        thread = threading.Thread(target=self._download_files)
+        thread.start()
+
+    def _download_files(self):
         required_files = [
             get_absolute_path('frpc.exe'),
         ]
@@ -3586,10 +3590,12 @@ class MainWindow(QMainWindow):
             self.logger.info("正在下载所需文件...")
             url = "https://www.chmlfrp.cn/dw/ChmlFrp-0.51.2_240715_windows_amd64.zip"
             try:
-                response = requests.get(url)
+                response = requests.get(url, stream=True)
+                response.raise_for_status()  # 检查是否成功获取
                 zip_path = get_absolute_path("ChmlFrp.zip")
                 with open(zip_path, "wb") as f:
-                    f.write(response.content)
+                    for chunk in response.iter_content(chunk_size=8192):
+                        f.write(chunk)
 
                 extracted_folder = None
                 with zipfile.ZipFile(zip_path, 'r') as zip_ref:
@@ -3619,7 +3625,7 @@ class MainWindow(QMainWindow):
                 self.logger.error(f"下载或处理文件时发生错误: {str(e)}")
         else:
             self.logger.info("所需文件已存在，无需下载")
-
+    
     def mousePressEvent(self, event):
         """鼠标按下事件"""
         if event.button() == Qt.MouseButton.LeftButton:
