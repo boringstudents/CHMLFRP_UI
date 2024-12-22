@@ -1583,25 +1583,31 @@ class StopWorker(QObject):
         self.logger.info(f"隧道 '{tunnel_name}' 已停止")
 
     def kill_remaining_frpc_processes(self):
-    self.progress.emit("正在清理残留的 frpc.exe 进程...")
-    killed_count = 0
+        self.progress.emit("正在清理残留的 frpc.exe 进程...")
+        killed_count = 0
 
-    try:
-        ps_command = (
-            'powershell -Command "Get-Process | Where-Object { $_.Path -eq '
-            '\'C:\\Users\\Administrator\\Desktop\\ChmlFrp-0.51.2_240715_windows_amd64\\frpc.exe\' } | '
-            'Stop-Process -Force"'
-        )
-        subprocess.Popen(ps_command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        killed_count += 1
-        self.logger.info("已通过 PowerShell 强制终止 frpc.exe 进程")
-    except Exception as e:
-        self.logger.error(f"使用 PowerShell 终止 frpc.exe 时发生错误: {str(e)}")
+        try:
+            # 获取当前目录下的 frpc.exe 完整路径
+            frpc_path = get_absolute_path('frpc.exe').replace('\\', '\\\\')  # 转义反斜杠
 
-    if killed_count > 0:
-        self.progress.emit(f"已终止 {killed_count} 个残留的 frpc.exe 进程")
-    else:
-        self.progress.emit("没有发现残留的 frpc.exe 进程")
+            ps_command = (
+                f'powershell -Command "Get-Process | Where-Object {{ $_.Path -eq \'{frpc_path}\' }} | '
+                'Stop-Process -Force"'
+            )
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            startupinfo.wShowWindow = subprocess.SW_HIDE
+
+            subprocess.Popen(ps_command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, startupinfo=startupinfo)
+            killed_count += 1
+            self.logger.info("已通过 PowerShell 强制终止 frpc.exe 进程")
+        except Exception as e:
+            self.logger.error(f"使用 PowerShell 终止 frpc.exe 时发生错误: {str(e)}")
+
+        if killed_count > 0:
+            self.progress.emit(f"已终止 {killed_count} 个残留的 frpc.exe 进程")
+        else:
+            self.progress.emit("没有发现残留的 frpc.exe 进程")
             
 class MainWindow(QMainWindow):
     """主窗口"""
