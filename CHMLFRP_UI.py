@@ -1583,53 +1583,25 @@ class StopWorker(QObject):
         self.logger.info(f"隧道 '{tunnel_name}' 已停止")
 
     def kill_remaining_frpc_processes(self):
-        self.progress.emit("正在清理残留的 frpc.exe 进程...")
-        killed_count = 0
-        current_directory = os.path.dirname(os.path.abspath(__file__))  # 获取当前脚本目录
-        frpc_path = os.path.join(current_directory, 'frpc.exe')  # 当前目录下的 frpc.exe 完整路径
+    self.progress.emit("正在清理残留的 frpc.exe 进程...")
+    killed_count = 0
 
-        for proc in psutil.process_iter(['name', 'exe']):
-            try:
-                # 判断进程是否是 frpc.exe，且路径是否与当前目录下的 frpc.exe 完全一致
-                if proc.name().lower() == 'frpc.exe' and proc.exe().lower() == frpc_path.lower():
-                    proc.terminate()
-                    proc.wait(timeout=3)
-                    if proc.is_running():
-                        proc.kill()
-                    killed_count += 1
-            except psutil.NoSuchProcess:
-                pass
-            except Exception as e:
-                self.logger.error(f"终止 frpc.exe 进程时发生错误: {str(e)}")
+    try:
+        ps_command = (
+            'powershell -Command "Get-Process | Where-Object { $_.Path -eq '
+            '\'C:\\Users\\Administrator\\Desktop\\ChmlFrp-0.51.2_240715_windows_amd64\\frpc.exe\' } | '
+            'Stop-Process -Force"'
+        )
+        subprocess.Popen(ps_command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        killed_count += 1
+        self.logger.info("已通过 PowerShell 强制终止 frpc.exe 进程")
+    except Exception as e:
+        self.logger.error(f"使用 PowerShell 终止 frpc.exe 时发生错误: {str(e)}")
 
-        if killed_count > 0:
-            self.progress.emit(f"已终止 {killed_count} 个残留的 frpc.exe 进程")
-        else:
-            self.progress.emit("没有发现残留的 frpc.exe 进程")
-
-        # 使用 taskkill 确保所有 frpc 进程被终止（仅在 Windows 上）
-        if psutil.WINDOWS:
-            try:
-                # 创建 STARTUPINFO 对象，并设置 CREATE_NO_WINDOW
-                startupinfo = subprocess.STARTUPINFO()
-                startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-                startupinfo.wShowWindow = subprocess.SW_HIDE  # 隐藏窗口
-
-                # 使用 subprocess.Popen 执行 taskkill
-                subprocess.Popen(['taskkill', '/F', '/IM', 'frpc.exe'],
-                                 stdout=subprocess.DEVNULL,
-                                 stderr=subprocess.DEVNULL,
-                                 startupinfo=startupinfo)
-            except Exception as e:
-                self.logger.error(f"使用 taskkill 终止 frpc.exe 时发生错误: {str(e)}")
-
-        # 最后检查是否还有 frpc.exe 进程
-        time.sleep(1)  # 稍微等待一下，确保进程有时间完全终止
-        remaining = [p for p in psutil.process_iter(['name']) if p.name().lower() == 'frpc.exe']
-        if remaining:
-            self.progress.emit(f"警告：仍有 {len(remaining)} 个 frpc.exe 进程无法终止")
-        else:
-            self.progress.emit("所有 frpc.exe 进程已成功终止")
+    if killed_count > 0:
+        self.progress.emit(f"已终止 {killed_count} 个残留的 frpc.exe 进程")
+    else:
+        self.progress.emit("没有发现残留的 frpc.exe 进程")
             
 class MainWindow(QMainWindow):
     """主窗口"""
