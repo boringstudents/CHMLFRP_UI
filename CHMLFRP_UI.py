@@ -1610,11 +1610,16 @@ class StopWorker(QObject):
         # 使用 taskkill 确保所有 frpc 进程被终止（仅在 Windows 上）
         if psutil.WINDOWS:
             try:
-                # 使用 subprocess.Popen 以避免显示黑色命令行窗口
+                # 创建 STARTUPINFO 对象，并设置 CREATE_NO_WINDOW
+                startupinfo = subprocess.STARTUPINFO()
+                startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                startupinfo.wShowWindow = subprocess.SW_HIDE  # 隐藏窗口
+
+                # 使用 subprocess.Popen 执行 taskkill
                 subprocess.Popen(['taskkill', '/F', '/IM', 'frpc.exe'],
                                  stdout=subprocess.DEVNULL,
                                  stderr=subprocess.DEVNULL,
-                                 creationflags=subprocess.CREATE_NO_WINDOW)
+                                 startupinfo=startupinfo)
             except Exception as e:
                 self.logger.error(f"使用 taskkill 终止 frpc.exe 时发生错误: {str(e)}")
 
@@ -1625,7 +1630,7 @@ class StopWorker(QObject):
             self.progress.emit(f"警告：仍有 {len(remaining)} 个 frpc.exe 进程无法终止")
         else:
             self.progress.emit("所有 frpc.exe 进程已成功终止")
-
+            
 class MainWindow(QMainWindow):
     """主窗口"""
 
