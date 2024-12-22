@@ -84,7 +84,7 @@ def get_nodes(max_retries=3, retry_delay=1):
     """获取节点数据"""
     logger.info("开始获取节点数据")
     url = "http://cf-v2.uapis.cn/node"
-    headers = {'User-Agent': 'CHMLFRP_UI/2.1 (Python/3.12.7; Windows NT 10.0)'}
+    headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
 
     for attempt in range(max_retries):
         try:
@@ -111,7 +111,7 @@ def login(username, password):
     """用户登录返回token"""
     logger.info(f"尝试登录用户: {username}")
     url = f"http://cf-v2.uapis.cn/login?username={username}&password={password}"
-    headers = {'User-Agent': 'CHMLFRP_UI/2.1 (Python/3.12.7; Windows NT 10.0)'}
+    headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
     try:
         response = requests.get(url, headers=headers)
         response_data = response.json()
@@ -145,7 +145,7 @@ def validate_and_resolve_ip(ip_or_hostname):
 def get_user_tunnels(token):
     """获取用户隧道列表"""
     url = f"http://cf-v2.uapis.cn/tunnel?token={token}"
-    headers = {'User-Agent': 'CHMLFRP_UI/2.1 (Python/3.12.7; Windows NT 10.0)'}
+    headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
     try:
         response = requests.get(url, headers=headers)
         response.raise_for_status()  # 这会在HTTP错误时抛出异常
@@ -167,7 +167,7 @@ def get_node_ip(token, node):
     """获取节点IP"""
     logger.info(f"获取节点 {node} 的IP")
     url = f"http://cf-v2.uapis.cn/nodeinfo?token={token}&node={node}"
-    headers = {'User-Agent': 'CHMLFRP_UI/2.1 (Python/3.12.7; Windows NT 10.0)'}
+    headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
     try:
         response = requests.get(url, headers=headers)
         ip = response.json()["data"]["realIp"]
@@ -192,7 +192,7 @@ def update_subdomain(token, domain, record, target, record_type):
         "remarks": ""
     }
     headers = {
-        'User-Agent': 'CHMLFRP_UI/2.1 (Python/3.12.7; Windows NT 10.0)',
+        'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)',
         'Content-Type': 'application/json'
     }
     try:
@@ -235,7 +235,7 @@ def update_tunnel(token, tunnel_info, node):
     }
 
     headers = {
-        'User-Agent': 'CHMLFRP_UI/2.1 (Python/3.12.7; Windows NT 10.0)',
+        'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)',
         'Content-Type': 'application/json'
     }
     try:
@@ -251,7 +251,7 @@ def update_tunnel(token, tunnel_info, node):
 
 def is_node_online(node_name):
     url = "http://cf-v2.uapis.cn/node_stats"
-    headers = {'User-Agent': 'CHMLFRP_UI/2.1 (Python/3.12.7; Windows NT 10.0)'}
+    headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
     try:
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
@@ -1145,7 +1145,7 @@ class TunnelCard(QFrame):
     def fetch_node_info(self):
         node = self.tunnel_info.get('node', '')
         url = f"http://cf-v2.uapis.cn/nodeinfo?token={self.token}&node={node}"
-        headers = {'User-Agent': 'CHMLFRP_UI/2.1 (Python/3.12.7; Windows NT 10.0)'}
+        headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
         try:
             response = requests.get(url, headers=headers)
             data = response.json()
@@ -2354,7 +2354,7 @@ class MainWindow(QMainWindow):
     def get_user_info(self):
         """获取用户信息"""
         url = f"http://cf-v2.uapis.cn/userinfo?token={self.token}"
-        headers = {'User-Agent': 'CHMLFRP_UI/2.1 (Python/3.12.7; Windows NT 10.0)'}
+        headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
         try:
             response = requests.get(url, headers=headers)
             data = response.json()
@@ -2470,7 +2470,7 @@ class MainWindow(QMainWindow):
                 raise ValueError("未登录，无法加载域名列表")
 
             url = f"http://cf-v2.uapis.cn/get_user_free_subdomains?token={self.token}"
-            headers = {'User-Agent': 'CHMLFRP_UI/2.1 (Python/3.12.7; Windows NT 10.0)'}
+            headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
             response = requests.get(url, headers=headers)
             response.raise_for_status()
             data = response.json()
@@ -2510,7 +2510,7 @@ class MainWindow(QMainWindow):
         """加载节点列表"""
         try:
             url = "http://cf-v2.uapis.cn/node_stats"
-            headers = {'User-Agent': 'CHMLFRP_UI/2.1 (Python/3.12.7; Windows NT 10.0)'}
+            headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
             response = requests.get(url, headers=headers)
             response.raise_for_status()
             data = response.json()
@@ -2764,7 +2764,7 @@ class MainWindow(QMainWindow):
                 }
 
                 headers = {
-                    'User-Agent': 'CHMLFRP_UI/2.1 (Python/3.12.7; Windows NT 10.0)',
+                    'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)',
                     'Content-Type': 'application/json'
                 }
                 if not validate_port(local_port_input.text()) or not validate_port(remote_port_input.text()):
@@ -2849,7 +2849,7 @@ class MainWindow(QMainWindow):
                 }
 
                 headers = {
-                    'User-Agent': 'CHMLFRP_UI/2.1 (Python/3.12.7; Windows NT 10.0)',
+                    'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)',
                     'Content-Type': 'application/json'
                 }
                 if not validate_port(local_port_input.text()) or not validate_port(remote_port_input.text()):
@@ -2883,7 +2883,7 @@ class MainWindow(QMainWindow):
             if reply == QMessageBox.StandardButton.Yes:
                 try:
                     url = f"http://cf-v2.uapis.cn/deletetunnel?token={self.token}&tunnelid={tunnel_info['id']}"
-                    headers = {'User-Agent': 'CHMLFRP_UI/2.1 (Python/3.12.7; Windows NT 10.0)'}
+                    headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
                     response = requests.post(url, headers=headers)
                     if response.status_code == 200:
                         self.logger.info(f"隧道 '{tunnel_info['name']}' 删除成功")
@@ -3116,7 +3116,7 @@ class MainWindow(QMainWindow):
                 }
 
                 headers = {
-                    'User-Agent': 'CHMLFRP_UI/2.1 (Python/3.12.7; Windows NT 10.0)',
+                    'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)',
                     'Content-Type': 'application/json'
                 }
                 response = requests.post(url, headers=headers, json=payload)
@@ -3134,7 +3134,7 @@ class MainWindow(QMainWindow):
         """加载主域名到下拉框"""
         try:
             url = "http://cf-v2.uapis.cn/list_available_domains"
-            headers = {'User-Agent': 'CHMLFRP_UI/2.1 (Python/3.12.7; Windows NT 10.0)'}
+            headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
             response = requests.get(url, headers=headers)
             if response.status_code == 200:
                 data = response.json()
@@ -3154,7 +3154,7 @@ class MainWindow(QMainWindow):
         """获取可用的主域名列表"""
         try:
             url = "http://cf-v2.uapis.cn/list_available_domains"
-            headers = {'User-Agent': 'CHMLFRP_UI/2.1 (Python/3.12.7; Windows NT 10.0)'}
+            headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
             response = requests.get(url, headers=headers)
             if response.status_code == 200:
                 data = response.json()
@@ -3271,7 +3271,7 @@ class MainWindow(QMainWindow):
                     }
 
                     headers = {
-                        'User-Agent': 'CHMLFRP_UI/2.1 (Python/3.12.7; Windows NT 10.0)',
+                        'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)',
                         'Content-Type': 'application/json'
                     }
                     response = requests.post(url, headers=headers, json=payload)
@@ -3305,7 +3305,7 @@ class MainWindow(QMainWindow):
                     }
 
                     headers = {
-                        'User-Agent': 'CHMLFRP_UI/2.1 (Python/3.12.7; Windows NT 10.0)',
+                        'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)',
                         'Content-Type': 'application/json'
                     }
                     response = requests.post(url, headers=headers, json=payload)
@@ -3448,7 +3448,7 @@ class MainWindow(QMainWindow):
                 }
 
                 headers = {
-                    'User-Agent': 'CHMLFRP_UI/2.1 (Python/3.12.7; Windows NT 10.0)',
+                    'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)',
                     'Content-Type': 'application/json'
                 }
                 response = requests.post(url, headers=headers, json=payload)
@@ -3472,7 +3472,7 @@ class MainWindow(QMainWindow):
 
     def get_current_record_type(self, domain, record):
         url = f"http://cf-v2.uapis.cn/get_user_free_subdomains?token={self.token}"
-        headers = {'User-Agent': 'CHMLFRP_UI/2.1 (Python/3.12.7; Windows NT 10.0)'}
+        headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
         try:
             response = requests.get(url, headers=headers)
             data = response.json()
@@ -3486,7 +3486,7 @@ class MainWindow(QMainWindow):
 
     def get_existing_srv_record(self, domain, record):
         url = f"http://cf-v2.uapis.cn/get_user_free_subdomains?token={self.token}"
-        headers = {'User-Agent': 'CHMLFRP_UI/2.1 (Python/3.12.7; Windows NT 10.0)'}
+        headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
         try:
             response = requests.get(url, headers=headers)
             data = response.json()
@@ -4055,7 +4055,7 @@ class MainWindow(QMainWindow):
     def dt_load_domains(self):
         if self.token:
             url = f"http://cf-v2.uapis.cn/get_user_free_subdomains?token={self.token}"
-            headers = {'User-Agent': 'CHMLFRP_UI/2.1 (Python/3.12.7; Windows NT 10.0)'}
+            headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
             try:
                 response = requests.get(url, headers=headers)
                 data = response.json()
