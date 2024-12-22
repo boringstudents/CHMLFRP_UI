@@ -792,6 +792,11 @@ class IPToolsWidget(QWidget):
         """
         self.setStyleSheet(style)
 
+        # 更新所有子部件的样式
+        for i in range(self.tab_widget.count()):
+            tab = self.tab_widget.widget(i)
+            tab.setStyleSheet(style)
+
 class PingThread(QThread):
     update_signal = pyqtSignal(str, object)
 
