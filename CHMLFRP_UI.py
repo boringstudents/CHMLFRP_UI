@@ -8,21 +8,22 @@ import time
 import zipfile
 from logging.handlers import *
 import random
+import socket
+import threading
+import json
+from concurrent.futures import *
+import ipaddress
+import re
+
 import requests
 from PyQt6.QtCore import *
 from PyQt6.QtWidgets import *
 from PyQt6.QtGui import *
 from PyQt6.QtNetwork import *
-import socket
-import threading
-import json
-from concurrent.futures import *
 from mcstatus import *
 from requests import *
 import psutil
 import pyperclip
-import ipaddress
-import re
 
 # 设置全局日志
 logger = logging.getLogger('CHMLFRP_UI')
