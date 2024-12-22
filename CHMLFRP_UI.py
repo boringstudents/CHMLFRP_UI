@@ -1111,15 +1111,6 @@ class TunnelCard(QFrame):
         else:
             return self.tunnel_info.get('node', '')  # 如果不是 HTTP/HTTPS，则使用节点名称
 
-    def update_status(self):
-        if self.is_running:
-            self.status_label.setText("状态: 运行中")
-            self.start_stop_button.setText("停止")
-        else:
-            self.status_label.setText("状态: 未启动")
-            self.start_stop_button.setText("启动")
-        self.update()
-
     def toggle_start_stop(self):
         self.is_running = not self.is_running
         self.update_status()
