@@ -832,18 +832,6 @@ class PingThread(QThread):
             return int(match.group(1))
         return None
 
-    def calculate_packet_loss(self, output):
-        # 对于 Windows 系统
-        if os.name == 'nt':
-            match = re.search(r"(\d+)% 丢失", output)
-        # 对于 Unix/Linux 系统
-        else:
-            match = re.search(r"(\d+)% packet loss", output)
-
-        if match:
-            return int(match.group(1))
-        return None
-
     def tcp_ping(self):
         port = 80  # 默认使用 80 端口
         if ':' in self.target:
