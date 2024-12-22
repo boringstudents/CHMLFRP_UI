@@ -1961,6 +1961,7 @@ class MainWindow(QMainWindow):
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.token_input = QLineEdit(self)
         self.token_input.setPlaceholderText('Token (可选)')
+        self.token_input.setEchoMode(QLineEdit.EchoMode.Password)  # 设置为密码模式
         self.login_button = QPushButton('登录', self)
         self.login_button.clicked.connect(self.login)
         self.logout_button = QPushButton('退出登录', self)
