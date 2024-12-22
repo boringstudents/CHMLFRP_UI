@@ -712,7 +712,7 @@ class IPToolsWidget(QWidget):
         except Exception as e:
             result_widget.setPlainText(f"查询错误: {str(e)}")
 
-     def update_style(self, is_dark):
+    def update_style(self, is_dark):
         style = """
         QWidget {
             background-color: #2D2D2D;
