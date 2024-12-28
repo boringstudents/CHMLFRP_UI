@@ -2644,7 +2644,7 @@ class MainWindow(QMainWindow):
 
         name_input = QLineEdit()
         name_input.setPlaceholderText("如果留空则随机")
-        local_ip_input = QLineEdit()
+        local_ip_input = QLineEdit("127.0.0.1")  # 默认值设置为127.0.0.1
         local_port_input = QLineEdit()
         remote_port_input = QLineEdit()
         node_combo = QComboBox()
@@ -2672,7 +2672,7 @@ class MainWindow(QMainWindow):
         if dialog.exec() == QDialog.DialogCode.Accepted:
             try:
                 url = "http://cf-v2.uapis.cn/create_tunnel"
-    
+
                 # 验证并解析本地IP
                 local_ip = validate_and_resolve_ip(local_ip_input.text())
                 if not local_ip:
