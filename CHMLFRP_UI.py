@@ -2665,12 +2665,14 @@ class MainWindow(QMainWindow):
         layout.addRow("隧道名称:", name_input)
         layout.addRow("本地IP/主机名:", local_ip_input)
         layout.addRow("本地端口:", local_port_input)
+        remote_port_label = QLabel("远程端口:")
+        banddomain_label = QLabel("绑定域名:")
         remote_port_layout = QHBoxLayout()
         remote_port_layout.addWidget(remote_port_input)
-        layout.addRow("远程端口:", remote_port_layout)
-        banddomain_layout = QHBoxLayout()
+        layout.addRow(remote_port_label, remote_port_layout)
+        banddomain_layout = QVBoxLayout()
         banddomain_layout.addWidget(banddomain_input)
-        layout.addRow("绑定域名:", banddomain_layout)
+        layout.addRow(banddomain_label, banddomain_layout)
         layout.addRow("节点:", node_combo)
         layout.addRow("类型:", type_combo)
         layout.addRow(encryption_checkbox)
@@ -2683,14 +2685,15 @@ class MainWindow(QMainWindow):
                 if not remote_port_layout.itemAt(0):
                     remote_port_layout.addWidget(remote_port_input)
                 if banddomain_layout.itemAt(0):
-                    banddomain_layout.removeWidget(banddomain_input)
-                    banddomain_input.setParent(None)
+                    banddomain_layout.itemAt(0).widget().deleteLater()
+                    layout.removeRow(banddomain_label)
             else:
                 if remote_port_layout.itemAt(0):
-                    remote_port_layout.removeWidget(remote_port_input)
-                    remote_port_input.setParent(None)
+                    remote_port_layout.itemAt(0).widget().deleteLater()
+                    layout.removeRow(remote_port_label)
                 if not banddomain_layout.itemAt(0):
                     banddomain_layout.addWidget(banddomain_input)
+                    layout.addRow(banddomain_label, banddomain_layout)
 
         type_combo.currentTextChanged.connect(on_type_changed)
         on_type_changed()  # 初始化时调用一次
@@ -2751,7 +2754,6 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 self.logger.exception("添加隧道时发生错误")
                 QMessageBox.warning(self, "错误", f"添加隧道失败: {str(e)}")
-
 
     def edit_tunnel(self):
         """编辑隧道"""
