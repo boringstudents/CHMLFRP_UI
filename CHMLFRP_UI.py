@@ -2649,6 +2649,10 @@ class MainWindow(QMainWindow):
         remote_port_input = QLineEdit()
         node_combo = QComboBox()
         type_combo = QComboBox()
+        encryption_checkbox = QCheckBox("开启加密")
+        compression_checkbox = QCheckBox("开启压缩")
+        extra_params_input = QLineEdit()
+        extra_params_input.setPlaceholderText("额外参数（可选）")
 
         # 获取节点列表
         nodes = get_nodes()
@@ -2663,6 +2667,9 @@ class MainWindow(QMainWindow):
         layout.addRow("远程端口:", remote_port_input)
         layout.addRow("节点:", node_combo)
         layout.addRow("类型:", type_combo)
+        layout.addRow(encryption_checkbox)
+        layout.addRow(compression_checkbox)
+        layout.addRow("额外参数:", extra_params_input)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(dialog.accept)
@@ -2690,8 +2697,9 @@ class MainWindow(QMainWindow):
                     "porttype": type_combo.currentText(),
                     "localport": int(local_port_input.text()),
                     "remoteport": int(remote_port_input.text()),
-                    "encryption": False,
-                    "compression": False
+                    "encryption": encryption_checkbox.isChecked(),
+                    "compression": compression_checkbox.isChecked(),
+                    "extraparams": extra_params_input.text() or ""
                 }
 
                 headers = {
@@ -2713,7 +2721,7 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 self.logger.exception("添加隧道时发生错误")
                 QMessageBox.warning(self, "错误", f"添加隧道失败: {str(e)}")
-                
+
 
     def edit_tunnel(self):
         """编辑隧道"""
@@ -2736,6 +2744,12 @@ class MainWindow(QMainWindow):
         remote_port_input = QLineEdit(str(tunnel_info['dorp']))
         node_combo = QComboBox()
         type_combo = QComboBox()
+        encryption_checkbox = QCheckBox("开启加密")
+        encryption_checkbox.setChecked(tunnel_info.get("encryption", False))
+        compression_checkbox = QCheckBox("开启压缩")
+        compression_checkbox.setChecked(tunnel_info.get("compression", False))
+        extra_params_input = QLineEdit(tunnel_info.get("extraparams", ""))
+        extra_params_input.setPlaceholderText("额外参数（可选）")
 
         # 获取节点列表
         nodes = get_nodes()
@@ -2752,6 +2766,9 @@ class MainWindow(QMainWindow):
         layout.addRow("远程端口:", remote_port_input)
         layout.addRow("节点:", node_combo)
         layout.addRow("类型:", type_combo)
+        layout.addRow(encryption_checkbox)
+        layout.addRow(compression_checkbox)
+        layout.addRow("额外参数:", extra_params_input)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(dialog.accept)
@@ -2776,10 +2793,11 @@ class MainWindow(QMainWindow):
                     "porttype": type_combo.currentText(),
                     "localport": int(local_port_input.text()),
                     "remoteport": int(remote_port_input.text()),
-                    "encryption": tunnel_info["encryption"],
-                    "compression": tunnel_info["compression"]
+                    "encryption": encryption_checkbox.isChecked(),
+                    "compression": compression_checkbox.isChecked(),
+                    "extraparams": extra_params_input.text() or ""
                 }
-
+    
                 headers = {
                     'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)',
                     'Content-Type': 'application/json'
@@ -2800,6 +2818,7 @@ class MainWindow(QMainWindow):
                 self.logger.exception("更新隧道时发生错误")
                 QMessageBox.warning(self, "错误", f"更新隧道失败: {str(e)}")
 
+    
     def delete_tunnel(self):
         """删除隧道"""
         if not self.selected_tunnels:
