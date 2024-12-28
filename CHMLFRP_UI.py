@@ -2643,6 +2643,7 @@ class MainWindow(QMainWindow):
         layout = QFormLayout(dialog)
 
         name_input = QLineEdit()
+        name_input.setPlaceholderText("如果留空则随机")
         local_ip_input = QLineEdit()
         local_port_input = QLineEdit()
         remote_port_input = QLineEdit()
@@ -2671,15 +2672,19 @@ class MainWindow(QMainWindow):
         if dialog.exec() == QDialog.DialogCode.Accepted:
             try:
                 url = "http://cf-v2.uapis.cn/create_tunnel"
-
+    
                 # 验证并解析本地IP
                 local_ip = validate_and_resolve_ip(local_ip_input.text())
                 if not local_ip:
                     raise ValueError("无效的IP地址或无法解析的主机名")
 
+                tunnel_name = name_input.text()
+                if not tunnel_name:
+                    tunnel_name = ''.join(random.choices('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=8))
+
                 payload = {
                     "token": self.token,
-                    "tunnelname": name_input.text(),
+                    "tunnelname": tunnel_name,
                     "node": node_combo.currentText(),
                     "localip": local_ip,
                     "porttype": type_combo.currentText(),
@@ -2708,6 +2713,7 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 self.logger.exception("添加隧道时发生错误")
                 QMessageBox.warning(self, "错误", f"添加隧道失败: {str(e)}")
+                
 
     def edit_tunnel(self):
         """编辑隧道"""
