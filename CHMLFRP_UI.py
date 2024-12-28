@@ -2678,7 +2678,7 @@ class MainWindow(QMainWindow):
     	layout.addRow("类型:", type_combo)
     	layout.addRow(encryption_checkbox)
     	layout.addRow(compression_checkbox)
-    	layout.addRow("额外参数:", extra_params_input)
+        layout.addRow("额外参数:", extra_params_input)
 
         def on_type_changed():
             porttype = type_combo.currentText()
