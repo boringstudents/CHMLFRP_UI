@@ -2637,127 +2637,127 @@ class MainWindow(QMainWindow):
                     self.clear_layout(item.layout())
 
     def add_tunnel(self):
-    	"""添加隧道"""
-    	dialog = QDialog(self)
-    	dialog.setWindowTitle("添加隧道")
-    	layout = QFormLayout(dialog)
-
-    	name_input = QLineEdit()
-    	name_input.setPlaceholderText("如果留空则随机")
-    	local_ip_input = QLineEdit("127.0.0.1")  # 默认值设置为127.0.0.1
-    	local_port_input = QLineEdit()
-    	remote_port_input = QLineEdit()
-    	banddomain_input = QLineEdit()
-    	node_combo = QComboBox()
-    	type_combo = QComboBox()
-    	encryption_checkbox = QCheckBox("开启加密")
-    	compression_checkbox = QCheckBox("开启压缩")
-    	extra_params_input = QLineEdit()
-    	extra_params_input.setPlaceholderText("额外参数（可选）")
-
-    	# 获取节点列表
-    	nodes = get_nodes()
-    	for node in nodes:
-    	    node_combo.addItem(node['name'])
-
-    	type_combo.addItems(["tcp", "udp", "http", "https"])
-
-    	layout.addRow("隧道名称:", name_input)
-    	layout.addRow("本地IP/主机名:", local_ip_input)
-    	layout.addRow("本地端口:", local_port_input)
-    
-    	remote_port_layout = QHBoxLayout()
-    	remote_port_layout.addWidget(remote_port_input)
-    	layout.addRow("远程端口:", remote_port_layout)
-    
-    	banddomain_layout = QHBoxLayout()
-    	banddomain_layout.addWidget(banddomain_input)
-    	layout.addRow("绑定域名:", banddomain_layout)
-    
-    	layout.addRow("节点:", node_combo)
-    	layout.addRow("类型:", type_combo)
-    	layout.addRow(encryption_checkbox)
-    	layout.addRow(compression_checkbox)
-    	layout.addRow("额外参数:", extra_params_input)
-
-    	def on_type_changed():
-            porttype = type_combo.currentText()
-        
-            # If TCP or UDP, remove the domain input and show remote port input
-            if porttype in ["tcp", "udp"]:
-                if banddomain_layout.itemAt(0):
-                    banddomain_layout.removeWidget(banddomain_input)
-                    banddomain_input.setParent(None)
-                if not remote_port_layout.itemAt(0):
-                    remote_port_layout.addWidget(remote_port_input)
-
-            # If HTTP or HTTPS, remove the remote port input and show domain input
-            else:
-                if remote_port_layout.itemAt(0):
-                    remote_port_layout.removeWidget(remote_port_input)
-                    remote_port_input.setParent(None)
-                if not banddomain_layout.itemAt(0):
-                    banddomain_layout.addWidget(banddomain_input)
-
-        type_combo.currentTextChanged.connect(on_type_changed)
-        on_type_changed()  # 初始化时调用一次
-
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(dialog.accept)
-        buttons.rejected.connect(dialog.reject)
-        layout.addRow(buttons)
-
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            try:
-                url = "http://cf-v2.uapis.cn/create_tunnel"
-
-                # 验证并解析本地IP
-                local_ip = validate_and_resolve_ip(local_ip_input.text())
-                if not local_ip:
-                    raise ValueError("无效的IP地址或无法解析的主机名")
-
-                tunnel_name = name_input.text()
-                if not tunnel_name:
-                    tunnel_name = ''.join(random.choices('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=8))
-
-                porttype = type_combo.currentText()
-                payload = {
-                    "token": self.token,
-                    "tunnelname": tunnel_name,
-                    "node": node_combo.currentText(),
-                    "localip": local_ip,
-                    "porttype": porttype,
-                    "localport": int(local_port_input.text()),
-                    "encryption": encryption_checkbox.isChecked(),
-                    "compression": compression_checkbox.isChecked(),
-                    "extraparams": extra_params_input.text() or ""
-                }
-
-                if porttype in ["tcp", "udp"]:
-                    if not validate_port(remote_port_input.text()):
-                        raise ValueError("远程端口必须是1-65535之间的整数")
-                    payload["remoteport"] = int(remote_port_input.text())
-                elif porttype in ["http", "https"]:
-                    if not banddomain_input.text():
-                        raise ValueError("绑定域名是必须的")
-                    payload["banddomain"] = banddomain_input.text()
-
-                headers = {
-                    'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)',
-                    'Content-Type': 'application/json'
-                }
-                response = requests.post(url, headers=headers, json=payload)
-                if response.status_code == 200:
-                    self.logger.info("隧道添加成功")
-                    self.load_tunnels()  # 刷新隧道列表
-                else:
-                    self.logger.error(f"添加隧道失败: {response.text}")
-            except ValueError as ve:
-                self.logger.error(f"添加隧道失败: {str(ve)}")
-                QMessageBox.warning(self, "错误", str(ve))
-            except Exception as e:
-                self.logger.exception("添加隧道时发生错误")
-                QMessageBox.warning(self, "错误", f"添加隧道失败: {str(e)}")
+	    """添加隧道"""
+	    dialog = QDialog(self)
+	    dialog.setWindowTitle("添加隧道")
+	    layout = QFormLayout(dialog)
+	
+	    name_input = QLineEdit()
+	    name_input.setPlaceholderText("如果留空则随机")
+	    local_ip_input = QLineEdit("127.0.0.1")  # 默认值设置为127.0.0.1
+	    local_port_input = QLineEdit()
+	    remote_port_input = QLineEdit()
+	    banddomain_input = QLineEdit()
+	    node_combo = QComboBox()
+	    type_combo = QComboBox()
+	    encryption_checkbox = QCheckBox("开启加密")
+	    compression_checkbox = QCheckBox("开启压缩")
+	    extra_params_input = QLineEdit()
+	    extra_params_input.setPlaceholderText("额外参数（可选）")
+	
+	    # 获取节点列表
+	    nodes = get_nodes()
+	    for node in nodes:
+	        node_combo.addItem(node['name'])
+	
+	    type_combo.addItems(["tcp", "udp", "http", "https"])
+	
+	    layout.addRow("隧道名称:", name_input)
+	    layout.addRow("本地IP/主机名:", local_ip_input)
+	    layout.addRow("本地端口:", local_port_input)
+	    
+	    remote_port_layout = QHBoxLayout()
+	    remote_port_layout.addWidget(remote_port_input)
+	    layout.addRow("远程端口:", remote_port_layout)
+	    
+	    banddomain_layout = QHBoxLayout()
+	    banddomain_layout.addWidget(banddomain_input)
+	    layout.addRow("绑定域名:", banddomain_layout)
+	    
+	    layout.addRow("节点:", node_combo)
+	    layout.addRow("类型:", type_combo)
+	    layout.addRow(encryption_checkbox)
+	    layout.addRow(compression_checkbox)
+	    layout.addRow("额外参数:", extra_params_input)
+	
+	    def on_type_changed():
+	        porttype = type_combo.currentText()
+	        
+	        # If TCP or UDP, remove the domain input and show remote port input
+	        if porttype in ["tcp", "udp"]:
+	            if banddomain_layout.itemAt(0):
+	                banddomain_layout.removeWidget(banddomain_input)
+	                banddomain_input.setParent(None)
+	            if not remote_port_layout.itemAt(0):
+	                remote_port_layout.addWidget(remote_port_input)
+	
+	        # If HTTP or HTTPS, remove the remote port input and show domain input
+	        else:
+	            if remote_port_layout.itemAt(0):
+	                remote_port_layout.removeWidget(remote_port_input)
+	                remote_port_input.setParent(None)
+	            if not banddomain_layout.itemAt(0):
+	                banddomain_layout.addWidget(banddomain_input)
+	
+	    type_combo.currentTextChanged.connect(on_type_changed)
+	    on_type_changed()  # 初始化时调用一次
+	
+	    buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+	    buttons.accepted.connect(dialog.accept)
+	    buttons.rejected.connect(dialog.reject)
+	    layout.addRow(buttons)
+	
+	    if dialog.exec() == QDialog.DialogCode.Accepted:
+	        try:
+	            url = "http://cf-v2.uapis.cn/create_tunnel"
+	
+	            # 验证并解析本地IP
+	            local_ip = validate_and_resolve_ip(local_ip_input.text())
+	            if not local_ip:
+	                raise ValueError("无效的IP地址或无法解析的主机名")
+	
+	            tunnel_name = name_input.text()
+	            if not tunnel_name:
+	                tunnel_name = ''.join(random.choices('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=8))
+	
+	            porttype = type_combo.currentText()
+	            payload = {
+	                "token": self.token,
+	                "tunnelname": tunnel_name,
+	                "node": node_combo.currentText(),
+	                "localip": local_ip,
+	                "porttype": porttype,
+	                "localport": int(local_port_input.text()),
+	                "encryption": encryption_checkbox.isChecked(),
+	                "compression": compression_checkbox.isChecked(),
+	                "extraparams": extra_params_input.text() or ""
+	            }
+	
+	            if porttype in ["tcp", "udp"]:
+	                if not validate_port(remote_port_input.text()):
+	                    raise ValueError("远程端口必须是1-65535之间的整数")
+	                payload["remoteport"] = int(remote_port_input.text())
+	            elif porttype in ["http", "https"]:
+	                if not banddomain_input.text():
+	                    raise ValueError("绑定域名是必须的")
+	                payload["banddomain"] = banddomain_input.text()
+	
+	            headers = {
+	                'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)',
+	                'Content-Type': 'application/json'
+	            }
+	            response = requests.post(url, headers=headers, json=payload)
+	            if response.status_code == 200:
+	                self.logger.info("隧道添加成功")
+	                self.load_tunnels()  # 刷新隧道列表
+	            else:
+	                self.logger.error(f"添加隧道失败: {response.text}")
+	        except ValueError as ve:
+	            self.logger.error(f"添加隧道失败: {str(ve)}")
+	            QMessageBox.warning(self, "错误", str(ve))
+	        except Exception as e:
+	            self.logger.exception("添加隧道时发生错误")
+	            QMessageBox.warning(self, "错误", f"添加隧道失败: {str(e)}")
 		
 
     def edit_tunnel(self):
