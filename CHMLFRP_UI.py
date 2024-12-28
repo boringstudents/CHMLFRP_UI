@@ -2637,54 +2637,61 @@ class MainWindow(QMainWindow):
                     self.clear_layout(item.layout())
 
     def add_tunnel(self):
-        """添加隧道"""
-        dialog = QDialog(self)
-        dialog.setWindowTitle("添加隧道")
-        layout = QFormLayout(dialog)
+    	"""添加隧道"""
+    	dialog = QDialog(self)
+    	dialog.setWindowTitle("添加隧道")
+    	layout = QFormLayout(dialog)
 
-        name_input = QLineEdit()
-        name_input.setPlaceholderText("如果留空则随机")
-        local_ip_input = QLineEdit("127.0.0.1")  # 默认值设置为127.0.0.1
-        local_port_input = QLineEdit()
-        remote_port_input = QLineEdit()
-        banddomain_input = QLineEdit()
-        node_combo = QComboBox()
-        type_combo = QComboBox()
-        encryption_checkbox = QCheckBox("开启加密")
-        compression_checkbox = QCheckBox("开启压缩")
-        extra_params_input = QLineEdit()
-        extra_params_input.setPlaceholderText("额外参数（可选）")
+    	name_input = QLineEdit()
+    	name_input.setPlaceholderText("如果留空则随机")
+    	local_ip_input = QLineEdit("127.0.0.1")  # 默认值设置为127.0.0.1
+    	local_port_input = QLineEdit()
+    	remote_port_input = QLineEdit()
+    	banddomain_input = QLineEdit()
+    	node_combo = QComboBox()
+    	type_combo = QComboBox()
+    	encryption_checkbox = QCheckBox("开启加密")
+    	compression_checkbox = QCheckBox("开启压缩")
+    	extra_params_input = QLineEdit()
+    	extra_params_input.setPlaceholderText("额外参数（可选）")
 
-        # 获取节点列表
-        nodes = get_nodes()
-        for node in nodes:
-            node_combo.addItem(node['name'])
+    	# 获取节点列表
+    	nodes = get_nodes()
+    	for node in nodes:
+    	    node_combo.addItem(node['name'])
 
-        type_combo.addItems(["tcp", "udp", "http", "https"])
+    	type_combo.addItems(["tcp", "udp", "http", "https"])
 
-        layout.addRow("隧道名称:", name_input)
-        layout.addRow("本地IP/主机名:", local_ip_input)
-        layout.addRow("本地端口:", local_port_input)
-        remote_port_layout = QHBoxLayout()
-        remote_port_layout.addWidget(remote_port_input)
-        layout.addRow("远程端口:", remote_port_layout)
-        banddomain_layout = QHBoxLayout()
-        banddomain_layout.addWidget(banddomain_input)
-        layout.addRow("绑定域名:", banddomain_layout)
-        layout.addRow("节点:", node_combo)
-        layout.addRow("类型:", type_combo)
-        layout.addRow(encryption_checkbox)
-        layout.addRow(compression_checkbox)
-        layout.addRow("额外参数:", extra_params_input)
+    	layout.addRow("隧道名称:", name_input)
+    	layout.addRow("本地IP/主机名:", local_ip_input)
+    	layout.addRow("本地端口:", local_port_input)
+    
+    	remote_port_layout = QHBoxLayout()
+    	remote_port_layout.addWidget(remote_port_input)
+    	layout.addRow("远程端口:", remote_port_layout)
+    
+    	banddomain_layout = QHBoxLayout()
+    	banddomain_layout.addWidget(banddomain_input)
+    	layout.addRow("绑定域名:", banddomain_layout)
+    
+    	layout.addRow("节点:", node_combo)
+    	layout.addRow("类型:", type_combo)
+    	layout.addRow(encryption_checkbox)
+    	layout.addRow(compression_checkbox)
+    	layout.addRow("额外参数:", extra_params_input)
 
         def on_type_changed():
             porttype = type_combo.currentText()
+        
+            # If TCP or UDP, remove the domain input and show remote port input
             if porttype in ["tcp", "udp"]:
-                if not remote_port_layout.itemAt(0):
-                    remote_port_layout.addWidget(remote_port_input)
                 if banddomain_layout.itemAt(0):
                     banddomain_layout.removeWidget(banddomain_input)
                     banddomain_input.setParent(None)
+                if not remote_port_layout.itemAt(0):
+                    remote_port_layout.addWidget(remote_port_input)
+
+            # If HTTP or HTTPS, remove the remote port input and show domain input
             else:
                 if remote_port_layout.itemAt(0):
                     remote_port_layout.removeWidget(remote_port_input)
