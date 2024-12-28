@@ -2665,14 +2665,12 @@ class MainWindow(QMainWindow):
         layout.addRow("隧道名称:", name_input)
         layout.addRow("本地IP/主机名:", local_ip_input)
         layout.addRow("本地端口:", local_port_input)
-        self.remote_port_label = QLabel("远程端口:")
-        self.banddomain_label = QLabel("绑定域名:")
-        self.remote_port_layout = QHBoxLayout()
-        self.remote_port_layout.addWidget(remote_port_input)
-        layout.addRow(self.remote_port_label, self.remote_port_layout)
-        self.banddomain_layout = QVBoxLayout()
-        self.banddomain_layout.addWidget(banddomain_input)
-        layout.addRow(self.banddomain_label, self.banddomain_layout)
+        remote_port_layout = QHBoxLayout()
+        remote_port_layout.addWidget(remote_port_input)
+        layout.addRow("远程端口:", remote_port_layout)
+        banddomain_layout = QHBoxLayout()
+        banddomain_layout.addWidget(banddomain_input)
+        layout.addRow("绑定域名:", banddomain_layout)
         layout.addRow("节点:", node_combo)
         layout.addRow("类型:", type_combo)
         layout.addRow(encryption_checkbox)
@@ -2682,18 +2680,17 @@ class MainWindow(QMainWindow):
         def on_type_changed():
             porttype = type_combo.currentText()
             if porttype in ["tcp", "udp"]:
-                if not self.remote_port_layout.itemAt(0):
-                    self.remote_port_layout.addWidget(remote_port_input)
-                if self.banddomain_layout.itemAt(0):
-                    self.banddomain_layout.itemAt(0).widget().deleteLater()
-                    layout.removeRow(self.banddomain_label)
+                if not remote_port_layout.itemAt(0):
+                    remote_port_layout.addWidget(remote_port_input)
+                if banddomain_layout.itemAt(0):
+                    banddomain_layout.removeWidget(banddomain_input)
+                    banddomain_input.setParent(None)
             else:
-                if self.remote_port_layout.itemAt(0):
-                    self.remote_port_layout.itemAt(0).widget().deleteLater()
-                    layout.removeRow(self.remote_port_label)
-                if not self.banddomain_layout.itemAt(0):
-                    self.banddomain_layout.addWidget(banddomain_input)
-                    layout.addRow(self.banddomain_label, self.banddomain_layout)
+                if remote_port_layout.itemAt(0):
+                    remote_port_layout.removeWidget(remote_port_input)
+                    remote_port_input.setParent(None)
+                if not banddomain_layout.itemAt(0):
+                    banddomain_layout.addWidget(banddomain_input)
 
         type_combo.currentTextChanged.connect(on_type_changed)
         on_type_changed()  # 初始化时调用一次
