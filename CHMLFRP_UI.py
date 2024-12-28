@@ -2677,10 +2677,12 @@ class MainWindow(QMainWindow):
             porttype = type_combo.currentText()
             if porttype in ["tcp", "udp"]:
                 remote_port_input.setEnabled(True)
+                remote_port_input.clear()
                 banddomain_input.setEnabled(False)
             else:
                 remote_port_input.setEnabled(False)
                 banddomain_input.setEnabled(True)
+                banddomain_input.clear()
 
         type_combo.currentTextChanged.connect(on_type_changed)
         on_type_changed()  # 初始化时调用一次
