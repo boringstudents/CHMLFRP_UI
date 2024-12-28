@@ -2637,13 +2637,13 @@ class MainWindow(QMainWindow):
                     self.clear_layout(item.layout())
 
     def add_tunnel(self):
-    	"""添加隧道"""
-    	dialog = QDialog(self)
-    	dialog.setWindowTitle("添加隧道")
-    	layout = QFormLayout(dialog)
+        """添加隧道"""
+        dialog = QDialog(self)
+        dialog.setWindowTitle("添加隧道")
+        layout = QFormLayout(dialog)
 
-    	name_input = QLineEdit()
-    	name_input.setPlaceholderText("如果留空则随机")
+        name_input = QLineEdit()
+        name_input.setPlaceholderText("如果留空则随机")
         local_ip_input = QLineEdit("127.0.0.1")  # 默认值设置为127.0.0.1
         local_port_input = QLineEdit()
         remote_port_input = QLineEdit()
@@ -2677,7 +2677,7 @@ class MainWindow(QMainWindow):
         layout.addRow("类型:", type_combo)
         layout.addRow(encryption_checkbox)
         layout.addRow(compression_checkbox)
-        layout.addRow("额外参数:", extra_params_input)
+    layout.addRow("额外参数:", extra_params_input)
 
         def on_type_changed():
             porttype = type_combo.currentText()
