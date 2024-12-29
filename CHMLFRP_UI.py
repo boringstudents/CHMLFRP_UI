@@ -2846,33 +2846,69 @@ class MainWindow(QMainWindow):
 	            QMessageBox.warning(self, "错误", f"更新隧道失败: {str(e)}")
     
     def delete_tunnel(self):
-        """删除隧道"""
-        if not self.selected_tunnels:
-            QMessageBox.warning(self, "警告", "请先选择要删除的隧道")
-            return
-
-        tunnels_to_delete = self.selected_tunnels.copy()  # 创建副本,因为我们可能会修改原列表
-
-        for tunnel_info in tunnels_to_delete:
-            reply = QMessageBox.question(self, '确认删除', f"确定要删除隧道 '{tunnel_info['name']}' 吗？",
-                                         QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-
-            if reply == QMessageBox.StandardButton.Yes:
-                try:
-                    url = f"http://cf-v2.uapis.cn/deletetunnel?token={self.token}&tunnelid={tunnel_info['id']}"
-                    headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
-                    response = requests.post(url, headers=headers)
-                    if response.status_code == 200:
-                        self.logger.info(f"隧道 '{tunnel_info['name']}' 删除成功")
-                        self.selected_tunnels.remove(tunnel_info)  # 从选中列表中移除
-                    else:
-                        self.logger.error(f"删除隧道失败: {response.text}")
-                except Exception as e:
-                    self.logger.exception("删除隧道时发生错误")
-                    QMessageBox.warning(self, "错误", f"删除隧道失败: {str(e)}")
-
-        self.load_tunnels()  # 刷新隧道列表
-        self.update_tunnel_buttons()  # 更新按钮状态
+	    """删除隧道"""
+	    if not self.selected_tunnels:
+	        QMessageBox.warning(self, "警告", "请先选择要删除的隧道")
+	        return
+	
+	    tunnels_to_delete = self.selected_tunnels.copy()  # 创建副本,因为我们可能会修改原列表
+	
+	    # Step 1: Get the user ID and user token from v2 API
+	    try:
+	        url = f"http://cf-v2.uapis.cn/userinfo?token={self.token}"
+	        response = requests.get(url)
+	        if response.status_code == 200:
+	            user_info = response.json()
+	            if user_info["code"] == 200:
+	                user_id = user_info["data"]["id"]
+	                user_token = user_info["data"]["usertoken"]
+	            else:
+	                raise Exception(f"Failed to get user info from v2: {user_info['msg']}")
+	        else:
+	            raise Exception(f"Failed to fetch user info, status code {response.status_code}")
+	    except Exception as e:
+	        self.logger.error(f"Error fetching user info: {str(e)}")
+	        QMessageBox.warning(self, "错误", f"无法获取用户信息: {str(e)}")
+	        return
+	
+	    # Step 2: Try to delete tunnel using v2 API
+	    for tunnel_info in tunnels_to_delete:
+	        reply = QMessageBox.question(self, '确认删除', f"确定要删除隧道 '{tunnel_info['name']}' 吗？",
+	                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+	
+	        if reply == QMessageBox.StandardButton.Yes:
+	            try:
+	                # Try v2 API first
+	                url_v2 = f"http://cf-v2.uapis.cn/deletetunnel?token={self.token}&tunnelid={tunnel_info['id']}"
+	                headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
+	                response = requests.post(url_v2, headers=headers)
+	                if response.status_code == 200:
+	                    self.logger.info(f"隧道 '{tunnel_info['name']}' 删除成功 (v2 API)")
+	                    self.selected_tunnels.remove(tunnel_info)  # 从选中列表中移除
+	                else:
+	                    self.logger.error(f"v2 API 删除隧道失败: {response.text}")
+	                    raise Exception(f"v2 API 删除失败: {response.text}")
+	            except Exception as e_v2:
+	                self.logger.error(f"v2 API 删除失败，尝试 v1 API: {str(e_v2)}")
+	                try:
+	                    # Fallback to v1 API
+	                    url_v1 = f"http://cf-v1.uapis.cn/api/deletetl.php?token={user_token}&userid={user_id}&nodeid={tunnel_info['id']}"
+	                    conn = http.client.HTTPSConnection("cf-v1.uapis.cn")
+	                    conn.request("GET", url_v1)
+	                    res = conn.getresponse()
+	                    data = res.read().decode("utf-8")
+	                    if res.status == 200:
+	                        self.logger.info(f"隧道 '{tunnel_info['name']}' 删除成功 (v1 API)")
+	                        self.selected_tunnels.remove(tunnel_info)  # 从选中列表中移除
+	                    else:
+	                        self.logger.error(f"v1 API 删除隧道失败: {data}")
+	                        raise Exception(f"v1 API 删除失败: {data}")
+	                except Exception as e_v1:
+	                    self.logger.exception("删除隧道时发生错误")
+	                    QMessageBox.warning(self, "错误", f"删除隧道失败: {str(e_v1)}")
+	
+	    self.load_tunnels()  # 刷新隧道列表
+	    self.update_tunnel_buttons()  # 更新按钮状态
 
     def add_domain(self):
         TTL_OPTIONS = [
