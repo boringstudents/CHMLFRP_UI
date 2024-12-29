@@ -2756,6 +2756,7 @@ class MainWindow(QMainWindow):
 		
 
     def edit_tunnel(self):
+	    print("edit_tunnel triggered")
 	    """编辑隧道"""
 	    if not self.selected_tunnels:
 	        QMessageBox.warning(self, "警告", "请先选择一个隧道")
