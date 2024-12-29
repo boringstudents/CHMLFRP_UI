@@ -1815,69 +1815,63 @@ class MainWindow(QMainWindow):
                 """)
 
     def batch_edit_tunnels(self):
-        if not self.selected_tunnels:
-            QMessageBox.warning(self, "警告", "请先选择要编辑的隧道")
-            return
-
-        dialog = BatchEditDialog(self)
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            changes = dialog.get_changes()
-            if not changes:
-                QMessageBox.information(self, "提示", "没有进行任何修改")
-                return
-
-            for tunnel_info in self.selected_tunnels:
-                try:
-                    url = "http://cf-v2.uapis.cn/update_tunnel"
-                    payload = {
-                        "tunnelid": int(tunnel_info["id"]),
-                        "token": self.token,
-                        "tunnelname": tunnel_info["name"],
-                        "node": changes.get("node", tunnel_info["node"]),
-                        "localip": tunnel_info["localip"],
-                        "porttype": changes.get("type", tunnel_info["type"]),
-                        "localport": tunnel_info["nport"],
-                        "remoteport": tunnel_info["dorp"],
-                        "encryption": tunnel_info["encryption"],
-                        "compression": tunnel_info["compression"]
-                    }
-
-                    # 验证并解析本地IP
-                    if "localip" in changes:
-                        local_ip = validate_and_resolve_ip(changes["localip"])
-                        if not local_ip:
-                            raise ValueError(f"隧道 '{tunnel_info['name']}': 无效的IP地址或无法解析的主机名")
-                        payload["localip"] = local_ip
-
-                    # 验证端口
-                    if "nport" in changes:
-                        if not validate_port(changes["nport"]):
-                            raise ValueError(f"隧道 '{tunnel_info['name']}': 本地端口必须是1-65535之间的整数")
-                        payload["localport"] = int(changes["nport"])
-
-                    if "dorp" in changes:
-                        if not validate_port(changes["dorp"]):
-                            raise ValueError(f"隧道 '{tunnel_info['name']}': 远程端口必须是1-65535之间的整数")
-                        payload["remoteport"] = int(changes["dorp"])
-
-                    headers = {
-                        'User-Agent': 'CHMLFRP_UI/1.0 (Python/3.9; Windows NT 10.0)',
-                        'Content-Type': 'application/json'
-                    }
-                    response = requests.post(url, headers=headers, json=payload)
-                    if response.status_code == 200:
-                        self.logger.info(f"隧道 {tunnel_info['name']} 更新成功")
-                    else:
-                        self.logger.error(f"更新隧道 {tunnel_info['name']} 失败: {response.text}")
-                except ValueError as ve:
-                    self.logger.error(str(ve))
-                    QMessageBox.warning(self, "错误", str(ve))
-                except Exception as e:
-                    self.logger.exception(f"更新隧道 {tunnel_info['name']} 时发生错误")
-                    QMessageBox.warning(self, "错误", f"更新隧道 {tunnel_info['name']} 失败: {str(e)}")
-
-            self.load_tunnels()  # 刷新隧道列表
-            QMessageBox.information(self, "成功", "批量编辑完成")
+	    if not self.selected_tunnels:
+	        QMessageBox.warning(self, "警告", "请先选择要编辑的隧道")
+	        return
+	
+	    dialog = BatchEditDialog(self)
+	    if dialog.exec() == QDialog.DialogCode.Accepted:
+	        changes = dialog.get_changes()
+	        if not changes:
+	            QMessageBox.information(self, "提示", "没有进行任何修改")
+	            return
+	
+	        for tunnel_info in self.selected_tunnels:
+	            try:
+	                url = "http://cf-v2.uapis.cn/update_tunnel"
+	                payload = {
+	                    "tunnelid": int(tunnel_info["id"]),
+	                    "token": self.token,
+	                    "tunnelname": tunnel_info["name"],
+	                    "node": changes.get("node", tunnel_info["node"]),
+	                    "localip": tunnel_info["localip"],  # 保留原本的 localip，不进行解析
+	                    "porttype": changes.get("type", tunnel_info["type"]),
+	                    "localport": tunnel_info["nport"],
+	                    "remoteport": tunnel_info["dorp"],
+	                    "encryption": tunnel_info["encryption"],
+	                    "compression": tunnel_info["compression"]
+	                }
+	
+	                # 验证本地端口是否有效
+	                if "nport" in changes:
+	                    if not validate_port(changes["nport"]):
+	                        raise ValueError(f"隧道 '{tunnel_info['name']}': 本地端口必须是1-65535之间的整数")
+	                    payload["localport"] = int(changes["nport"])
+	
+	                # 验证远程端口是否有效
+	                if "dorp" in changes:
+	                    if not validate_port(changes["dorp"]):
+	                        raise ValueError(f"隧道 '{tunnel_info['name']}': 远程端口必须是1-65535之间的整数")
+	                    payload["remoteport"] = int(changes["dorp"])
+	
+	                headers = {
+	                    'User-Agent': 'CHMLFRP_UI/1.0 (Python/3.9; Windows NT 10.0)',
+	                    'Content-Type': 'application/json'
+	                }
+	                response = requests.post(url, headers=headers, json=payload)
+	                if response.status_code == 200:
+	                    self.logger.info(f"隧道 {tunnel_info['name']} 更新成功")
+	                else:
+	                    self.logger.error(f"更新隧道 {tunnel_info['name']} 失败: {response.text}")
+	            except ValueError as ve:
+	                self.logger.error(str(ve))
+	                QMessageBox.warning(self, "错误", str(ve))
+	            except Exception as e:
+	                self.logger.exception(f"更新隧道 {tunnel_info['name']} 时发生错误")
+	                QMessageBox.warning(self, "错误", f"更新隧道 {tunnel_info['name']} 失败: {str(e)}")
+	
+	        self.load_tunnels()  # 刷新隧道列表
+	        QMessageBox.information(self, "成功", "批量编辑完成")
 
     def setup_user_info_page(self):
         user_info_widget = QWidget()
@@ -2756,7 +2750,6 @@ class MainWindow(QMainWindow):
 		
 
     def edit_tunnel(self):
-	    print("edit_tunnel triggered")
 	    """编辑隧道"""
 	    if not self.selected_tunnels:
 	        QMessageBox.warning(self, "警告", "请先选择一个隧道")
