@@ -2750,7 +2750,6 @@ class MainWindow(QMainWindow):
 		
 
     def edit_tunnel(self):
-	    """编辑隧道"""
 	    if not self.selected_tunnels:
 	        QMessageBox.warning(self, "警告", "请先选择一个隧道")
 	        return
@@ -2771,11 +2770,13 @@ class MainWindow(QMainWindow):
 	    node_combo = QComboBox()
 	    type_combo = QComboBox()
 	    encryption_checkbox = QCheckBox("开启加密")
-	    encryption_checkbox.setChecked(tunnel_info.get("encryption", False))
 	    compression_checkbox = QCheckBox("开启压缩")
-	    compression_checkbox.setChecked(tunnel_info.get("compression", False))
 	    extra_params_input = QLineEdit(tunnel_info.get("extraparams", ""))
 	    extra_params_input.setPlaceholderText("额外参数（可选）")
+	
+	    # Ensure the values are boolean
+	    encryption_checkbox.setChecked(bool(tunnel_info.get("encryption", False)))
+	    compression_checkbox.setChecked(bool(tunnel_info.get("compression", False)))
 	
 	    # 获取节点列表
 	    nodes = get_nodes()
@@ -2843,7 +2844,6 @@ class MainWindow(QMainWindow):
 	        except Exception as e:
 	            self.logger.exception("更新隧道时发生错误")
 	            QMessageBox.warning(self, "错误", f"更新隧道失败: {str(e)}")
-
     
     def delete_tunnel(self):
         """删除隧道"""
