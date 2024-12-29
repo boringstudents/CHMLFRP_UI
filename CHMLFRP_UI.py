@@ -2851,7 +2851,7 @@ class MainWindow(QMainWindow):
 	        QMessageBox.warning(self, "警告", "请先选择要删除的隧道")
 	        return
 	
-	    tunnels_to_delete = self.selected_tunnels.copy()  # 创建副本,因为我们可能会修改原列表
+	    tunnels_to_delete = self.selected_tunnels.copy()  # 创建副本,因为可能会修改原列表
 	
 	    # Step 1: Get the user ID and user token from v2 API
 	    try:
@@ -2891,18 +2891,15 @@ class MainWindow(QMainWindow):
 	            except Exception as e_v2:
 	                self.logger.error(f"v2 API 删除失败，尝试 v1 API: {str(e_v2)}")
 	                try:
-	                    # Fallback to v1 API
+	                    # Fallback to v1 API using requests
 	                    url_v1 = f"http://cf-v1.uapis.cn/api/deletetl.php?token={user_token}&userid={user_id}&nodeid={tunnel_info['id']}"
-	                    conn = http.client.HTTPSConnection("cf-v1.uapis.cn")
-	                    conn.request("GET", url_v1)
-	                    res = conn.getresponse()
-	                    data = res.read().decode("utf-8")
-	                    if res.status == 200:
+	                    response_v1 = requests.get(url_v1)
+	                    if response_v1.status_code == 200:
 	                        self.logger.info(f"隧道 '{tunnel_info['name']}' 删除成功 (v1 API)")
 	                        self.selected_tunnels.remove(tunnel_info)  # 从选中列表中移除
 	                    else:
-	                        self.logger.error(f"v1 API 删除隧道失败: {data}")
-	                        raise Exception(f"v1 API 删除失败: {data}")
+	                        self.logger.error(f"v1 API 删除隧道失败: {response_v1.text}")
+	                        raise Exception(f"v1 API 删除失败: {response_v1.text}")
 	                except Exception as e_v1:
 	                    self.logger.exception("删除隧道时发生错误")
 	                    QMessageBox.warning(self, "错误", f"删除隧道失败: {str(e_v1)}")
