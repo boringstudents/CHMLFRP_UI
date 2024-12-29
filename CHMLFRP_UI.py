@@ -2756,99 +2756,99 @@ class MainWindow(QMainWindow):
 		
 
     def edit_tunnel(self):
-        """编辑隧道"""
-        if not self.selected_tunnels:
-            QMessageBox.warning(self, "警告", "请先选择一个隧道")
-            return
-
-        if len(self.selected_tunnels) > 1:
-            QMessageBox.warning(self, "警告", "编辑隧道时只能选择一个隧道")
-            return
-
-        tunnel_info = self.selected_tunnels[0]
-        dialog = QDialog(self)
-        dialog.setWindowTitle("编辑隧道")
-        layout = QFormLayout(dialog)
-
-        name_input = QLineEdit(tunnel_info['name'])
-        local_ip_input = QLineEdit(tunnel_info['localip'])
-        local_port_input = QLineEdit(str(tunnel_info['nport']))
-        remote_port_input = QLineEdit(str(tunnel_info['dorp']))
-        node_combo = QComboBox()
-        type_combo = QComboBox()
-        encryption_checkbox = QCheckBox("开启加密")
-        encryption_checkbox.setChecked(tunnel_info.get("encryption", False))
-        compression_checkbox = QCheckBox("开启压缩")
-        compression_checkbox.setChecked(tunnel_info.get("compression", False))
-        extra_params_input = QLineEdit(tunnel_info.get("extraparams", ""))
-        extra_params_input.setPlaceholderText("额外参数（可选）")
-
-        # 获取节点列表
-        nodes = get_nodes()
-        for node in nodes:
-            node_combo.addItem(node['name'])
-        node_combo.setCurrentText(tunnel_info['node'])
-
-        type_combo.addItems(["tcp", "udp", "http", "https"])
-        type_combo.setCurrentText(tunnel_info['type'])
-
-        layout.addRow("隧道名称:", name_input)
-        layout.addRow("本地IP/主机名:", local_ip_input)
-        layout.addRow("本地端口:", local_port_input)
-        layout.addRow("远程端口:", remote_port_input)
-        layout.addRow("节点:", node_combo)
-        layout.addRow("类型:", type_combo)
-        layout.addRow(encryption_checkbox)
-        layout.addRow(compression_checkbox)
-        layout.addRow("额外参数:", extra_params_input)
-
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(dialog.accept)
-        buttons.rejected.connect(dialog.reject)
-        layout.addRow(buttons)
-
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            try:
-                url = "http://cf-v2.uapis.cn/update_tunnel"
-
-                # 验证并解析本地IP
-                local_ip = validate_and_resolve_ip(local_ip_input.text())
-                if not local_ip:
-                    raise ValueError("无效的IP地址或无法解析的主机名")
-
-                payload = {
-                    "tunnelid": int(tunnel_info["id"]),
-                    "token": self.token,
-                    "tunnelname": name_input.text(),
-                    "node": node_combo.currentText(),
-                    "localip": local_ip,
-                    "porttype": type_combo.currentText(),
-                    "localport": int(local_port_input.text()),
-                    "remoteport": int(remote_port_input.text()),
-                    "encryption": encryption_checkbox.isChecked(),
-                    "compression": compression_checkbox.isChecked(),
-                    "extraparams": extra_params_input.text() or ""
-                }
-    
-                headers = {
-                    'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)',
-                    'Content-Type': 'application/json'
-                }
-                if not validate_port(local_port_input.text()) or not validate_port(remote_port_input.text()):
-                    QMessageBox.warning(self, "错误", "端口必须是1-65535之间的整数")
-                    return
-                response = requests.post(url, headers=headers, json=payload)
-                if response.status_code == 200:
-                    self.logger.info("隧道更新成功")
-                    self.load_tunnels()  # 刷新隧道列表
-                else:
-                    self.logger.error(f"更新隧道失败: {response.text}")
-            except ValueError as ve:
-                self.logger.error(f"更新隧道失败: {str(ve)}")
-                QMessageBox.warning(self, "错误", str(ve))
-            except Exception as e:
-                self.logger.exception("更新隧道时发生错误")
-                QMessageBox.warning(self, "错误", f"更新隧道失败: {str(e)}")
+	    """编辑隧道"""
+	    if not self.selected_tunnels:
+	        QMessageBox.warning(self, "警告", "请先选择一个隧道")
+	        return
+	
+	    if len(self.selected_tunnels) > 1:
+	        QMessageBox.warning(self, "警告", "编辑隧道时只能选择一个隧道")
+	        return
+	
+	    tunnel_info = self.selected_tunnels[0]
+	    dialog = QDialog(self)
+	    dialog.setWindowTitle("编辑隧道")
+	    layout = QFormLayout(dialog)
+	
+	    name_input = QLineEdit(tunnel_info['name'])
+	    local_ip_input = QLineEdit(tunnel_info['localip'])
+	    local_port_input = QLineEdit(str(tunnel_info['nport']))
+	    remote_port_input = QLineEdit(str(tunnel_info['dorp']))
+	    node_combo = QComboBox()
+	    type_combo = QComboBox()
+	    encryption_checkbox = QCheckBox("开启加密")
+	    encryption_checkbox.setChecked(tunnel_info.get("encryption", False))
+	    compression_checkbox = QCheckBox("开启压缩")
+	    compression_checkbox.setChecked(tunnel_info.get("compression", False))
+	    extra_params_input = QLineEdit(tunnel_info.get("extraparams", ""))
+	    extra_params_input.setPlaceholderText("额外参数（可选）")
+	
+	    # 获取节点列表
+	    nodes = get_nodes()
+	    for node in nodes:
+	        node_combo.addItem(node['name'])
+	    node_combo.setCurrentText(tunnel_info['node'])
+	
+	    type_combo.addItems(["tcp", "udp", "http", "https"])
+	    type_combo.setCurrentText(tunnel_info['type'])
+	
+	    layout.addRow("隧道名称:", name_input)
+	    layout.addRow("本地IP/主机名:", local_ip_input)
+	    layout.addRow("本地端口:", local_port_input)
+	    layout.addRow("远程端口:", remote_port_input)
+	    layout.addRow("节点:", node_combo)
+	    layout.addRow("类型:", type_combo)
+	    layout.addRow(encryption_checkbox)
+	    layout.addRow(compression_checkbox)
+	    layout.addRow("额外参数:", extra_params_input)
+	
+	    buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+	    buttons.accepted.connect(dialog.accept)
+	    buttons.rejected.connect(dialog.reject)
+	    layout.addRow(buttons)
+	
+	    if dialog.exec() == QDialog.DialogCode.Accepted:
+	        try:
+	            url = "http://cf-v2.uapis.cn/update_tunnel"
+	
+	            # 这里不再进行IP解析
+	            local_ip = local_ip_input.text()  # 直接使用输入的本地IP或主机名
+	
+	            payload = {
+	                "tunnelid": tunnel_info["id"],  # tunnelid 不可修改
+	                "token": self.token,  # token 不可修改
+	                "tunnelname": name_input.text(),
+	                "node": node_combo.currentText(),
+	                "localip": local_ip,  # 使用直接输入的IP/主机名
+	                "porttype": type_combo.currentText(),
+	                "localport": int(local_port_input.text()),
+	                "remoteport": int(remote_port_input.text()),
+	                "encryption": encryption_checkbox.isChecked(),
+	                "compression": compression_checkbox.isChecked(),
+	                "extraparams": extra_params_input.text() or ""
+	            }
+	
+	            # 校验端口
+	            if not validate_port(local_port_input.text()) or not validate_port(remote_port_input.text()):
+	                QMessageBox.warning(self, "错误", "端口必须是1-65535之间的整数")
+	                return
+	
+	            headers = {
+	                'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)',
+	                'Content-Type': 'application/json'
+	            }
+	            response = requests.post(url, headers=headers, json=payload)
+	            if response.status_code == 200:
+	                self.logger.info("隧道更新成功")
+	                self.load_tunnels()  # 刷新隧道列表
+	            else:
+	                self.logger.error(f"更新隧道失败: {response.text}")
+	        except ValueError as ve:
+	            self.logger.error(f"更新隧道失败: {str(ve)}")
+	            QMessageBox.warning(self, "错误", str(ve))
+	        except Exception as e:
+	            self.logger.exception("更新隧道时发生错误")
+	            QMessageBox.warning(self, "错误", f"更新隧道失败: {str(e)}")
 
     
     def delete_tunnel(self):
