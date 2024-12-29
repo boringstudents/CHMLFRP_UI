@@ -2662,42 +2662,60 @@ class MainWindow(QMainWindow):
 	
 	    type_combo.addItems(["tcp", "udp", "http", "https"])
 	
-	    layout.addRow("隧道名称:", name_input)
-	    layout.addRow("本地IP/主机名:", local_ip_input)
-	    layout.addRow("本地端口:", local_port_input)
-	    
+	    name_label = QLabel("隧道名称:")
+	    local_ip_label = QLabel("本地IP/主机名:")
+	    local_port_label = QLabel("本地端口:")
+	    remote_port_label = QLabel("远程端口:")
+	    banddomain_label = QLabel("绑定域名:")
+	    node_label = QLabel("节点:")
+	    type_label = QLabel("类型:")
+	    extra_params_label = QLabel("额外参数:")
+	
+	    layout.addRow(name_label, name_input)
+	    layout.addRow(local_ip_label, local_ip_input)
+	    layout.addRow(local_port_label, local_port_input)
+	
 	    remote_port_layout = QHBoxLayout()
 	    remote_port_layout.addWidget(remote_port_input)
-	    layout.addRow("远程端口:", remote_port_layout)
-	    
+	    layout.addRow(remote_port_label, remote_port_layout)
+	
 	    banddomain_layout = QHBoxLayout()
 	    banddomain_layout.addWidget(banddomain_input)
-	    layout.addRow("绑定域名:", banddomain_layout)
-	    
-	    layout.addRow("节点:", node_combo)
-	    layout.addRow("类型:", type_combo)
+	    layout.addRow(banddomain_label, banddomain_layout)
+	
+	    layout.addRow(node_label, node_combo)
+	    layout.addRow(type_label, type_combo)
 	    layout.addRow(encryption_checkbox)
 	    layout.addRow(compression_checkbox)
-	    layout.addRow("额外参数:", extra_params_input)
+	    layout.addRow(extra_params_label, extra_params_input)
 	
 	    def on_type_changed():
 	        porttype = type_combo.currentText()
-	        
-	        # If TCP or UDP, remove the domain input and show remote port input
+	
+	        # 如果是TCP或UDP，移除绑定域名输入框，显示远程端口输入框
 	        if porttype in ["tcp", "udp"]:
 	            if banddomain_layout.itemAt(0):
 	                banddomain_layout.removeWidget(banddomain_input)
 	                banddomain_input.setParent(None)
+	                banddomain_label.setParent(None)  # 移除标签
 	            if not remote_port_layout.itemAt(0):
 	                remote_port_layout.addWidget(remote_port_input)
 	
-	        # If HTTP or HTTPS, remove the remote port input and show domain input
+	        # 如果是HTTP或HTTPS，移除远程端口输入框，显示绑定域名输入框
 	        else:
 	            if remote_port_layout.itemAt(0):
 	                remote_port_layout.removeWidget(remote_port_input)
 	                remote_port_input.setParent(None)
+	                remote_port_label.setParent(None)  # 移除标签
 	            if not banddomain_layout.itemAt(0):
 	                banddomain_layout.addWidget(banddomain_input)
+	
+	            # 显示绑定域名标签
+	            if not banddomain_label.parent():
+	                layout.addRow(banddomain_label, banddomain_layout)
+	
+	        # 更新布局
+	        dialog.adjustSize()
 	
 	    type_combo.currentTextChanged.connect(on_type_changed)
 	    on_type_changed()  # 初始化时调用一次
@@ -2758,6 +2776,7 @@ class MainWindow(QMainWindow):
 	        except Exception as e:
 	            self.logger.exception("添加隧道时发生错误")
 	            QMessageBox.warning(self, "错误", f"添加隧道失败: {str(e)}")
+		
 		
 
     def edit_tunnel(self):
