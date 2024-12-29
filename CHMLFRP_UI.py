@@ -2710,11 +2710,6 @@ class MainWindow(QMainWindow):
 	        try:
 	            url = "http://cf-v2.uapis.cn/create_tunnel"
 	
-	            # 验证并解析本地IP
-	            local_ip = validate_and_resolve_ip(local_ip_input.text())
-	            if not local_ip:
-	                raise ValueError("无效的IP地址或无法解析的主机名")
-	
 	            tunnel_name = name_input.text()
 	            if not tunnel_name:
 	                tunnel_name = ''.join(random.choices('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=8))
@@ -2724,7 +2719,7 @@ class MainWindow(QMainWindow):
 	                "token": self.token,
 	                "tunnelname": tunnel_name,
 	                "node": node_combo.currentText(),
-	                "localip": local_ip,
+	                "localip": local_ip_input.text(),  # 直接使用输入的本地IP
 	                "porttype": porttype,
 	                "localport": int(local_port_input.text()),
 	                "encryption": encryption_checkbox.isChecked(),
