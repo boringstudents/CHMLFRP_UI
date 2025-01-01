@@ -5,6 +5,7 @@
 下载地址: 蓝奏云：[https://wwvn.lanzoul.com/b00pzv3oyj](https://wwvn.lanzoul.com/b00pzv3oyj) 密码:ff50
 
 下载解压运行即可(仅支持win10以上版本)，如有bug请提出谢谢!
+有bug请投稿至boring_student@qq.com谢谢
 
 # **target一周一个**
 | 目标 | 预计实现时间 |
