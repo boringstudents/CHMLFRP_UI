@@ -1175,11 +1175,9 @@ class TunnelCard(QFrame):
         if self.is_running:
             self.status_label.setText("状态: 运行中")
             self.start_stop_button.setText("停止")
-            self.show_output_button.setEnabled(True)  # 启动时启用查看输出按钮
         else:
             self.status_label.setText("状态: 未启动")
             self.start_stop_button.setText("启动")
-            self.show_output_button.setEnabled(False)  # 停止时禁用查看输出按钮
         self.update()
 
 
