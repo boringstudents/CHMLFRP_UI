@@ -12,6 +12,7 @@ import socket
 import threading
 import json
 from concurrent.futures import *
+import traceback
 import ipaddress
 import re
 
@@ -1030,6 +1031,7 @@ class BaseCard(QFrame):
 class TunnelCard(QFrame):
     clicked = pyqtSignal(object, bool)
     start_stop_signal = pyqtSignal(object, bool)
+    show_output_signal = pyqtSignal(object)
 
     def __init__(self, tunnel_info, token):
         super().__init__()
