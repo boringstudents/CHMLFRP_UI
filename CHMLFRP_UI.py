@@ -2581,17 +2581,19 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "错误", f"启动隧道失败: {str(e)}")
 
     def read_process_output(self, tunnel_name, process):
-        def read_output():
-            while True:
-                output = process.stdout.readline()
-                if output == b"" and process.poll() is not None:
-                    break
-                if output:
-                    output_text = output.decode("utf-8")
-                    self.tunnel_outputs[tunnel_name].append(output_text)
-                    self.logger.info(output_text)
-
-        threading.Thread(target=read_output, daemon=True).start()
+	    def read_output():
+	        while True:
+	            output = process.stdout.readline()
+	            if output == b"" and process.poll() is not None:
+	                break
+	            if output:
+	                output_text = output.decode("utf-8")
+	                if tunnel_name not in self.tunnel_outputs:
+	                    self.tunnel_outputs[tunnel_name] = []  # Initialize if not exist
+	                self.tunnel_outputs[tunnel_name].append(output_text)
+	                self.logger.info(output_text)
+	
+	    threading.Thread(target=read_output, daemon=True).start()
 
     def update_tunnel_card_status(self, tunnel_name, is_running):
         for i in range(self.tunnel_container.layout().count()):
