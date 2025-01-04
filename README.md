@@ -49,7 +49,7 @@
 更多TechCat开源代码请前往：[https://github.com/orgs/TechCat-Team](https://github.com/orgs/TechCat-Team)
 
 ## api文档链接
-这是群友northwind的api文档[https://docs.northwind.top/#/](https://docs.northwind.top/#/)
+这是群友的api文档[https://docs.northwind.top/#/](https://docs.northwind.top/#/)
 
 这是官方api v2文档[https://apifox.com/apidoc/shared-24b31bd1-e48b-44ab-a486-81cf5f964422/](https://apifox.com/apidoc/shared-24b31bd1-e48b-44ab-a486-81cf5f964422/)
 
