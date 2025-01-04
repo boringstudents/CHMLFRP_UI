@@ -1970,13 +1970,10 @@ class MainWindow(QMainWindow):
         tunnel_widget = QWidget()
         layout = QVBoxLayout(tunnel_widget)
 
-        # 添加刷新按钮
+        # Add refresh button
         refresh_button = QPushButton("刷新隧道列表")
         refresh_button.clicked.connect(self.load_tunnels)
         layout.addWidget(refresh_button)
-
-        refresh_button = QPushButton("刷新隧道列表")
-        refresh_button.setObjectName("refreshButton")
 
         self.tunnel_container = QWidget()
         self.tunnel_container.setLayout(QGridLayout())
@@ -2008,7 +2005,7 @@ class MainWindow(QMainWindow):
 
         self.content_stack.addWidget(tunnel_widget)
         
-        # 新增用于显示隧道输出的文本框
+        # Add a new text display for tunnel outputs
         self.tunnel_output_display = QTextEdit()
         self.tunnel_output_display.setReadOnly(True)
         self.content_stack.addWidget(self.tunnel_output_display)
@@ -2356,10 +2353,10 @@ class MainWindow(QMainWindow):
             if tunnels is None:
                 raise ValueError("获取隧道列表失败")
 
-            # 保存当前选中的隧道ID
+            # Save currently selected tunnel IDs
             selected_ids = [t['id'] for t in self.selected_tunnels]
 
-            # 清除现有的隧道卡片
+            # Clear existing tunnel cards
             while self.tunnel_container.layout().count():
                 item = self.tunnel_container.layout().takeAt(0)
                 if item.widget():
@@ -2371,9 +2368,9 @@ class MainWindow(QMainWindow):
                     tunnel_widget = TunnelCard(tunnel, self.token)
                     tunnel_widget.clicked.connect(self.on_tunnel_clicked)
                     tunnel_widget.start_stop_signal.connect(self.start_stop_tunnel)
-                    tunnel_widget.show_output_signal.connect(self.show_tunnel_output)  # 连接信号
+                    tunnel_widget.show_output_signal.connect(self.show_tunnel_output)  # Connect signal
 
-                    # 恢复之前的选中状态
+                    # Restore previous selection state
                     if tunnel['id'] in selected_ids:
                         tunnel_widget.is_selected = True
                         tunnel_widget.setSelected(True)
@@ -2381,7 +2378,7 @@ class MainWindow(QMainWindow):
                     self.tunnel_container.layout().addWidget(tunnel_widget, row, col)
 
                     col += 1
-                    if col == 2:  # 每行两个卡片
+                    if col == 2:  # Two cards per row
                         col = 0
                         row += 1
 
@@ -2390,9 +2387,14 @@ class MainWindow(QMainWindow):
                     self.logger.error(traceback.format_exc())
                     continue
 
-            # 更新选中的隧道列表
+            # Update selected tunnel list
             self.selected_tunnels = [t for t in tunnels if t['id'] in selected_ids]
             self.update_tunnel_buttons()
+
+        except Exception as e:
+            self.logger.error(f"加载隧道列表时发生错误: {str(e)}")
+            self.logger.error(traceback.format_exc())
+            self.show_error_message(f"加载隧道列表时发生错误: {str(e)}")
 
         except Exception as e:
             self.logger.error(f"加载隧道列表时发生错误: {str(e)}")
