@@ -1937,7 +1937,7 @@ class MainWindow(QMainWindow):
 
     def update_tunnel_buttons(self):
         selected_count = len(self.selected_tunnels)
-	self.logger.info(f"Selected tunnels count: {selected_count}")
+        self.logger.info(f"Selected tunnels count: {selected_count}")
         self.edit_tunnel_button.setEnabled(selected_count == 1)
         self.delete_tunnel_button.setEnabled(selected_count > 0)
         self.batch_edit_button.setEnabled(selected_count > 0)
