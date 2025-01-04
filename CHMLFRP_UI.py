@@ -1030,7 +1030,6 @@ class BaseCard(QFrame):
 class TunnelCard(QFrame):
     clicked = pyqtSignal(object, bool)
     start_stop_signal = pyqtSignal(object, bool)
-    show_output_signal = pyqtSignal(object)  # 新增信号
 
     def __init__(self, tunnel_info, token):
         super().__init__()
@@ -1057,7 +1056,6 @@ class TunnelCard(QFrame):
 
         self.status_label = QLabel("状态: 未启动")
 
-        # 添加连接链接标签，放在启动按钮上方
         self.link_label = QLabel(f"连接: {self.get_link()}")
         self.link_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self.link_label.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -1066,24 +1064,18 @@ class TunnelCard(QFrame):
         self.start_stop_button = QPushButton("启动")
         self.start_stop_button.clicked.connect(self.toggle_start_stop)
 
-        # 新增查看输出按钮
-        self.show_output_button = QPushButton("查看输出")
-        self.show_output_button.clicked.connect(self.show_output)
-        self.show_output_button.setEnabled(False)  # 初始时禁用按钮
-
         layout.addWidget(name_label)
         layout.addWidget(type_label)
         layout.addWidget(local_label)
         layout.addWidget(remote_label)
         layout.addWidget(node_label)
         layout.addWidget(self.status_label)
-        layout.addWidget(self.link_label)  # 放在启动按钮上方
+        layout.addWidget(self.link_label)
         layout.addWidget(self.start_stop_button)
-        layout.addWidget(self.show_output_button)  # 新增按钮
 
         self.setLayout(layout)
         self.setFixedSize(250, 250)
-
+	    
     def fetch_node_info(self):
         node = self.tunnel_info.get('node', '')
         url = f"http://cf-v2.uapis.cn/nodeinfo?token={self.token}&node={node}"
