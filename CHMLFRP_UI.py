@@ -1967,48 +1967,54 @@ class MainWindow(QMainWindow):
         self.delete_domain_button.setEnabled(True)
 
     def setup_tunnel_page(self):
-        tunnel_widget = QWidget()
-        layout = QVBoxLayout(tunnel_widget)
-
-        # Add refresh button
-        refresh_button = QPushButton("刷新隧道列表")
-        refresh_button.clicked.connect(self.load_tunnels)
-        layout.addWidget(refresh_button)
-
-        self.tunnel_container = QWidget()
-        self.tunnel_container.setLayout(QGridLayout())
-
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setWidget(self.tunnel_container)
-
-        layout.addWidget(scroll_area)
-
-        button_layout = QHBoxLayout()
-        add_tunnel_button = QPushButton("添加隧道")
-        add_tunnel_button.clicked.connect(self.add_tunnel)
-        self.edit_tunnel_button = QPushButton("编辑隧道")
-        self.edit_tunnel_button.clicked.connect(self.edit_tunnel)
-        self.edit_tunnel_button.setEnabled(False)
-        self.delete_tunnel_button = QPushButton("删除隧道")
-        self.delete_tunnel_button.clicked.connect(self.delete_tunnel)
-        self.delete_tunnel_button.setEnabled(False)
-        self.batch_edit_button = QPushButton("批量编辑")
-        self.batch_edit_button.clicked.connect(self.batch_edit_tunnels)
-        self.batch_edit_button.setEnabled(False)
-        button_layout.addWidget(add_tunnel_button)
-        button_layout.addWidget(self.edit_tunnel_button)
-        button_layout.addWidget(self.delete_tunnel_button)
-        button_layout.addWidget(self.batch_edit_button)
-
-        layout.addLayout(button_layout)
-
-        self.content_stack.addWidget(tunnel_widget)
-        
-        # Add a new text display for tunnel outputs
-        self.tunnel_output_display = QTextEdit()
-        self.tunnel_output_display.setReadOnly(True)
-        self.content_stack.addWidget(self.tunnel_output_display)
+	    tunnel_widget = QWidget()
+	    layout = QVBoxLayout(tunnel_widget)
+	
+	    # Add refresh button
+	    refresh_button = QPushButton("刷新隧道列表")
+	    refresh_button.clicked.connect(self.load_tunnels)
+	    layout.addWidget(refresh_button)
+	
+	    self.tunnel_container = QWidget()
+	    self.tunnel_container.setLayout(QGridLayout())
+	
+	    scroll_area = QScrollArea()
+	    scroll_area.setWidgetResizable(True)
+	    scroll_area.setWidget(self.tunnel_container)
+	
+	    layout.addWidget(scroll_area)
+	
+	    button_layout = QHBoxLayout()
+	    add_tunnel_button = QPushButton("添加隧道")
+	    add_tunnel_button.clicked.connect(self.add_tunnel)
+	    self.edit_tunnel_button = QPushButton("编辑隧道")
+	    self.edit_tunnel_button.clicked.connect(self.edit_tunnel)
+	    self.edit_tunnel_button.setEnabled(False)
+	    self.delete_tunnel_button = QPushButton("删除隧道")
+	    self.delete_tunnel_button.clicked.connect(self.delete_tunnel)
+	    self.delete_tunnel_button.setEnabled(False)
+	    self.batch_edit_button = QPushButton("批量编辑")
+	    self.batch_edit_button.clicked.connect(self.batch_edit_tunnels)
+	    self.batch_edit_button.setEnabled(False)
+	    view_button = QPushButton("查看输出")
+	    view_button.clicked.connect(self.show_tunnel_output)
+	    view_button.setEnabled(False)
+	    self.view_button = view_button  # Save reference to enable/disable it later
+	
+	    button_layout.addWidget(add_tunnel_button)
+	    button_layout.addWidget(self.edit_tunnel_button)
+	    button_layout.addWidget(self.delete_tunnel_button)
+	    button_layout.addWidget(self.batch_edit_button)
+	    button_layout.addWidget(view_button)  # Add view button to the right
+	
+	    layout.addLayout(button_layout)
+	
+	    self.content_stack.addWidget(tunnel_widget)
+	    
+	    # Add a new text display for tunnel outputs
+	    self.tunnel_output_display = QTextEdit()
+	    self.tunnel_output_display.setReadOnly(True)
+	    self.content_stack.addWidget(self.tunnel_output_display)
 
     def setup_domain_page(self):
         domain_widget = QWidget()
@@ -2583,19 +2589,20 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "错误", f"启动隧道失败: {str(e)}")
 
     def read_process_output(self, tunnel_name, process):
-	    def read_output():
-	        while True:
-	            output = process.stdout.readline()
-	            if output == b"" and process.poll() is not None:
-	                break
-	            if output:
-	                output_text = output.decode("utf-8")
-	                if tunnel_name not in self.tunnel_outputs:
-	                    self.tunnel_outputs[tunnel_name] = []  # Initialize if not exist
-	                self.tunnel_outputs[tunnel_name].append(output_text)
-	                self.logger.info(output_text)
-	
-	    threading.Thread(target=read_output, daemon=True).start()
+        def read_output():
+            while True:
+                output = process.stdout.readline()
+                if output == b"" and process.poll() is not None:
+                    break
+                if output:
+                    output_text = output.decode("utf-8")
+                    if tunnel_name not in self.tunnel_outputs:
+                        self.tunnel_outputs[tunnel_name] = []  # Initialize if not exist
+                    self.tunnel_outputs[tunnel_name].append(output_text)
+                    self.logger.info(output_text)
+                    if self.content_stack.currentWidget() == self.tunnel_output_display:
+                        self.tunnel_output_display.append(output_text)
+        threading.Thread(target=read_output, daemon=True).start()
 
     def update_tunnel_card_status(self, tunnel_name, is_running):
         for i in range(self.tunnel_container.layout().count()):
