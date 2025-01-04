@@ -1743,8 +1743,12 @@ class MainWindow(QMainWindow):
 	    
 	    button_layout.addWidget(self.view_button)
 	    background_layout.addLayout(button_layout)  # Use background_layout instead of layout
+	
+	    # Define tunnel_widget before using it
+	    tunnel_widget = QWidget()
+	    layout = QVBoxLayout(tunnel_widget)
 	    self.content_stack.addWidget(tunnel_widget)
-
+	
     def setup_system_tray(self):
         icon_path = get_absolute_path("favicon.ico")
         self.tray_icon = QSystemTrayIcon(self)
