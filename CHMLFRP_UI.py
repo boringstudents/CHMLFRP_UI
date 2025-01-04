@@ -1622,7 +1622,7 @@ class MainWindow(QMainWindow):
         
         self.view_button = QPushButton("查看输出")
         self.view_button.clicked.connect(self.show_tunnel_output)
-        self.view_button.setEnabled(False)
+        self.view_button.setEnabled(True)
 
     def initUI(self):
         self.setWindowTitle('ChmlFrp UI程序')
@@ -1928,13 +1928,12 @@ class MainWindow(QMainWindow):
         self.content_stack.addWidget(user_info_widget)
 
     def on_tunnel_clicked(self, tunnel_info, is_selected):
-        if is_selected:
-            if tunnel_info not in self.selected_tunnels:
-                self.selected_tunnels.append(tunnel_info)
-        else:
-            self.selected_tunnels = [t for t in self.selected_tunnels if t['id'] != tunnel_info['id']]
-
-        self.update_tunnel_buttons()
+	    if is_selected:
+	        if tunnel_info not in self.selected_tunnels:
+	            self.selected_tunnels.append(tunnel_info)
+	    else:
+	        self.selected_tunnels = [t for t in self.selected_tunnels if t['id'] != tunnel_info['id']]
+	    self.update_tunnel_buttons()
 
     def update_tunnel_buttons(self):
         selected_count = len(self.selected_tunnels)
@@ -2341,16 +2340,18 @@ class MainWindow(QMainWindow):
                     item.widget().setSelected(False)
 
     def show_tunnel_output(self):
-        if not self.selected_tunnels:
-            QMessageBox.warning(self, "警告", "请先选择一个隧道")
-            return
-
-        tunnel_info = self.selected_tunnels[0]
-        tunnel_name = tunnel_info['name']
-        self.tunnel_output_display.clear()
-        if tunnel_name in self.tunnel_outputs:
-            self.tunnel_output_display.append("".join(self.tunnel_outputs[tunnel_name]))
-        self.content_stack.setCurrentWidget(self.tunnel_output_display)
+	    if not self.selected_tunnels:
+	        QMessageBox.warning(self, "警告", "请先选择一个或多个隧道")
+	        return
+	
+	    self.tunnel_output_display.clear()
+	    for tunnel_info in self.selected_tunnels:
+	        tunnel_name = tunnel_info['name']
+	        if tunnel_name in self.tunnel_outputs:
+	            self.tunnel_output_display.append(f"隧道 {tunnel_name} 输出:\n")
+	            self.tunnel_output_display.append("".join(self.tunnel_outputs[tunnel_name]))
+	            self.tunnel_output_display.append("\n" + "="*50 + "\n")
+	    self.content_stack.setCurrentWidget(self.tunnel_output_display)
 	    
 
     def load_tunnels(self):
