@@ -1575,9 +1575,9 @@ class MainWindow(QMainWindow):
         self.qt_handler = QtHandler(self)
         self.logger.addHandler(self.qt_handler)
         self.qt_handler.new_record.connect(self.update_log)
-
-	self.tunnel_outputs = {}  # 初始化隧道输出字典
-
+        
+        self.tunnel_outputs = {}  # 初始化隧道输出字典
+        
         # 初始化日志显示
         self.log_display = QTextEdit(self)
         self.log_display.setReadOnly(True)
