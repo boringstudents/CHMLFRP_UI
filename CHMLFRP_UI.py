@@ -1617,6 +1617,10 @@ class MainWindow(QMainWindow):
         # 加载用户域名
         self.load_user_domains()
 
+	self.view_button = QPushButton("查看输出")
+        self.view_button.clicked.connect(self.show_tunnel_output)
+        self.view_button.setEnabled(False)  # 最初禁用，直到选择隧道
+
     def initUI(self):
         self.setWindowTitle('ChmlFrp UI程序')
         self.setGeometry(100, 100, 800, 600)
@@ -1934,6 +1938,7 @@ class MainWindow(QMainWindow):
         self.edit_tunnel_button.setEnabled(selected_count == 1)
         self.delete_tunnel_button.setEnabled(selected_count > 0)
         self.batch_edit_button.setEnabled(selected_count > 0)
+        self.view_button.setEnabled(selected_count == 1)  # 如果选择了一条隧道，则启用视图按钮
 
     def get_selected_tunnel_count(self):
         count = 0
@@ -2332,7 +2337,12 @@ class MainWindow(QMainWindow):
                     item.widget().is_selected = False
                     item.widget().setSelected(False)
 
-    def show_tunnel_output(self, tunnel_info):
+    def show_tunnel_output(self):
+        if not self.selected_tunnels:
+            QMessageBox.warning(self, "警告", "请先选择一个隧道")
+            return
+
+        tunnel_info = self.selected_tunnels[0]
         tunnel_name = tunnel_info['name']
         self.tunnel_output_display.clear()
         if tunnel_name in self.tunnel_outputs:
