@@ -1624,6 +1624,11 @@ class MainWindow(QMainWindow):
         self.view_button.clicked.connect(self.show_tunnel_output)
         self.view_button.setEnabled(True)
 
+        # 将视图按钮添加到布局中
+        button_layout.addWidget(self.view_button)
+        layout.addLayout(button_layout)
+        self.content_stack.addWidget(tunnel_widget)
+
     def initUI(self):
         self.setWindowTitle('ChmlFrp UI程序')
         self.setGeometry(100, 100, 800, 600)
@@ -1928,16 +1933,15 @@ class MainWindow(QMainWindow):
         self.content_stack.addWidget(user_info_widget)
 
     def on_tunnel_clicked(self, tunnel_info, is_selected):
-	    if is_selected:
-	        if tunnel_info not in self.selected_tunnels:
-	            self.selected_tunnels.append(tunnel_info)
-	    else:
-	        self.selected_tunnels = [t for t in self.selected_tunnels if t['id'] != tunnel_info['id']]
-	    self.update_tunnel_buttons()
+        if is_selected:
+            if tunnel_info not in self.selected_tunnels:
+                self.selected_tunnels.append(tunnel_info)
+        else:
+            self.selected_tunnels = [t for t in self.selected_tunnels if t['id'] != tunnel_info['id']]
+        self.update_tunnel_buttons()
 
     def update_tunnel_buttons(self):
         selected_count = len(self.selected_tunnels)
-        self.logger.info(f"Selected tunnels count: {selected_count}")
         self.edit_tunnel_button.setEnabled(selected_count == 1)
         self.delete_tunnel_button.setEnabled(selected_count > 0)
         self.batch_edit_button.setEnabled(selected_count > 0)
