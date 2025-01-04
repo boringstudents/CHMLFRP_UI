@@ -1736,13 +1736,6 @@ class MainWindow(QMainWindow):
 	
 	    # Initialize button_layout here before using it
 	    button_layout = QHBoxLayout()
-	    
-	    self.view_button = QPushButton("查看输出")
-	    self.view_button.clicked.connect(self.show_tunnel_output)
-	    self.view_button.setEnabled(False)
-	    
-	    button_layout.addWidget(self.view_button)
-	    background_layout.addLayout(button_layout)  # Use background_layout instead of layout
 	
 	    # Define tunnel_widget before using it
 	    tunnel_widget = QWidget()
