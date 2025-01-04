@@ -1741,6 +1741,10 @@ class MainWindow(QMainWindow):
 	    tunnel_widget = QWidget()
 	    layout = QVBoxLayout(tunnel_widget)
 	    self.content_stack.addWidget(tunnel_widget)
+
+	    self.view_button = QPushButton("查看输出")
+	    self.view_button.clicked.connect(self.show_tunnel_output)
+	    self.view_button.setEnabled(False)
 	
     def setup_system_tray(self):
         icon_path = get_absolute_path("favicon.ico")
