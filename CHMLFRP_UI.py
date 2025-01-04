@@ -1576,6 +1576,8 @@ class MainWindow(QMainWindow):
         self.logger.addHandler(self.qt_handler)
         self.qt_handler.new_record.connect(self.update_log)
 
+	self.tunnel_outputs = {}  # 初始化隧道输出字典
+
         # 初始化日志显示
         self.log_display = QTextEdit(self)
         self.log_display.setReadOnly(True)
@@ -2005,6 +2007,11 @@ class MainWindow(QMainWindow):
         layout.addLayout(button_layout)
 
         self.content_stack.addWidget(tunnel_widget)
+        
+        # 新增用于显示隧道输出的文本框
+        self.tunnel_output_display = QTextEdit()
+        self.tunnel_output_display.setReadOnly(True)
+        self.content_stack.addWidget(self.tunnel_output_display)
 
     def setup_domain_page(self):
         domain_widget = QWidget()
@@ -2332,6 +2339,14 @@ class MainWindow(QMainWindow):
                     item.widget().is_selected = False
                     item.widget().setSelected(False)
 
+    def show_tunnel_output(self, tunnel_info):
+        tunnel_name = tunnel_info['name']
+        self.tunnel_output_display.clear()
+        if tunnel_name in self.tunnel_outputs:
+            self.tunnel_output_display.append("".join(self.tunnel_outputs[tunnel_name]))
+        self.content_stack.setCurrentWidget(self.tunnel_output_display)
+	    
+
     def load_tunnels(self):
         try:
             if not self.token:
@@ -2356,6 +2371,7 @@ class MainWindow(QMainWindow):
                     tunnel_widget = TunnelCard(tunnel, self.token)
                     tunnel_widget.clicked.connect(self.on_tunnel_clicked)
                     tunnel_widget.start_stop_signal.connect(self.start_stop_tunnel)
+                    tunnel_widget.show_output_signal.connect(self.show_tunnel_output)  # 连接信号
 
                     # 恢复之前的选中状态
                     if tunnel['id'] in selected_ids:
@@ -2377,6 +2393,11 @@ class MainWindow(QMainWindow):
             # 更新选中的隧道列表
             self.selected_tunnels = [t for t in tunnels if t['id'] in selected_ids]
             self.update_tunnel_buttons()
+
+        except Exception as e:
+            self.logger.error(f"加载隧道列表时发生错误: {str(e)}")
+            self.logger.error(traceback.format_exc())
+            self.show_error_message(f"加载隧道列表时发生错误: {str(e)}")
 
         except Exception as e:
             self.logger.error(f"加载隧道列表时发生错误: {str(e)}")
@@ -2547,6 +2568,9 @@ class MainWindow(QMainWindow):
             self.logger.info(f"frpc已启动，使用节点: {tunnel_info['node']}")
             self.tunnel_processes[tunnel_info['name']] = process
 
+            # 读取并保存命令行输出
+            self.read_process_output(tunnel_info['name'], process)
+
             # 更新UI状态
             self.update_tunnel_card_status(tunnel_info['name'], True)
 
@@ -2555,6 +2579,19 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.logger.exception(f"启动隧道时发生错误: {str(e)}")
             QMessageBox.warning(self, "错误", f"启动隧道失败: {str(e)}")
+
+    def read_process_output(self, tunnel_name, process):
+        def read_output():
+            while True:
+                output = process.stdout.readline()
+                if output == b"" and process.poll() is not None:
+                    break
+                if output:
+                    output_text = output.decode("utf-8")
+                    self.tunnel_outputs[tunnel_name].append(output_text)
+                    self.logger.info(output_text)
+
+        threading.Thread(target=read_output, daemon=True).start()
 
     def update_tunnel_card_status(self, tunnel_name, is_running):
         for i in range(self.tunnel_container.layout().count()):
