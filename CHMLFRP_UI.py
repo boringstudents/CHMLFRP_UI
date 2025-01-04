@@ -1626,119 +1626,124 @@ class MainWindow(QMainWindow):
 
 
     def initUI(self):
-        self.setWindowTitle('ChmlFrp UI程序')
-        self.setGeometry(100, 100, 800, 600)
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-
-        central_widget = QWidget(self)
-        self.setCentralWidget(central_widget)
-
-        main_layout = QVBoxLayout(central_widget)
-
-        self.background_frame = QFrame(self)
-        self.background_frame.setObjectName("background")
-        background_layout = QVBoxLayout(self.background_frame)
-        main_layout.addWidget(self.background_frame)
-
-        title_bar = QWidget()
-        title_layout = QHBoxLayout(title_bar)
-        title_label = QLabel("ChmlFrp UI程序")
-        title_layout.addWidget(title_label)
-        title_layout.addStretch(1)
-        min_button = QPushButton("－")
-        min_button.clicked.connect(self.showMinimized)
-        close_button = QPushButton("×")
-        close_button.clicked.connect(self.close)
-        theme_button = QPushButton("切换主题")
-        theme_button.clicked.connect(self.toggle_theme)
-
-        title_layout.addWidget(theme_button)
-        title_layout.addWidget(min_button)
-        title_layout.addWidget(close_button)
-        background_layout.addWidget(title_bar)
-
-        content_layout = QHBoxLayout()
-
-        menu_widget = QWidget()
-        menu_layout = QVBoxLayout(menu_widget)
-
-        self.user_info_button = QPushButton("用户信息")
-        self.tunnel_button = QPushButton("隧道管理")
-        self.domain_button = QPushButton("域名管理")
-        self.node_button = QPushButton("节点状态")
-        self.ddns_button = QPushButton("DDNS管理")
-        self.ping_button = QPushButton("Ping工具")
-        self.dynamic_tunnel_button = QPushButton("动态节点隧道")
-        self.ip_tools_button = QPushButton("IP工具")
-
-        self.user_info_button.clicked.connect(lambda: self.switch_tab("user_info"))
-        self.tunnel_button.clicked.connect(lambda: self.switch_tab("tunnel"))
-        self.domain_button.clicked.connect(lambda: self.switch_tab("domain"))
-        self.node_button.clicked.connect(lambda: self.switch_tab("node"))
-        self.ddns_button.clicked.connect(lambda: self.switch_tab("ddns"))
-        self.ping_button.clicked.connect(lambda: self.switch_tab("ping"))
-        self.dynamic_tunnel_button.clicked.connect(lambda: self.switch_tab("dynamic_tunnel"))
-        self.ip_tools_button.clicked.connect(lambda: self.switch_tab("ip_tools"))
-
-        menu_layout.addWidget(self.user_info_button)
-        menu_layout.addWidget(self.tunnel_button)
-        menu_layout.addWidget(self.domain_button)
-        menu_layout.addWidget(self.node_button)
-        menu_layout.addWidget(self.ddns_button)
-        menu_layout.addWidget(self.ping_button)
-        menu_layout.addWidget(self.dynamic_tunnel_button)
-        menu_layout.addWidget(self.ip_tools_button)
-        menu_layout.addStretch(1)
-
-        content_layout.addWidget(menu_widget)
-
-        self.content_stack = QStackedWidget()
-        content_layout.addWidget(self.content_stack, 1)
-
-        background_layout.addLayout(content_layout)
-
-        background_layout.addWidget(self.log_display)
-
-        author_info = QLabel("本程序基于ChmlFrp api开发 作者: boring_student")
-        author_info.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom)
-        author_info.setStyleSheet("font-size: 7pt; color: #888888; background: transparent; padding: 2px;")
-        author_info.setProperty("author_info", True)
-        author_info.setFixedHeight(18)
-
-        bottom_layout = QHBoxLayout()
-        bottom_layout.addStretch(1)
-        bottom_layout.addWidget(author_info)
-        bottom_layout.setContentsMargins(0, 0, 5, 2)
-        background_layout.addLayout(bottom_layout)
-
-        self.setup_user_info_page()
-        self.setup_tunnel_page()
-        self.setup_domain_page()
-        self.setup_node_page()
-        self.setup_ddns_page()
-        self.setup_ping_page()
-        self.setup_dynamic_tunnel_page()
-        self.setup_ip_tools_page()
-
-        self.switch_tab("user_info")
-
-        self.tab_buttons = [
-            self.user_info_button,
-            self.tunnel_button,
-            self.domain_button,
-            self.node_button,
-            self.ddns_button,
-            self.ping_button,
-            self.dynamic_tunnel_button,
-            self.ip_tools_button
-        ]
-
+	    self.setWindowTitle('ChmlFrp UI程序')
+	    self.setGeometry(100, 100, 800, 600)
+	    self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
+	    self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 	
-        # 将视图按钮添加到布局中
-        button_layout.addWidget(self.view_button)
-        layout.addLayout(button_layout)
-        self.content_stack.addWidget(tunnel_widget)
+	    central_widget = QWidget(self)
+	    self.setCentralWidget(central_widget)
+	
+	    main_layout = QVBoxLayout(central_widget)
+	
+	    self.background_frame = QFrame(self)
+	    self.background_frame.setObjectName("background")
+	    background_layout = QVBoxLayout(self.background_frame)
+	    main_layout.addWidget(self.background_frame)
+	
+	    title_bar = QWidget()
+	    title_layout = QHBoxLayout(title_bar)
+	    title_label = QLabel("ChmlFrp UI程序")
+	    title_layout.addWidget(title_label)
+	    title_layout.addStretch(1)
+	    min_button = QPushButton("－")
+	    min_button.clicked.connect(self.showMinimized)
+	    close_button = QPushButton("×")
+	    close_button.clicked.connect(self.close)
+	    theme_button = QPushButton("切换主题")
+	    theme_button.clicked.connect(self.toggle_theme)
+	
+	    title_layout.addWidget(theme_button)
+	    title_layout.addWidget(min_button)
+	    title_layout.addWidget(close_button)
+	    background_layout.addWidget(title_bar)
+	
+	    content_layout = QHBoxLayout()
+	
+	    menu_widget = QWidget()
+	    menu_layout = QVBoxLayout(menu_widget)
+	
+	    self.user_info_button = QPushButton("用户信息")
+	    self.tunnel_button = QPushButton("隧道管理")
+	    self.domain_button = QPushButton("域名管理")
+	    self.node_button = QPushButton("节点状态")
+	    self.ddns_button = QPushButton("DDNS管理")
+	    self.ping_button = QPushButton("Ping工具")
+	    self.dynamic_tunnel_button = QPushButton("动态节点隧道")
+	    self.ip_tools_button = QPushButton("IP工具")
+	
+	    self.user_info_button.clicked.connect(lambda: self.switch_tab("user_info"))
+	    self.tunnel_button.clicked.connect(lambda: self.switch_tab("tunnel"))
+	    self.domain_button.clicked.connect(lambda: self.switch_tab("domain"))
+	    self.node_button.clicked.connect(lambda: self.switch_tab("node"))
+	    self.ddns_button.clicked.connect(lambda: self.switch_tab("ddns"))
+	    self.ping_button.clicked.connect(lambda: self.switch_tab("ping"))
+	    self.dynamic_tunnel_button.clicked.connect(lambda: self.switch_tab("dynamic_tunnel"))
+	    self.ip_tools_button.clicked.connect(lambda: self.switch_tab("ip_tools"))
+	
+	    menu_layout.addWidget(self.user_info_button)
+	    menu_layout.addWidget(self.tunnel_button)
+	    menu_layout.addWidget(self.domain_button)
+	    menu_layout.addWidget(self.node_button)
+	    menu_layout.addWidget(self.ddns_button)
+	    menu_layout.addWidget(self.ping_button)
+	    menu_layout.addWidget(self.dynamic_tunnel_button)
+	    menu_layout.addWidget(self.ip_tools_button)
+	    menu_layout.addStretch(1)
+	
+	    content_layout.addWidget(menu_widget)
+	
+	    self.content_stack = QStackedWidget()
+	    content_layout.addWidget(self.content_stack, 1)
+	
+	    background_layout.addLayout(content_layout)
+	
+	    background_layout.addWidget(self.log_display)
+	
+	    author_info = QLabel("本程序基于ChmlFrp api开发 作者: boring_student")
+	    author_info.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom)
+	    author_info.setStyleSheet("font-size: 7pt; color: #888888; background: transparent; padding: 2px;")
+	    author_info.setProperty("author_info", True)
+	    author_info.setFixedHeight(18)
+	
+	    bottom_layout = QHBoxLayout()
+	    bottom_layout.addStretch(1)
+	    bottom_layout.addWidget(author_info)
+	    bottom_layout.setContentsMargins(0, 0, 5, 2)
+	    background_layout.addLayout(bottom_layout)
+	
+	    self.setup_user_info_page()
+	    self.setup_tunnel_page()
+	    self.setup_domain_page()
+	    self.setup_node_page()
+	    self.setup_ddns_page()
+	    self.setup_ping_page()
+	    self.setup_dynamic_tunnel_page()
+	    self.setup_ip_tools_page()
+	
+	    self.switch_tab("user_info")
+	
+	    self.tab_buttons = [
+	        self.user_info_button,
+	        self.tunnel_button,
+	        self.domain_button,
+	        self.node_button,
+	        self.ddns_button,
+	        self.ping_button,
+	        self.dynamic_tunnel_button,
+	        self.ip_tools_button
+	    ]
+	
+	    # Initialize button_layout here before using it
+	    button_layout = QHBoxLayout()
+	    
+	    self.view_button = QPushButton("查看输出")
+	    self.view_button.clicked.connect(self.show_tunnel_output)
+	    self.view_button.setEnabled(False)
+	    
+	    button_layout.addWidget(self.view_button)
+	    layout.addLayout(button_layout)
+	    self.content_stack.addWidget(tunnel_widget)
 
     def setup_system_tray(self):
         icon_path = get_absolute_path("favicon.ico")
