@@ -1030,6 +1030,7 @@ class BaseCard(QFrame):
 class TunnelCard(QFrame):
     clicked = pyqtSignal(object, bool)
     start_stop_signal = pyqtSignal(object, bool)
+    show_output_signal = pyqtSignal(object)  # 新增信号
 
     def __init__(self, tunnel_info, token):
         super().__init__()
@@ -1065,6 +1066,11 @@ class TunnelCard(QFrame):
         self.start_stop_button = QPushButton("启动")
         self.start_stop_button.clicked.connect(self.toggle_start_stop)
 
+        # 新增查看输出按钮
+        self.show_output_button = QPushButton("查看输出")
+        self.show_output_button.clicked.connect(self.show_output)
+        self.show_output_button.setEnabled(False)  # 初始时禁用按钮
+
         layout.addWidget(name_label)
         layout.addWidget(type_label)
         layout.addWidget(local_label)
@@ -1073,9 +1079,10 @@ class TunnelCard(QFrame):
         layout.addWidget(self.status_label)
         layout.addWidget(self.link_label)  # 放在启动按钮上方
         layout.addWidget(self.start_stop_button)
+        layout.addWidget(self.show_output_button)  # 新增按钮
 
         self.setLayout(layout)
-        self.setFixedSize(250, 250)  # 可能需要调整高度以适应新的布局
+        self.setFixedSize(250, 250)
 
     def fetch_node_info(self):
         node = self.tunnel_info.get('node', '')
@@ -1168,6 +1175,20 @@ class TunnelCard(QFrame):
             self.setStyleSheet(self.styleSheet() + "TunnelCard { border: 2px solid #0066cc; background-color: rgba(224, 224, 224, 50); }")
         else:
             self.setStyleSheet(self.styleSheet().replace("TunnelCard { border: 2px solid #0066cc; background-color: rgba(224, 224, 224, 50); }", ""))
+
+    def show_output(self):
+        self.show_output_signal.emit(self.tunnel_info)
+
+    def update_status(self):
+        if self.is_running:
+            self.status_label.setText("状态: 运行中")
+            self.start_stop_button.setText("停止")
+            self.show_output_button.setEnabled(True)  # 启动时启用查看输出按钮
+        else:
+            self.status_label.setText("状态: 未启动")
+            self.start_stop_button.setText("启动")
+            self.show_output_button.setEnabled(False)  # 停止时禁用查看输出按钮
+        self.update()
 
 
 class BatchEditDialog(QDialog):
