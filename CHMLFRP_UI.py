@@ -1044,6 +1044,7 @@ class TunnelCard(QFrame):
         self.updateStyle()
         self.fetch_node_info()
 
+
     def initUI(self):
         layout = QVBoxLayout()
         layout.setContentsMargins(10, 10, 10, 10)
@@ -1621,7 +1622,7 @@ class MainWindow(QMainWindow):
         
         self.view_button = QPushButton("查看输出")
         self.view_button.clicked.connect(self.show_tunnel_output)
-        self.view_button.setEnabled(False)  # 最初禁用，直到选择隧道
+        self.view_button.setEnabled(False)
 
     def initUI(self):
         self.setWindowTitle('ChmlFrp UI程序')
@@ -1940,7 +1941,7 @@ class MainWindow(QMainWindow):
         self.edit_tunnel_button.setEnabled(selected_count == 1)
         self.delete_tunnel_button.setEnabled(selected_count > 0)
         self.batch_edit_button.setEnabled(selected_count > 0)
-        self.view_button.setEnabled(selected_count == 1)  # 如果选择了一条隧道，则启用视图按钮
+        self.view_button.setEnabled(selected_count == 1)
 
     def get_selected_tunnel_count(self):
         count = 0
@@ -2591,20 +2592,19 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "错误", f"启动隧道失败: {str(e)}")
 
     def read_process_output(self, tunnel_name, process):
-        def read_output():
-            while True:
-                output = process.stdout.readline()
-                if output == b"" and process.poll() is not None:
-                    break
-                if output:
-                    output_text = output.decode("utf-8")
-                    if tunnel_name not in self.tunnel_outputs:
-                        self.tunnel_outputs[tunnel_name] = []  # Initialize if not exist
-                    self.tunnel_outputs[tunnel_name].append(output_text)
-                    self.logger.info(output_text)
-                    if self.content_stack.currentWidget() == self.tunnel_output_display:
-                        self.tunnel_output_display.append(output_text)
-        threading.Thread(target=read_output, daemon=True).start()
+	    def read_output():
+	        while True:
+	            output = process.stdout.readline()
+	            if output == b"" and process.poll() is not None:
+	                break
+	            if output:
+	                output_text = output.decode("utf-8")
+	                if tunnel_name not in self.tunnel_outputs:
+	                    self.tunnel_outputs[tunnel_name] = []  # Initialize if not exist
+	                self.tunnel_outputs[tunnel_name].append(output_text)
+	                if self.content_stack.currentWidget() == self.tunnel_output_display:
+	                    self.tunnel_output_display.append(output_text)
+	    threading.Thread(target=read_output, daemon=True).start()
 
     def update_tunnel_card_status(self, tunnel_name, is_running):
         for i in range(self.tunnel_container.layout().count()):
