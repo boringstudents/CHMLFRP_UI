@@ -2011,8 +2011,8 @@ class MainWindow(QMainWindow):
 	    self.batch_edit_button.setEnabled(False)
 	    view_button = QPushButton("查看输出")
 	    view_button.clicked.connect(self.show_tunnel_output)
-	    view_button.setEnabled(False)
-	    self.view_button = view_button  # Save reference to enable/disable it later
+	    view_button.setEnabled(True)
+	    self.view_button = view_button
 	
 	    button_layout.addWidget(add_tunnel_button)
 	    button_layout.addWidget(self.edit_tunnel_button)
