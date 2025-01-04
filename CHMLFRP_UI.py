@@ -1742,7 +1742,7 @@ class MainWindow(QMainWindow):
 	    self.view_button.setEnabled(False)
 	    
 	    button_layout.addWidget(self.view_button)
-	    layout.addLayout(button_layout)
+	    background_layout.addLayout(button_layout)  # Use background_layout instead of layout
 	    self.content_stack.addWidget(tunnel_widget)
 
     def setup_system_tray(self):
