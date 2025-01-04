@@ -1624,10 +1624,6 @@ class MainWindow(QMainWindow):
         self.view_button.clicked.connect(self.show_tunnel_output)
         self.view_button.setEnabled(True)
 
-        # 将视图按钮添加到布局中
-        button_layout.addWidget(self.view_button)
-        layout.addLayout(button_layout)
-        self.content_stack.addWidget(tunnel_widget)
 
     def initUI(self):
         self.setWindowTitle('ChmlFrp UI程序')
@@ -1737,6 +1733,12 @@ class MainWindow(QMainWindow):
             self.dynamic_tunnel_button,
             self.ip_tools_button
         ]
+
+	
+        # 将视图按钮添加到布局中
+        button_layout.addWidget(self.view_button)
+        layout.addLayout(button_layout)
+        self.content_stack.addWidget(tunnel_widget)
 
     def setup_system_tray(self):
         icon_path = get_absolute_path("favicon.ico")
