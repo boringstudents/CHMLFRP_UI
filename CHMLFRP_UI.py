@@ -1564,8 +1564,6 @@ class StopWorker(QObject):
             self.progress.emit("没有发现残留的 frpc.exe 进程")
             
 class MainWindow(QMainWindow):
-    """主窗口"""
-
     def __init__(self):
         super().__init__()
         self.tab_buttons = []
