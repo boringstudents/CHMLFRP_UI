@@ -1616,8 +1616,8 @@ class MainWindow(QMainWindow):
 
         # 加载用户域名
         self.load_user_domains()
-
-	self.view_button = QPushButton("查看输出")
+        
+        self.view_button = QPushButton("查看输出")
         self.view_button.clicked.connect(self.show_tunnel_output)
         self.view_button.setEnabled(False)  # 最初禁用，直到选择隧道
 
