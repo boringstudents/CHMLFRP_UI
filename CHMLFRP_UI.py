@@ -1983,7 +1983,7 @@ class MainWindow(QMainWindow):
 	    tunnel_widget = QWidget()
 	    layout = QVBoxLayout(tunnel_widget)
 	
-	    # Add refresh button
+	    # 添加刷新按钮
 	    refresh_button = QPushButton("刷新隧道列表")
 	    refresh_button.clicked.connect(self.load_tunnels)
 	    layout.addWidget(refresh_button)
@@ -2023,7 +2023,7 @@ class MainWindow(QMainWindow):
 	    layout.addLayout(button_layout)
 	
 	    self.content_stack.addWidget(tunnel_widget)
-	    
+	
 	    # Add a new text display for tunnel outputs
 	    self.tunnel_output_display = QTextEdit()
 	    self.tunnel_output_display.setReadOnly(True)
