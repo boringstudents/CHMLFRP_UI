@@ -3872,6 +3872,114 @@ class MainWindow(QMainWindow):
         self.update_button_styles(self.ip_tools_button)
 
     def apply_theme(self):
+	if self.dark_theme:
+        self.button_color = "#0D47A1"
+        self.button_hover_color = "#1565C0"
+        self.setStyleSheet("""
+            QWidget {
+                color: #FFFFFF;
+                background-color: #2D2D2D;
+            }
+            #background {
+                background-color: #1E1E1E;
+                border-radius: 10px;
+            }
+            QPushButton {
+                background-color: #0D47A1;
+                color: white;
+                border: none;
+                padding: 5px 10px;
+                text-align: center;
+                text-decoration: none;
+                font-size: 14px;
+                margin: 4px 2px;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #1565C0;
+            }
+            QPushButton:disabled {
+                background-color: #424242;
+            }
+            QLineEdit, QComboBox, QTextEdit, QMenuBar {
+                padding: 5px;
+                border: 1px solid #424242;
+                border-radius: 4px;
+                background-color: #1E1E1E;
+                color: #FFFFFF;
+            }
+            QMenuBar::item {
+                background-color: #2D2D2D;
+                color: #FFFFFF;
+            }
+            QMenuBar::item:selected {
+                background-color: #3D3D3D;
+            }
+            NodeCard, TunnelCard, DomainCard {
+                background-color: #2D2D2D;
+                border: 1px solid #424242;
+            }
+            NodeCard:hover, TunnelCard:hover, DomainCard:hover {
+                background-color: #3D3D3D;
+            }
+        """)
+        else:
+            self.button_color = "#4CAF50"
+            self.button_hover_color = "#45a049"
+            self.setStyleSheet("""
+                QWidget {
+                    color: #333333;
+                    background-color: #FFFFFF;
+                }
+                #background {
+                    background-color: #F0F0F0;
+                    border-radius: 10px;
+                }
+                QPushButton {
+                    background-color: #4CAF50;
+                    color: white;
+                    border: none;
+                    padding: 5px 10px;
+                    text-align: center;
+                    text-decoration: none;
+                    font-size: 14px;
+                    margin: 4px 2px;
+                    border-radius: 4px;
+                }
+                QPushButton:hover {
+                    background-color: #45a049;
+                }
+                QPushButton:disabled {
+                    background-color: #CCCCCC;
+                }
+                QLineEdit, QComboBox, QTextEdit, QMenuBar {
+                    padding: 5px;
+                    border: 1px solid #DCDCDC;
+                    border-radius: 4px;
+                    background-color: #F0F0F0;
+                    color: #333333;
+                }
+                QMenuBar::item {
+                    background-color: #FFFFFF;
+                    color: #333333;
+                }
+                QMenuBar::item:selected {
+                    background-color: #E0E0E0;
+                }
+                NodeCard, TunnelCard, DomainCard {
+                    background-color: #FFFFFF;
+                    border: 1px solid #D0D0D0;
+                }    
+                NodeCard:hover, TunnelCard:hover, DomainCard:hover {
+                    background-color: #F0F0F0;
+                }
+            """)
+
+        self.ip_tools_widget.update_style(self.dark_theme)
+        self.tunnel_select_combo.setStyleSheet(self.styleSheet())
+        self.frpc_output_text.setStyleSheet(self.styleSheet())
+        self.menuBar().setStyleSheet(self.styleSheet())
+	
         if self.dark_theme:
             self.button_color = "#0D47A1"
             self.button_hover_color = "#1565C0"
@@ -3962,7 +4070,6 @@ class MainWindow(QMainWindow):
             """)
         self.ip_tools_widget.update_style(self.dark_theme)
         if self.dark_theme:
-            # ... 其他样式 ...
             refresh_button_style = """
                     QPushButton#refreshButton {
                         background-color: #1E90FF;
@@ -3977,7 +4084,6 @@ class MainWindow(QMainWindow):
                     }
                 """
         else:
-            # ... 其他样式 ...
             refresh_button_style = """
                     QPushButton#refreshButton {
                         background-color: #4CAF50;
@@ -3993,6 +4099,7 @@ class MainWindow(QMainWindow):
                 """
 
         self.setStyleSheet(self.styleSheet() + refresh_button_style)
+	    
 
     def refresh_nodes(self):
         """刷新节点状态"""
