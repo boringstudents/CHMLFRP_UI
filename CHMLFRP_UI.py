@@ -2051,25 +2051,21 @@ class MainWindow(QMainWindow):
 
     # 加载流量监控
     def load_traffic_monitor(self, tunnel_name):
-	    self.traffic_monitor_plot.clear()
-	    # 这里加入获取流量监控数据的逻辑
-	    # 使用曲线图显示上传、下载流量、CPU占用、内存占用和磁盘读写占用
-	    # 示例代码，实际数据获取请根据具体情况调整
-	    self.update_traffic_monitor(tunnel_name)
+        self.traffic_monitor_plot.clear()
+        self.traffic_monitor_timer.start(1000)  # 每秒更新
 
-    def update_traffic_monitor(self, tunnel_name):
-	    # 模拟数据
-	    upload_data = [random.randint(0, 100) for _ in range(100)]
-	    download_data = [random.randint(0, 100) for _ in range(100)]
-	    cpu_data = [random.randint(0, 100) for _ in range(100)]
-	    memory_data = [random.randint(0, 100) for _ in range(100)]
-	    disk_data = [random.randint(0, 100) for _ in range(100)]
-	
-	    self.traffic_monitor_plot.plot(upload_data, pen='r')
-	    self.traffic_monitor_plot.plot(download_data, pen='b')
-	    self.traffic_monitor_plot.plot(cpu_data, pen='g')
-	    self.traffic_monitor_plot.plot(memory_data, pen='c')
-	    self.traffic_monitor_plot.plot(disk_data, pen='m')
+    def update_traffic_monitor(self):
+        upload_data = [psutil.net_io_counters().bytes_sent]
+        download_data = [psutil.net_io_counters().bytes_recv]
+        cpu_data = [psutil.cpu_percent()]
+        memory_data = [psutil.virtual_memory().percent]
+        disk_data = [psutil.disk_io_counters().read_bytes + psutil.disk_io_counters().write_bytes]
+
+        self.traffic_monitor_plot.plot(upload_data, pen='r')
+        self.traffic_monitor_plot.plot(download_data, pen='b')
+        self.traffic_monitor_plot.plot(cpu_data, pen='g')
+        self.traffic_monitor_plot.plot(memory_data, pen='c')
+        self.traffic_monitor_plot.plot(disk_data, pen='m')
 
     def setup_domain_page(self):
         domain_widget = QWidget()
