@@ -12,7 +12,6 @@ import socket
 import threading
 import json
 from concurrent.futures import *
-import traceback
 import ipaddress
 import re
 
@@ -1031,7 +1030,6 @@ class BaseCard(QFrame):
 class TunnelCard(QFrame):
     clicked = pyqtSignal(object, bool)
     start_stop_signal = pyqtSignal(object, bool)
-    show_output_signal = pyqtSignal(object)
 
     def __init__(self, tunnel_info, token):
         super().__init__()
@@ -1043,7 +1041,6 @@ class TunnelCard(QFrame):
         self.initUI()
         self.updateStyle()
         self.fetch_node_info()
-
 
     def initUI(self):
         layout = QVBoxLayout()
@@ -1059,6 +1056,7 @@ class TunnelCard(QFrame):
 
         self.status_label = QLabel("状态: 未启动")
 
+        # 添加连接链接标签，放在启动按钮上方
         self.link_label = QLabel(f"连接: {self.get_link()}")
         self.link_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self.link_label.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -1073,12 +1071,12 @@ class TunnelCard(QFrame):
         layout.addWidget(remote_label)
         layout.addWidget(node_label)
         layout.addWidget(self.status_label)
-        layout.addWidget(self.link_label)
+        layout.addWidget(self.link_label)  # 放在启动按钮上方
         layout.addWidget(self.start_stop_button)
 
         self.setLayout(layout)
-        self.setFixedSize(250, 250)
-	    
+        self.setFixedSize(250, 250)  # 可能需要调整高度以适应新的布局
+
     def fetch_node_info(self):
         node = self.tunnel_info.get('node', '')
         url = f"http://cf-v2.uapis.cn/nodeinfo?token={self.token}&node={node}"
@@ -1170,18 +1168,6 @@ class TunnelCard(QFrame):
             self.setStyleSheet(self.styleSheet() + "TunnelCard { border: 2px solid #0066cc; background-color: rgba(224, 224, 224, 50); }")
         else:
             self.setStyleSheet(self.styleSheet().replace("TunnelCard { border: 2px solid #0066cc; background-color: rgba(224, 224, 224, 50); }", ""))
-
-    def show_output(self):
-        self.show_output_signal.emit(self.tunnel_info)
-
-    def update_status(self):
-        if self.is_running:
-            self.status_label.setText("状态: 运行中")
-            self.start_stop_button.setText("停止")
-        else:
-            self.status_label.setText("状态: 未启动")
-            self.start_stop_button.setText("启动")
-        self.update()
 
 
 class BatchEditDialog(QDialog):
@@ -1557,6 +1543,8 @@ class StopWorker(QObject):
             self.progress.emit("没有发现残留的 frpc.exe 进程")
             
 class MainWindow(QMainWindow):
+    """主窗口"""
+
     def __init__(self):
         super().__init__()
         self.tab_buttons = []
@@ -1568,9 +1556,7 @@ class MainWindow(QMainWindow):
         self.qt_handler = QtHandler(self)
         self.logger.addHandler(self.qt_handler)
         self.qt_handler.new_record.connect(self.update_log)
-        
-        self.tunnel_outputs = {}  # 初始化隧道输出字典
-        
+
         # 初始化日志显示
         self.log_display = QTextEdit(self)
         self.log_display.setReadOnly(True)
@@ -1619,167 +1605,116 @@ class MainWindow(QMainWindow):
 
         # 加载用户域名
         self.load_user_domains()
-        
-        self.view_button = QPushButton("查看输出")
-        self.view_button.clicked.connect(self.show_tunnel_output)
-        self.view_button.setEnabled(True)
-
 
     def initUI(self):
-	    self.setWindowTitle('ChmlFrp UI程序')
-	    self.setGeometry(100, 100, 800, 600)
-	    self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
-	    self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-	
-	    central_widget = QWidget(self)
-	    self.setCentralWidget(central_widget)
-	
-	    main_layout = QVBoxLayout(central_widget)
-	
-	    self.background_frame = QFrame(self)
-	    self.background_frame.setObjectName("background")
-	    background_layout = QVBoxLayout(self.background_frame)
-	    main_layout.addWidget(self.background_frame)
-	
-	    title_bar = QWidget()
-	    title_layout = QHBoxLayout(title_bar)
-	    title_label = QLabel("ChmlFrp UI程序")
-	    title_layout.addWidget(title_label)
-	    title_layout.addStretch(1)
-	    min_button = QPushButton("－")
-	    min_button.clicked.connect(self.showMinimized)
-	    close_button = QPushButton("×")
-	    close_button.clicked.connect(self.close)
-	    theme_button = QPushButton("切换主题")
-	    theme_button.clicked.connect(self.toggle_theme)
-	
-	    title_layout.addWidget(theme_button)
-	    title_layout.addWidget(min_button)
-	    title_layout.addWidget(close_button)
-	    background_layout.addWidget(title_bar)
-	
-	    content_layout = QHBoxLayout()
-	
-	    menu_widget = QWidget()
-	    menu_layout = QVBoxLayout(menu_widget)
-	
-	    self.user_info_button = QPushButton("用户信息")
-	    self.tunnel_button = QPushButton("隧道管理")
-	    self.frpc_output_button = QPushButton("frpc输出")
-	    self.domain_button = QPushButton("域名管理")
-	    self.node_button = QPushButton("节点状态")
-	    self.ddns_button = QPushButton("DDNS管理")
-	    self.ping_button = QPushButton("Ping工具")
-	    self.dynamic_tunnel_button = QPushButton("动态节点隧道")
-	    self.ip_tools_button = QPushButton("IP工具")
-	
-	    self.user_info_button.clicked.connect(lambda: self.switch_tab("user_info"))
-	    self.tunnel_button.clicked.connect(lambda: self.switch_tab("tunnel"))
-	    self.frpc_output_button.clicked.connect(lambda: self.switch_tab("frpc_output"))
-	    self.domain_button.clicked.connect(lambda: self.switch_tab("domain"))
-	    self.node_button.clicked.connect(lambda: self.switch_tab("node"))
-	    self.ddns_button.clicked.connect(lambda: self.switch_tab("ddns"))
-	    self.ping_button.clicked.connect(lambda: self.switch_tab("ping"))
-	    self.dynamic_tunnel_button.clicked.connect(lambda: self.switch_tab("dynamic_tunnel"))
-	    self.ip_tools_button.clicked.connect(lambda: self.switch_tab("ip_tools"))
-	
-	    menu_layout.addWidget(self.user_info_button)
-	    menu_layout.addWidget(self.tunnel_button)
-	    menu_layout.addWidget(self.frpc_output_button)
-	    menu_layout.addWidget(self.domain_button)
-	    menu_layout.addWidget(self.node_button)
-	    menu_layout.addWidget(self.ddns_button)
-	    menu_layout.addWidget(self.ping_button)
-	    menu_layout.addWidget(self.dynamic_tunnel_button)
-	    menu_layout.addWidget(self.ip_tools_button)
-	    menu_layout.addStretch(1)
-	
-	    content_layout.addWidget(menu_widget)
-	
-	    self.content_stack = QStackedWidget()
-	    content_layout.addWidget(self.content_stack, 1)
-	
-	    background_layout.addLayout(content_layout)
-	
-	    background_layout.addWidget(self.log_display)
-	
-	    author_info = QLabel("本程序基于ChmlFrp api开发 作者: boring_student")
-	    author_info.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom)
-	    author_info.setStyleSheet("font-size: 7pt; color: #888888; background: transparent; padding: 2px;")
-	    author_info.setProperty("author_info", True)
-	    author_info.setFixedHeight(18)
-	
-	    bottom_layout = QHBoxLayout()
-	    bottom_layout.addStretch(1)
-	    bottom_layout.addWidget(author_info)
-	    bottom_layout.setContentsMargins(0, 0, 5, 2)
-	    background_layout.addLayout(bottom_layout)
-	
-	    self.setup_user_info_page()
-	    self.setup_tunnel_page()
-	    self.setup_frpc_output_page()  # Correctly setup frpc_output_page here
-	    self.setup_domain_page()  # Correctly setup domain_page here
-	    self.setup_node_page()
-	    self.setup_ddns_page()
-	    self.setup_ping_page()
-	    self.setup_dynamic_tunnel_page()
-	    self.setup_ip_tools_page()
-	
-	    self.switch_tab("user_info")
-	
-	    self.tab_buttons = [
-	        self.user_info_button,
-	        self.tunnel_button,
-	        self.frpc_output_button,
-	        self.domain_button,
-	        self.node_button,
-	        self.ddns_button,
-	        self.ping_button,
-	        self.dynamic_tunnel_button,
-	        self.ip_tools_button
-	    ]
-	
-	    # Initialize button_layout here before using it
-	    button_layout = QHBoxLayout()
-	
-	    # Define tunnel_widget before using it
-	    tunnel_widget = QWidget()
-	    layout = QVBoxLayout(tunnel_widget)
-	    self.content_stack.addWidget(tunnel_widget)
-	
-	    self.view_button = QPushButton("查看输出")
-	    self.view_button.clicked.connect(self.show_tunnel_output)
-	    self.view_button.setEnabled(False)
+        self.setWindowTitle('ChmlFrp UI程序')
+        self.setGeometry(100, 100, 800, 600)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
+        central_widget = QWidget(self)
+        self.setCentralWidget(central_widget)
 
-    def setup_frpc_output_page(self):
-	    frpc_output_widget = QWidget()
-	    layout = QVBoxLayout(frpc_output_widget)
-	    
-	    self.tunnel_dropdown = QComboBox()
-	    self.tunnel_dropdown.addItem("选择隧道")
-	    self.tunnel_dropdown.currentIndexChanged.connect(self.update_frpc_output)
-	    layout.addWidget(self.tunnel_dropdown)
-	    
-	    self.frpc_output_text = QTextEdit()
-	    self.frpc_output_text.setReadOnly(True)
-	    layout.addWidget(self.frpc_output_text)
-	    
-	    self.content_stack.addWidget(frpc_output_widget)
-	    
-	    # Populate the dropdown with all available tunnels
-	    self.update_tunnel_dropdown()
-	    
-    def update_frpc_output(self):
-	    selected_tunnel = self.tunnel_dropdown.currentText()
-	    if selected_tunnel != "选择隧道":
-	        self.frpc_output_text.clear()
-	        output_text = "".join(self.tunnel_outputs.get(selected_tunnel, []))
-	        self.frpc_output_text.setPlainText(output_text)
-	
-	        # Ensure node status updates correctly
-	        self.update_node_status(selected_tunnel)
-	
+        main_layout = QVBoxLayout(central_widget)
+
+        self.background_frame = QFrame(self)
+        self.background_frame.setObjectName("background")
+        background_layout = QVBoxLayout(self.background_frame)
+        main_layout.addWidget(self.background_frame)
+
+        title_bar = QWidget()
+        title_layout = QHBoxLayout(title_bar)
+        title_label = QLabel("ChmlFrp UI程序")
+        title_layout.addWidget(title_label)
+        title_layout.addStretch(1)
+        min_button = QPushButton("－")
+        min_button.clicked.connect(self.showMinimized)
+        close_button = QPushButton("×")
+        close_button.clicked.connect(self.close)
+        theme_button = QPushButton("切换主题")
+        theme_button.clicked.connect(self.toggle_theme)
+
+        title_layout.addWidget(theme_button)
+        title_layout.addWidget(min_button)
+        title_layout.addWidget(close_button)
+        background_layout.addWidget(title_bar)
+
+        content_layout = QHBoxLayout()
+
+        menu_widget = QWidget()
+        menu_layout = QVBoxLayout(menu_widget)
+
+        self.user_info_button = QPushButton("用户信息")
+        self.tunnel_button = QPushButton("隧道管理")
+        self.domain_button = QPushButton("域名管理")
+        self.node_button = QPushButton("节点状态")
+        self.ddns_button = QPushButton("DDNS管理")
+        self.ping_button = QPushButton("Ping工具")
+        self.dynamic_tunnel_button = QPushButton("动态节点隧道")
+        self.ip_tools_button = QPushButton("IP工具")
+
+        self.user_info_button.clicked.connect(lambda: self.switch_tab("user_info"))
+        self.tunnel_button.clicked.connect(lambda: self.switch_tab("tunnel"))
+        self.domain_button.clicked.connect(lambda: self.switch_tab("domain"))
+        self.node_button.clicked.connect(lambda: self.switch_tab("node"))
+        self.ddns_button.clicked.connect(lambda: self.switch_tab("ddns"))
+        self.ping_button.clicked.connect(lambda: self.switch_tab("ping"))
+        self.dynamic_tunnel_button.clicked.connect(lambda: self.switch_tab("dynamic_tunnel"))
+        self.ip_tools_button.clicked.connect(lambda: self.switch_tab("ip_tools"))
+
+        menu_layout.addWidget(self.user_info_button)
+        menu_layout.addWidget(self.tunnel_button)
+        menu_layout.addWidget(self.domain_button)
+        menu_layout.addWidget(self.node_button)
+        menu_layout.addWidget(self.ddns_button)
+        menu_layout.addWidget(self.ping_button)
+        menu_layout.addWidget(self.dynamic_tunnel_button)
+        menu_layout.addWidget(self.ip_tools_button)
+        menu_layout.addStretch(1)
+
+        content_layout.addWidget(menu_widget)
+
+        self.content_stack = QStackedWidget()
+        content_layout.addWidget(self.content_stack, 1)
+
+        background_layout.addLayout(content_layout)
+
+        background_layout.addWidget(self.log_display)
+
+        author_info = QLabel("本程序基于ChmlFrp api开发 作者: boring_student")
+        author_info.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom)
+        author_info.setStyleSheet("font-size: 7pt; color: #888888; background: transparent; padding: 2px;")
+        author_info.setProperty("author_info", True)
+        author_info.setFixedHeight(18)
+
+        bottom_layout = QHBoxLayout()
+        bottom_layout.addStretch(1)
+        bottom_layout.addWidget(author_info)
+        bottom_layout.setContentsMargins(0, 0, 5, 2)
+        background_layout.addLayout(bottom_layout)
+
+        self.setup_user_info_page()
+        self.setup_tunnel_page()
+        self.setup_domain_page()
+        self.setup_node_page()
+        self.setup_ddns_page()
+        self.setup_ping_page()
+        self.setup_dynamic_tunnel_page()
+        self.setup_ip_tools_page()
+
+        self.switch_tab("user_info")
+
+        self.tab_buttons = [
+            self.user_info_button,
+            self.tunnel_button,
+            self.domain_button,
+            self.node_button,
+            self.ddns_button,
+            self.ping_button,
+            self.dynamic_tunnel_button,
+            self.ip_tools_button
+        ]
+
     def setup_system_tray(self):
         icon_path = get_absolute_path("favicon.ico")
         self.tray_icon = QSystemTrayIcon(self)
@@ -1975,33 +1910,19 @@ class MainWindow(QMainWindow):
         self.content_stack.addWidget(user_info_widget)
 
     def on_tunnel_clicked(self, tunnel_info, is_selected):
-	    if is_selected:
-	        if tunnel_info not in self.selected_tunnels:
-	            self.selected_tunnels.append(tunnel_info)
-	    else:
-	        self.selected_tunnels = [t for t in self.selected_tunnels if t['id'] != tunnel_info['id']]
-	    self.update_tunnel_buttons()
-	
-	    # 更新 frpc 输出页面中的下拉列表
-	    self.update_tunnel_dropdown()
+        if is_selected:
+            if tunnel_info not in self.selected_tunnels:
+                self.selected_tunnels.append(tunnel_info)
+        else:
+            self.selected_tunnels = [t for t in self.selected_tunnels if t['id'] != tunnel_info['id']]
 
-    def update_tunnel_dropdown(self):
-	    self.tunnel_dropdown.clear()
-	    self.tunnel_dropdown.addItem("选择隧道")
-	
-	    # Fetch all user tunnels
-	    if self.token:
-	        tunnels = get_user_tunnels(self.token)
-	        if tunnels:
-	            for tunnel in tunnels:
-	                self.tunnel_dropdown.addItem(tunnel['name'])
+        self.update_tunnel_buttons()
 
     def update_tunnel_buttons(self):
         selected_count = len(self.selected_tunnels)
         self.edit_tunnel_button.setEnabled(selected_count == 1)
         self.delete_tunnel_button.setEnabled(selected_count > 0)
         self.batch_edit_button.setEnabled(selected_count > 0)
-        self.view_button.setEnabled(selected_count == 1)
 
     def get_selected_tunnel_count(self):
         count = 0
@@ -2025,85 +1946,84 @@ class MainWindow(QMainWindow):
         self.delete_domain_button.setEnabled(True)
 
     def setup_tunnel_page(self):
-	    tunnel_widget = QWidget()
-	    layout = QVBoxLayout(tunnel_widget)
-	
-	    # 添加刷新按钮
-	    refresh_button = QPushButton("刷新隧道列表")
-	    refresh_button.clicked.connect(self.load_tunnels)
-	    layout.addWidget(refresh_button)
-	
-	    self.tunnel_container = QWidget()
-	    self.tunnel_container.setLayout(QGridLayout())
-	
-	    scroll_area = QScrollArea()
-	    scroll_area.setWidgetResizable(True)
-	    scroll_area.setWidget(self.tunnel_container)
-	
-	    layout.addWidget(scroll_area)
-	
-	    button_layout = QHBoxLayout()
-	    add_tunnel_button = QPushButton("添加隧道")
-	    add_tunnel_button.clicked.connect(self.add_tunnel)
-	    self.edit_tunnel_button = QPushButton("编辑隧道")
-	    self.edit_tunnel_button.clicked.connect(self.edit_tunnel)
-	    self.edit_tunnel_button.setEnabled(False)
-	    self.delete_tunnel_button = QPushButton("删除隧道")
-	    self.delete_tunnel_button.clicked.connect(self.delete_tunnel)
-	    self.delete_tunnel_button.setEnabled(False)
-	    self.batch_edit_button = QPushButton("批量编辑")
-	    self.batch_edit_button.clicked.connect(self.batch_edit_tunnels)
-	    self.batch_edit_button.setEnabled(False)
-	
-	    button_layout.addWidget(add_tunnel_button)
-	    button_layout.addWidget(self.edit_tunnel_button)
-	    button_layout.addWidget(self.delete_tunnel_button)
-	    button_layout.addWidget(self.batch_edit_button)
-	
-	    layout.addLayout(button_layout)
-	
-	    self.content_stack.addWidget(tunnel_widget)
-	
-	    self.tunnel_output_display = QTextEdit()
-	    self.tunnel_output_display.setReadOnly(True)
-	    self.content_stack.addWidget(self.tunnel_output_display)
+        tunnel_widget = QWidget()
+        layout = QVBoxLayout(tunnel_widget)
+
+        # 添加刷新按钮
+        refresh_button = QPushButton("刷新隧道列表")
+        refresh_button.clicked.connect(self.load_tunnels)
+        layout.addWidget(refresh_button)
+
+        refresh_button = QPushButton("刷新隧道列表")
+        refresh_button.setObjectName("refreshButton")
+
+        self.tunnel_container = QWidget()
+        self.tunnel_container.setLayout(QGridLayout())
+
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setWidget(self.tunnel_container)
+
+        layout.addWidget(scroll_area)
+
+        button_layout = QHBoxLayout()
+        add_tunnel_button = QPushButton("添加隧道")
+        add_tunnel_button.clicked.connect(self.add_tunnel)
+        self.edit_tunnel_button = QPushButton("编辑隧道")
+        self.edit_tunnel_button.clicked.connect(self.edit_tunnel)
+        self.edit_tunnel_button.setEnabled(False)
+        self.delete_tunnel_button = QPushButton("删除隧道")
+        self.delete_tunnel_button.clicked.connect(self.delete_tunnel)
+        self.delete_tunnel_button.setEnabled(False)
+        self.batch_edit_button = QPushButton("批量编辑")
+        self.batch_edit_button.clicked.connect(self.batch_edit_tunnels)
+        self.batch_edit_button.setEnabled(False)
+        button_layout.addWidget(add_tunnel_button)
+        button_layout.addWidget(self.edit_tunnel_button)
+        button_layout.addWidget(self.delete_tunnel_button)
+        button_layout.addWidget(self.batch_edit_button)
+
+        layout.addLayout(button_layout)
+
+        self.content_stack.addWidget(tunnel_widget)
 
     def setup_domain_page(self):
-	    domain_widget = QWidget()
-	    layout = QVBoxLayout(domain_widget)
-	
-	    # 添加刷新按钮
-	    refresh_button = QPushButton("刷新域名列表")
-	    refresh_button.clicked.connect(self.load_domains)
-	    layout.addWidget(refresh_button)
-	
-	    # 域容器
-	    self.domain_container = QWidget()
-	    self.domain_container.setLayout(QGridLayout())
-	
-	    scroll_area = QScrollArea()
-	    scroll_area.setWidgetResizable(True)
-	    scroll_area.setWidget(self.domain_container)
-	
-	    layout.addWidget(scroll_area)
-	
-	    # Buttons for domain actions
-	    button_layout = QHBoxLayout()
-	    add_domain_button = QPushButton("添加域名")
-	    add_domain_button.clicked.connect(self.add_domain)
-	    self.edit_domain_button = QPushButton("编辑域名")
-	    self.edit_domain_button.clicked.connect(self.edit_domain)
-	    self.edit_domain_button.setEnabled(False)
-	    self.delete_domain_button = QPushButton("删除域名")
-	    self.delete_domain_button.clicked.connect(self.delete_domain)
-	    self.delete_domain_button.setEnabled(False)
-	    button_layout.addWidget(add_domain_button)
-	    button_layout.addWidget(self.edit_domain_button)
-	    button_layout.addWidget(self.delete_domain_button)
-	
-	    layout.addLayout(button_layout)
-	
-	    self.content_stack.addWidget(domain_widget)
+        domain_widget = QWidget()
+        layout = QVBoxLayout(domain_widget)
+
+        # 添加刷新按钮
+        refresh_button = QPushButton("刷新域名列表")
+        refresh_button.clicked.connect(self.load_domains)
+        layout.addWidget(refresh_button)
+
+        refresh_button = QPushButton("刷新域名列表")
+        refresh_button.setObjectName("refreshButton")
+
+        self.domain_container = QWidget()
+        self.domain_container.setLayout(QGridLayout())
+
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setWidget(self.domain_container)
+
+        layout.addWidget(scroll_area)
+
+        button_layout = QHBoxLayout()
+        add_domain_button = QPushButton("添加域名")
+        add_domain_button.clicked.connect(self.add_domain)
+        self.edit_domain_button = QPushButton("编辑域名")
+        self.edit_domain_button.clicked.connect(self.edit_domain)
+        self.edit_domain_button.setEnabled(False)
+        self.delete_domain_button = QPushButton("删除域名")
+        self.delete_domain_button.clicked.connect(self.delete_domain)
+        self.delete_domain_button.setEnabled(False)
+        button_layout.addWidget(add_domain_button)
+        button_layout.addWidget(self.edit_domain_button)
+        button_layout.addWidget(self.delete_domain_button)
+
+        layout.addLayout(button_layout)
+
+        self.content_stack.addWidget(domain_widget)
 
     def setup_node_page(self):
         node_widget = QWidget()
@@ -2393,52 +2313,6 @@ class MainWindow(QMainWindow):
                     item.widget().is_selected = False
                     item.widget().setSelected(False)
 
-    def show_tunnel_output(self):
-	    if not self.selected_tunnels:
-	        QMessageBox.warning(self, "警告", "请先选择一个或多个隧道")
-	        return
-	
-	    self.tunnel_output_display.clear()
-	    for tunnel_info in self.selected_tunnels:
-	        tunnel_name = tunnel_info['name']
-	        if tunnel_name in self.tunnel_outputs:
-	            self.tunnel_output_display.append(f"隧道 {tunnel_name} 输出:\n")
-	            output_text = "".join(self.tunnel_outputs[tunnel_name])
-	
-	            # 替换token
-	            if self.token:
-	                output_text = output_text.replace(self.token, '********你的token********')
-	
-	            # 替换IP地址
-	            ip_pattern = re.compile(r'(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})')
-	            output_text = ip_pattern.sub(r'\1.***.***.\4', output_text)
-	
-	            # 渲染日志级别
-	            for line in output_text.splitlines():
-	                if "[E]" in line or "[e]" in line or "error" in line.lower():
-	                    self.append_colored_text(line, QColor(255, 0, 0))  # 红色
-	                elif "[W]" in line or "[w]" in line or "warning" in line.lower():
-	                    self.append_colored_text(line, QColor(255, 165, 0))  # 橙色
-	                elif "[I]" in line or "[i]" in line or "info" in line.lower():
-	                    self.append_colored_text(line, QColor(0, 255, 0))  # 绿色
-	                else:
-	                    self.tunnel_output_display.append(line)
-	            self.tunnel_output_display.append("\n" + "=" * 50 + "\n")
-	    self.content_stack.setCurrentWidget(self.tunnel_output_display)
-
-
-    def append_colored_text(self, text, color):
-        """在文本框中添加带颜色的文本"""
-        cursor = self.tunnel_output_display.textCursor()
-        cursor.movePosition(QTextCursor.MoveOperation.End)
-        format = QTextCharFormat()
-        format.setForeground(color)
-        cursor.setCharFormat(format)
-        cursor.insertText(text + "\n")
-        self.tunnel_output_display.setTextCursor(cursor)
-        self.tunnel_output_display.ensureCursorVisible()
-	    
-
     def load_tunnels(self):
         try:
             if not self.token:
@@ -2448,10 +2322,10 @@ class MainWindow(QMainWindow):
             if tunnels is None:
                 raise ValueError("获取隧道列表失败")
 
-            # Save currently selected tunnel IDs
+            # 保存当前选中的隧道ID
             selected_ids = [t['id'] for t in self.selected_tunnels]
 
-            # Clear existing tunnel cards
+            # 清除现有的隧道卡片
             while self.tunnel_container.layout().count():
                 item = self.tunnel_container.layout().takeAt(0)
                 if item.widget():
@@ -2463,9 +2337,8 @@ class MainWindow(QMainWindow):
                     tunnel_widget = TunnelCard(tunnel, self.token)
                     tunnel_widget.clicked.connect(self.on_tunnel_clicked)
                     tunnel_widget.start_stop_signal.connect(self.start_stop_tunnel)
-                    tunnel_widget.show_output_signal.connect(self.show_tunnel_output)  # Connect signal
 
-                    # Restore previous selection state
+                    # 恢复之前的选中状态
                     if tunnel['id'] in selected_ids:
                         tunnel_widget.is_selected = True
                         tunnel_widget.setSelected(True)
@@ -2473,7 +2346,7 @@ class MainWindow(QMainWindow):
                     self.tunnel_container.layout().addWidget(tunnel_widget, row, col)
 
                     col += 1
-                    if col == 2:  # Two cards per row
+                    if col == 2:  # 每行两个卡片
                         col = 0
                         row += 1
 
@@ -2482,19 +2355,9 @@ class MainWindow(QMainWindow):
                     self.logger.error(traceback.format_exc())
                     continue
 
-            # Update selected tunnel list
+            # 更新选中的隧道列表
             self.selected_tunnels = [t for t in tunnels if t['id'] in selected_ids]
             self.update_tunnel_buttons()
-
-        except Exception as e:
-            self.logger.error(f"加载隧道列表时发生错误: {str(e)}")
-            self.logger.error(traceback.format_exc())
-            self.show_error_message(f"加载隧道列表时发生错误: {str(e)}")
-
-        except Exception as e:
-            self.logger.error(f"加载隧道列表时发生错误: {str(e)}")
-            self.logger.error(traceback.format_exc())
-            self.show_error_message(f"加载隧道列表时发生错误: {str(e)}")
 
         except Exception as e:
             self.logger.error(f"加载隧道列表时发生错误: {str(e)}")
@@ -2665,9 +2528,6 @@ class MainWindow(QMainWindow):
             self.logger.info(f"frpc已启动，使用节点: {tunnel_info['node']}")
             self.tunnel_processes[tunnel_info['name']] = process
 
-            # 读取并保存命令行输出
-            self.read_process_output(tunnel_info['name'], process)
-
             # 更新UI状态
             self.update_tunnel_card_status(tunnel_info['name'], True)
 
@@ -2676,21 +2536,6 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.logger.exception(f"启动隧道时发生错误: {str(e)}")
             QMessageBox.warning(self, "错误", f"启动隧道失败: {str(e)}")
-
-    def read_process_output(self, tunnel_name, process):
-	    def read_output():
-	        while True:
-	            output = process.stdout.readline()
-	            if output == b"" and process.poll() is not None:
-	                break
-	            if output:
-	                output_text = output.decode("utf-8")
-	                if tunnel_name not in self.tunnel_outputs:
-	                    self.tunnel_outputs[tunnel_name] = []  # Initialize if not exist
-	                self.tunnel_outputs[tunnel_name].append(output_text)
-	                if self.content_stack.currentWidget() == self.tunnel_output_display:
-	                    self.tunnel_output_display.append(output_text)
-	    threading.Thread(target=read_output, daemon=True).start()
 
     def update_tunnel_card_status(self, tunnel_name, is_running):
         for i in range(self.tunnel_container.layout().count()):
@@ -2789,24 +2634,11 @@ class MainWindow(QMainWindow):
 	    """添加隧道"""
 	    dialog = QDialog(self)
 	    dialog.setWindowTitle("添加隧道")
-	    dialog.setGeometry(100, 100, 800, 400)  # Set the window size
+	    layout = QFormLayout(dialog)
 	
-	    # Center the dialog relative to the main window
-	    dialog.setGeometry(
-	        self.geometry().center().x() - 400,
-	        self.geometry().center().y() - 200,
-	        800,
-	        400
-	    )
-	
-	    main_layout = QHBoxLayout(dialog)
-	    form_layout = QFormLayout()
-	    main_layout.addLayout(form_layout)
-	
-	    # Left form layout
 	    name_input = QLineEdit()
 	    name_input.setPlaceholderText("如果留空则随机")
-	    local_ip_input = QLineEdit("127.0.0.1")  # Default value set to 127.0.0.1
+	    local_ip_input = QLineEdit("127.0.0.1")  # 默认值设置为127.0.0.1
 	    local_port_input = QLineEdit()
 	    remote_port_input = QLineEdit()
 	    banddomain_input = QLineEdit()
@@ -2817,7 +2649,7 @@ class MainWindow(QMainWindow):
 	    extra_params_input = QLineEdit()
 	    extra_params_input.setPlaceholderText("额外参数（可选）")
 	
-	    # Get the node list
+	    # 获取节点列表
 	    nodes = get_nodes()
 	    for node in nodes:
 	        node_combo.addItem(node['name'])
@@ -2827,91 +2659,68 @@ class MainWindow(QMainWindow):
 	    remote_port_label = QLabel("远程端口:")
 	    banddomain_label = QLabel("绑定域名:")
 	
-	    form_layout.addRow("隧道名称:", name_input)
-	    form_layout.addRow("本地IP/主机名:", local_ip_input)
-	    form_layout.addRow("本地端口:", local_port_input)
-	    form_layout.addRow(remote_port_label, remote_port_input)
-	    form_layout.addRow(banddomain_label, banddomain_input)
-	    form_layout.addRow("节点:", node_combo)
-	    form_layout.addRow("类型:", type_combo)
-	    form_layout.addRow(encryption_checkbox)
-	    form_layout.addRow(compression_checkbox)
-	    form_layout.addRow("额外参数:", extra_params_input)
+	    layout.addRow("隧道名称:", name_input)
+	    layout.addRow("本地IP/主机名:", local_ip_input)
+	    layout.addRow("本地端口:", local_port_input)
+	    layout.addRow(remote_port_label, remote_port_input)
+	    layout.addRow(banddomain_label, banddomain_input)
+	    layout.addRow("节点:", node_combo)
+	    layout.addRow("类型:", type_combo)
+	    layout.addRow(encryption_checkbox)
+	    layout.addRow(compression_checkbox)
+	    layout.addRow("额外参数:", extra_params_input)
 	
-	    # Initialize control states
+	    # 初始化控件状态
 	    banddomain_label.hide()
 	    banddomain_input.hide()
 	
 	    def on_type_changed():
 	        porttype = type_combo.currentText()
+	
 	        if porttype in ["tcp", "udp"]:
-	            # Show remote port, hide banddomain
+	            # 显示远程端口，隐藏绑定域名
 	            remote_port_label.show()
 	            remote_port_input.show()
 	            banddomain_label.hide()
 	            banddomain_input.hide()
 	        else:
-	            # Show banddomain, hide remote port
+	            # 显示绑定域名，隐藏远程端口
 	            remote_port_label.hide()
 	            remote_port_input.hide()
 	            banddomain_label.show()
 	            banddomain_input.show()
-	        dialog.adjustSize()  # Adjust the window size
+	
+	        dialog.adjustSize()  # 调整窗口大小
 	
 	    type_combo.currentTextChanged.connect(on_type_changed)
-	    on_type_changed()  # Call once at initialization
+	    on_type_changed()  # 初始化时调用一次
 	
 	    buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
 	    buttons.accepted.connect(dialog.accept)
 	    buttons.rejected.connect(dialog.reject)
-	    form_layout.addRow(buttons)
-	
-	    # Right node status display
-	    node_status_layout = QVBoxLayout()
-	    node_status_label = QLabel("节点状态")
-	    node_status_label.setStyleSheet("font-size: 16px; font-weight: bold; margin-bottom: 10px;")
-	    node_status_layout.addWidget(node_status_label)
-	
-	    node_status_text = QTextEdit()
-	    node_status_text.setReadOnly(True)
-	    node_status_layout.addWidget(node_status_text)
-	    main_layout.addLayout(node_status_layout)
-	
-	    def update_node_status(index):
-	        node_info = nodes[index]
-	        node_status = f"""
-	        名称: {node_info.get('name', 'N/A')}
-	        区域: {node_info.get('area', 'N/A')}
-	        节点组: {node_info.get('nodegroup', 'N/A')}
-	        大陆节点: {node_info.get('china', 'N/A')}
-	        搭建Web: {node_info.get('web', 'N/A')}
-	        搭建UDP: {node_info.get('udp', 'N/A')}
-	        防御: {node_info.get('fangyu', 'N/A')}
-	        介绍: {node_info.get('notes', 'N/A')}
-	        """
-	        node_status_text.setPlainText(node_status)
-	
-	    node_combo.currentIndexChanged.connect(update_node_status)
-	    update_node_status(0)  # Display the status of the first node at initialization
+	    layout.addRow(buttons)
 	
 	    if dialog.exec() == QDialog.DialogCode.Accepted:
 	        try:
 	            url = "http://cf-v2.uapis.cn/create_tunnel"
+	
 	            tunnel_name = name_input.text()
 	            if not tunnel_name:
 	                tunnel_name = ''.join(random.choices('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=8))
+	
 	            porttype = type_combo.currentText()
 	            payload = {
 	                "token": self.token,
 	                "tunnelname": tunnel_name,
 	                "node": node_combo.currentText(),
-	                "localip": local_ip_input.text(),  # Directly use the entered local IP
+	                "localip": local_ip_input.text(),  # 直接使用输入的本地IP
 	                "porttype": porttype,
 	                "localport": int(local_port_input.text()),
 	                "encryption": encryption_checkbox.isChecked(),
 	                "compression": compression_checkbox.isChecked(),
 	                "extraparams": extra_params_input.text() or ""
 	            }
+	
 	            if porttype in ["tcp", "udp"]:
 	                if not validate_port(remote_port_input.text()):
 	                    raise ValueError("远程端口必须是1-65535之间的整数")
@@ -2920,6 +2729,7 @@ class MainWindow(QMainWindow):
 	                if not banddomain_input.text():
 	                    raise ValueError("绑定域名是必须的")
 	                payload["banddomain"] = banddomain_input.text()
+	
 	            headers = {
 	                'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)',
 	                'Content-Type': 'application/json'
@@ -2927,7 +2737,7 @@ class MainWindow(QMainWindow):
 	            response = requests.post(url, headers=headers, json=payload)
 	            if response.status_code == 200:
 	                self.logger.info("隧道添加成功")
-	                self.load_tunnels()  # Refresh the tunnel list
+	                self.load_tunnels()  # 刷新隧道列表
 	            else:
 	                self.logger.error(f"添加隧道失败: {response.text}")
 	        except ValueError as ve:
@@ -4129,28 +3939,27 @@ class MainWindow(QMainWindow):
                 self.logger.error(f"加载用户域名时发生错误: {str(e)}")
 
     def switch_tab(self, tab_name):
-	    if tab_name == "user_info":
-	        self.content_stack.setCurrentIndex(0)
-	    elif tab_name == "tunnel":
-	        self.content_stack.setCurrentIndex(1)
-	    elif tab_name == "domain":
-	        self.content_stack.setCurrentIndex(2)
-	    elif tab_name == "frpc_output":  # 新增的条件
-	        self.content_stack.setCurrentIndex(3)
-	    elif tab_name == "node":
-	        self.content_stack.setCurrentIndex(4)
-	    elif tab_name == "ddns":
-	        self.content_stack.setCurrentIndex(5)
-	    elif tab_name == "ping":
-	        self.content_stack.setCurrentIndex(6)
-	    elif tab_name == "dynamic_tunnel":
-	        self.content_stack.setCurrentIndex(7)
-	    elif tab_name == "ip_tools":
-	        self.content_stack.setCurrentIndex(8)
-	
-	    for button in self.tab_buttons:
-	        if button.text().lower().replace(" ", "_") == tab_name:
-	            self.update_button_styles(button)
+        if tab_name == "user_info":
+            self.content_stack.setCurrentIndex(0)
+        elif tab_name == "tunnel":
+            self.content_stack.setCurrentIndex(1)
+        elif tab_name == "domain":
+            self.content_stack.setCurrentIndex(2)
+        elif tab_name == "node":
+            self.content_stack.setCurrentIndex(3)
+        elif tab_name == "ddns":
+            self.content_stack.setCurrentIndex(4)
+        elif tab_name == "ping":
+            self.content_stack.setCurrentIndex(5)
+        elif tab_name == "dynamic_tunnel":
+            self.content_stack.setCurrentIndex(6)
+        elif tab_name == "ip_tools":
+            self.content_stack.setCurrentIndex(7)
+
+        # 更新按钮样式
+        for button in self.tab_buttons:
+            if button.text().lower().replace(" ", "_") == tab_name:
+                self.update_button_styles(button)
 
 
     def setup_dynamic_tunnel_page(self):
