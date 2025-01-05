@@ -14,7 +14,6 @@ import json
 from concurrent.futures import *
 import ipaddress
 import re
-from pyqtgraph import *
 
 import requests 
 from PyQt6.QtCore import *
@@ -1953,7 +1952,6 @@ class MainWindow(QMainWindow):
 	    self.tunnel_tab_widget = QTabWidget()
 	    self.tunnel_tab_widget.addTab(self.create_tunnel_list_tab(), "隧道列表")
 	    self.tunnel_tab_widget.addTab(self.create_frpc_output_tab(), "frpc命令行输出")
-	    self.tunnel_tab_widget.addTab(self.create_traffic_monitor_tab(), "流量监控")
 	
 	    layout.addWidget(self.tunnel_tab_widget)
 	    self.content_stack.addWidget(tunnel_widget)
@@ -2010,18 +2008,6 @@ class MainWindow(QMainWindow):
 	
 	    return tab
 
-    def create_traffic_monitor_tab(self):
-	    tab = QWidget()
-	    layout = QVBoxLayout(tab)
-	
-	    self.traffic_monitor_combo = QComboBox()
-	    self.traffic_monitor_combo.currentTextChanged.connect(self.load_traffic_monitor)
-	    layout.addWidget(self.traffic_monitor_combo)
-	
-	    self.traffic_monitor_plot = PlotWidget()
-	    layout.addWidget(self.traffic_monitor_plot)
-	
-	    return tab
 
     # 加载frpc命令行输出
     def load_frpc_output(self, tunnel_name):
