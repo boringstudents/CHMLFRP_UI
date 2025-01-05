@@ -1946,46 +1946,129 @@ class MainWindow(QMainWindow):
         self.delete_domain_button.setEnabled(True)
 
     def setup_tunnel_page(self):
-        tunnel_widget = QWidget()
-        layout = QVBoxLayout(tunnel_widget)
+	    tunnel_widget = QWidget()
+	    layout = QVBoxLayout(tunnel_widget)
+	
+	    self.tunnel_tab_widget = QTabWidget()
+	    self.tunnel_tab_widget.addTab(self.create_tunnel_list_tab(), "隧道列表")
+	    self.tunnel_tab_widget.addTab(self.create_frpc_output_tab(), "frpc命令行输出")
+	    self.tunnel_tab_widget.addTab(self.create_traffic_monitor_tab(), "流量监控")
+	
+	    layout.addWidget(self.tunnel_tab_widget)
+	    self.content_stack.addWidget(tunnel_widget)
 
-        # 添加刷新按钮
-        refresh_button = QPushButton("刷新隧道列表")
-        refresh_button.clicked.connect(self.load_tunnels)
-        layout.addWidget(refresh_button)
+    def create_tunnel_list_tab(self):
+	    tab = QWidget()
+	    layout = QVBoxLayout(tab)
+	
+	    # 添加刷新按钮
+	    refresh_button = QPushButton("刷新隧道列表")
+	    refresh_button.clicked.connect(self.load_tunnels)
+	    layout.addWidget(refresh_button)
+	
+	    self.tunnel_container = QWidget()
+	    self.tunnel_container.setLayout(QGridLayout())
+	
+	    scroll_area = QScrollArea()
+	    scroll_area.setWidgetResizable(True)
+	    scroll_area.setWidget(self.tunnel_container)
+	
+	    layout.addWidget(scroll_area)
+	
+	    button_layout = QHBoxLayout()
+	    add_tunnel_button = QPushButton("添加隧道")
+	    add_tunnel_button.clicked.connect(self.add_tunnel)
+	    self.edit_tunnel_button = QPushButton("编辑隧道")
+	    self.edit_tunnel_button.clicked.connect(self.edit_tunnel)
+	    self.edit_tunnel_button.setEnabled(False)
+	    self.delete_tunnel_button = QPushButton("删除隧道")
+	    self.delete_tunnel_button.clicked.connect(self.delete_tunnel)
+	    self.delete_tunnel_button.setEnabled(False)
+	    self.batch_edit_button = QPushButton("批量编辑")
+	    self.batch_edit_button.clicked.connect(self.batch_edit_tunnels)
+	    self.batch_edit_button.setEnabled(False)
+	    button_layout.addWidget(add_tunnel_button)
+	    button_layout.addWidget(self.edit_tunnel_button)
+	    button_layout.addWidget(self.delete_tunnel_button)
+	    button_layout.addWidget(self.batch_edit_button)
+	
+	    layout.addLayout(button_layout)
+	    return tab
 
-        refresh_button = QPushButton("刷新隧道列表")
-        refresh_button.setObjectName("refreshButton")
+    def create_frpc_output_tab(self):
+	    tab = QWidget()
+	    layout = QVBoxLayout(tab)
+	
+	    self.frpc_output_combo = QComboBox()
+	    self.frpc_output_combo.currentTextChanged.connect(self.load_frpc_output)
+	    layout.addWidget(self.frpc_output_combo)
+	
+	    self.frpc_output_display = QTextEdit()
+	    self.frpc_output_display.setReadOnly(True)
+	    layout.addWidget(self.frpc_output_display)
+	
+	    return tab
 
-        self.tunnel_container = QWidget()
-        self.tunnel_container.setLayout(QGridLayout())
+    def create_traffic_monitor_tab(self):
+	    tab = QWidget()
+	    layout = QVBoxLayout(tab)
+	
+	    self.traffic_monitor_combo = QComboBox()
+	    self.traffic_monitor_combo.currentTextChanged.connect(self.load_traffic_monitor)
+	    layout.addWidget(self.traffic_monitor_combo)
+	
+	    self.traffic_monitor_plot = PlotWidget()
+	    layout.addWidget(self.traffic_monitor_plot)
+	
+	    return tab
 
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setWidget(self.tunnel_container)
+    # 加载frpc命令行输出
+    def load_frpc_output(self, tunnel_name):
+	    if tunnel_name in self.tunnel_processes:
+	        process = self.tunnel_processes[tunnel_name]
+	        output_lines = process.stdout.readlines()
+	        self.frpc_output_display.clear()
+	        for line in output_lines:
+	            self.frpc_output_display.append(self.process_frpc_output(line.decode('utf-8')))
 
-        layout.addWidget(scroll_area)
+    def process_frpc_output(self, output):
+	    # 替换Token
+	    output = output.replace(self.token, '*******你的token********')
+	
+	    # 隐藏IP地址
+	    output = re.sub(r'\d+\.\d+\.\d+\.\d+', lambda x: x.group(0).split('.')[0] + '.***.***.' + x.group(0).split('.')[-1], output)
+	
+	    # 渲染不同类型信息
+	    if '[I]' in output or '[i]' in output:
+	        return f'<span style="color:green;">{output}</span>'
+	    elif '[E]' in output or '[e]' in output:
+	        return f'<span style="color:red;">{output}</span>'
+	    elif '[W]' in output or '[w]' in output:
+	        return f'<span style="color:orange;">{output}</span>'
+	    else:
+	        return output
 
-        button_layout = QHBoxLayout()
-        add_tunnel_button = QPushButton("添加隧道")
-        add_tunnel_button.clicked.connect(self.add_tunnel)
-        self.edit_tunnel_button = QPushButton("编辑隧道")
-        self.edit_tunnel_button.clicked.connect(self.edit_tunnel)
-        self.edit_tunnel_button.setEnabled(False)
-        self.delete_tunnel_button = QPushButton("删除隧道")
-        self.delete_tunnel_button.clicked.connect(self.delete_tunnel)
-        self.delete_tunnel_button.setEnabled(False)
-        self.batch_edit_button = QPushButton("批量编辑")
-        self.batch_edit_button.clicked.connect(self.batch_edit_tunnels)
-        self.batch_edit_button.setEnabled(False)
-        button_layout.addWidget(add_tunnel_button)
-        button_layout.addWidget(self.edit_tunnel_button)
-        button_layout.addWidget(self.delete_tunnel_button)
-        button_layout.addWidget(self.batch_edit_button)
+    # 加载流量监控
+    def load_traffic_monitor(self, tunnel_name):
+	    self.traffic_monitor_plot.clear()
+	    # 这里加入获取流量监控数据的逻辑
+	    # 使用曲线图显示上传、下载流量、CPU占用、内存占用和磁盘读写占用
+	    # 示例代码，实际数据获取请根据具体情况调整
+	    self.update_traffic_monitor(tunnel_name)
 
-        layout.addLayout(button_layout)
-
-        self.content_stack.addWidget(tunnel_widget)
+    def update_traffic_monitor(self, tunnel_name):
+	    # 模拟数据
+	    upload_data = [random.randint(0, 100) for _ in range(100)]
+	    download_data = [random.randint(0, 100) for _ in range(100)]
+	    cpu_data = [random.randint(0, 100) for _ in range(100)]
+	    memory_data = [random.randint(0, 100) for _ in range(100)]
+	    disk_data = [random.randint(0, 100) for _ in range(100)]
+	
+	    self.traffic_monitor_plot.plot(upload_data, pen='r')
+	    self.traffic_monitor_plot.plot(download_data, pen='b')
+	    self.traffic_monitor_plot.plot(cpu_data, pen='g')
+	    self.traffic_monitor_plot.plot(memory_data, pen='c')
+	    self.traffic_monitor_plot.plot(disk_data, pen='m')
 
     def setup_domain_page(self):
         domain_widget = QWidget()
@@ -2314,55 +2397,57 @@ class MainWindow(QMainWindow):
                     item.widget().setSelected(False)
 
     def load_tunnels(self):
-        try:
-            if not self.token:
-                raise ValueError("未登录，无法加载隧道列表")
-
-            tunnels = get_user_tunnels(self.token)
-            if tunnels is None:
-                raise ValueError("获取隧道列表失败")
-
-            # 保存当前选中的隧道ID
-            selected_ids = [t['id'] for t in self.selected_tunnels]
-
-            # 清除现有的隧道卡片
-            while self.tunnel_container.layout().count():
-                item = self.tunnel_container.layout().takeAt(0)
-                if item.widget():
-                    item.widget().deleteLater()
-
-            row, col = 0, 0
-            for tunnel in tunnels:
-                try:
-                    tunnel_widget = TunnelCard(tunnel, self.token)
-                    tunnel_widget.clicked.connect(self.on_tunnel_clicked)
-                    tunnel_widget.start_stop_signal.connect(self.start_stop_tunnel)
-
-                    # 恢复之前的选中状态
-                    if tunnel['id'] in selected_ids:
-                        tunnel_widget.is_selected = True
-                        tunnel_widget.setSelected(True)
-
-                    self.tunnel_container.layout().addWidget(tunnel_widget, row, col)
-
-                    col += 1
-                    if col == 2:  # 每行两个卡片
-                        col = 0
-                        row += 1
-
-                except Exception as e:
-                    self.logger.error(f"创建隧道卡片时发生错误: {str(e)}")
-                    self.logger.error(traceback.format_exc())
-                    continue
-
-            # 更新选中的隧道列表
-            self.selected_tunnels = [t for t in tunnels if t['id'] in selected_ids]
-            self.update_tunnel_buttons()
-
-        except Exception as e:
-            self.logger.error(f"加载隧道列表时发生错误: {str(e)}")
-            self.logger.error(traceback.format_exc())
-            self.show_error_message(f"加载隧道列表时发生错误: {str(e)}")
+	    if not self.token:
+	        raise ValueError("未登录，无法加载隧道列表")
+	
+	    tunnels = get_user_tunnels(self.token)
+	    if tunnels is None:
+	        raise ValueError("获取隧道列表失败")
+	
+	    # 保存当前选中的隧道ID
+	    selected_ids = [t['id'] for t in self.selected_tunnels]
+	
+	    # 清除现有的隧道卡片
+	    while self.tunnel_container.layout().count():
+	        item = self.tunnel_container.layout().takeAt(0)
+	        if item.widget():
+	            item.widget().deleteLater()
+	
+	    # 清除现有的frpc_output_combo和traffic_monitor_combo
+	    self.frpc_output_combo.clear()
+	    self.traffic_monitor_combo.clear()
+	
+	    row, col = 0, 0
+	    for tunnel in tunnels:
+	        try:
+	            tunnel_widget = TunnelCard(tunnel, self.token)
+	            tunnel_widget.clicked.connect(self.on_tunnel_clicked)
+	            tunnel_widget.start_stop_signal.connect(self.start_stop_tunnel)
+	
+	            # 恢复之前的选中状态
+	            if tunnel['id'] in selected_ids:
+	                tunnel_widget.is_selected = True
+	                tunnel_widget.setSelected(True)
+	
+	            self.tunnel_container.layout().addWidget(tunnel_widget, row, col)
+	
+	            col += 1
+	            if col == 2:  # 每行两个卡片
+	                col = 0
+	                row += 1
+	
+	            # 加载隧道名称到frpc_output_combo和traffic_monitor_combo
+	            self.frpc_output_combo.addItem(tunnel['name'])
+	            self.traffic_monitor_combo.addItem(tunnel['name'])
+	
+	        except Exception as e:
+	            self.logger.error(f"创建隧道卡片时发生错误: {str(e)}")
+	            self.logger.error(traceback.format_exc())
+	            continue
+	
+	    # 更新选中的隧道列表
+	    self.selected_tunnels = [t for t in tunnels if t['id'] in selected_ids]
+	    self.update_tunnel_buttons()
 
 
     def clear_error_message(self, widget):
