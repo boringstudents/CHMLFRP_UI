@@ -1665,6 +1665,7 @@ class MainWindow(QMainWindow):
 	
 	    self.user_info_button = QPushButton("用户信息")
 	    self.tunnel_button = QPushButton("隧道管理")
+	    self.frpc_output_button = QPushButton("frpc输出")
 	    self.domain_button = QPushButton("域名管理")
 	    self.node_button = QPushButton("节点状态")
 	    self.ddns_button = QPushButton("DDNS管理")
@@ -1674,6 +1675,7 @@ class MainWindow(QMainWindow):
 	
 	    self.user_info_button.clicked.connect(lambda: self.switch_tab("user_info"))
 	    self.tunnel_button.clicked.connect(lambda: self.switch_tab("tunnel"))
+	    self.frpc_output_button.clicked.connect(lambda: self.switch_tab("frpc_output"))
 	    self.domain_button.clicked.connect(lambda: self.switch_tab("domain"))
 	    self.node_button.clicked.connect(lambda: self.switch_tab("node"))
 	    self.ddns_button.clicked.connect(lambda: self.switch_tab("ddns"))
@@ -1683,6 +1685,7 @@ class MainWindow(QMainWindow):
 	
 	    menu_layout.addWidget(self.user_info_button)
 	    menu_layout.addWidget(self.tunnel_button)
+	    menu_layout.addWidget(self.frpc_output_button)
 	    menu_layout.addWidget(self.domain_button)
 	    menu_layout.addWidget(self.node_button)
 	    menu_layout.addWidget(self.ddns_button)
@@ -1714,6 +1717,7 @@ class MainWindow(QMainWindow):
 	
 	    self.setup_user_info_page()
 	    self.setup_tunnel_page()
+	    self.setup_frpc_output_page()
 	    self.setup_domain_page()
 	    self.setup_node_page()
 	    self.setup_ddns_page()
@@ -1726,6 +1730,7 @@ class MainWindow(QMainWindow):
 	    self.tab_buttons = [
 	        self.user_info_button,
 	        self.tunnel_button,
+	        self.frpc_output_button,
 	        self.domain_button,
 	        self.node_button,
 	        self.ddns_button,
@@ -1745,6 +1750,15 @@ class MainWindow(QMainWindow):
 	    self.view_button = QPushButton("查看输出")
 	    self.view_button.clicked.connect(self.show_tunnel_output)
 	    self.view_button.setEnabled(False)
+
+
+    def setup_frpc_output_page(self):
+        frpc_output_widget = QWidget()
+        layout = QVBoxLayout(frpc_output_widget)
+        frpc_output_text = QTextEdit()
+        frpc_output_text.setReadOnly(True)
+        layout.addWidget(frpc_output_text)
+        self.content_stack.addWidget(frpc_output_widget)
 	
     def setup_system_tray(self):
         icon_path = get_absolute_path("favicon.ico")
@@ -2021,7 +2035,6 @@ class MainWindow(QMainWindow):
 	
 	    self.content_stack.addWidget(tunnel_widget)
 	
-	    # Add a new text display for tunnel outputs
 	    self.tunnel_output_display = QTextEdit()
 	    self.tunnel_output_display.setReadOnly(True)
 	    self.content_stack.addWidget(self.tunnel_output_display)
@@ -4086,27 +4099,28 @@ class MainWindow(QMainWindow):
                 self.logger.error(f"加载用户域名时发生错误: {str(e)}")
 
     def switch_tab(self, tab_name):
-        if tab_name == "user_info":
-            self.content_stack.setCurrentIndex(0)
-        elif tab_name == "tunnel":
-            self.content_stack.setCurrentIndex(1)
-        elif tab_name == "domain":
-            self.content_stack.setCurrentIndex(2)
-        elif tab_name == "node":
-            self.content_stack.setCurrentIndex(3)
-        elif tab_name == "ddns":
-            self.content_stack.setCurrentIndex(4)
-        elif tab_name == "ping":
-            self.content_stack.setCurrentIndex(5)
-        elif tab_name == "dynamic_tunnel":
-            self.content_stack.setCurrentIndex(6)
-        elif tab_name == "ip_tools":
-            self.content_stack.setCurrentIndex(7)
-
-        # 更新按钮样式
-        for button in self.tab_buttons:
-            if button.text().lower().replace(" ", "_") == tab_name:
-                self.update_button_styles(button)
+	    if tab_name == "user_info":
+	        self.content_stack.setCurrentIndex(0)
+	    elif tab_name == "tunnel":
+	        self.content_stack.setCurrentIndex(1)
+	    elif tab_name == "domain":
+	        self.content_stack.setCurrentIndex(2)
+	    elif tab_name == "frpc_output":  # 新增的条件
+	        self.content_stack.setCurrentIndex(3)
+	    elif tab_name == "node":
+	        self.content_stack.setCurrentIndex(4)
+	    elif tab_name == "ddns":
+	        self.content_stack.setCurrentIndex(5)
+	    elif tab_name == "ping":
+	        self.content_stack.setCurrentIndex(6)
+	    elif tab_name == "dynamic_tunnel":
+	        self.content_stack.setCurrentIndex(7)
+	    elif tab_name == "ip_tools":
+	        self.content_stack.setCurrentIndex(8)
+	
+	    for button in self.tab_buttons:
+	        if button.text().lower().replace(" ", "_") == tab_name:
+	            self.update_button_styles(button)
 
 
     def setup_dynamic_tunnel_page(self):
