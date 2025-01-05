@@ -2365,8 +2365,8 @@ class MainWindow(QMainWindow):
 	            output_text = "".join(self.tunnel_outputs[tunnel_name])
 	
 	            # 替换token
-	            token_pattern = re.compile(r'\b\w{32}\b')  # 假设token是32位长
-	            output_text = token_pattern.sub('********你的token********', output_text)
+	            if self.token:
+	                output_text = output_text.replace(self.token, '********你的token********')
 	
 	            # 替换IP地址
 	            ip_pattern = re.compile(r'(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})')
