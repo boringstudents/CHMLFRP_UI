@@ -14,9 +14,9 @@ import json
 from concurrent.futures import *
 import ipaddress
 import re
-import pyqtgraph
+from pyqtgraph import *
 
-import requests
+import requests 
 from PyQt6.QtCore import *
 from PyQt6.QtWidgets import *
 from PyQt6.QtGui import *
