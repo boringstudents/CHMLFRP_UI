@@ -2634,7 +2634,10 @@ class MainWindow(QMainWindow):
 	    """添加隧道"""
 	    dialog = QDialog(self)
 	    dialog.setWindowTitle("添加隧道")
-	    layout = QFormLayout(dialog)
+	    layout = QHBoxLayout(dialog)
+	
+	    form_layout = QFormLayout()
+	    detail_layout = QVBoxLayout()
 	
 	    name_input = QLineEdit()
 	    name_input.setPlaceholderText("如果留空则随机")
@@ -2659,16 +2662,16 @@ class MainWindow(QMainWindow):
 	    remote_port_label = QLabel("远程端口:")
 	    banddomain_label = QLabel("绑定域名:")
 	
-	    layout.addRow("隧道名称:", name_input)
-	    layout.addRow("本地IP/主机名:", local_ip_input)
-	    layout.addRow("本地端口:", local_port_input)
-	    layout.addRow(remote_port_label, remote_port_input)
-	    layout.addRow(banddomain_label, banddomain_input)
-	    layout.addRow("节点:", node_combo)
-	    layout.addRow("类型:", type_combo)
-	    layout.addRow(encryption_checkbox)
-	    layout.addRow(compression_checkbox)
-	    layout.addRow("额外参数:", extra_params_input)
+	    form_layout.addRow("隧道名称:", name_input)
+	    form_layout.addRow("本地IP/主机名:", local_ip_input)
+	    form_layout.addRow("本地端口:", local_port_input)
+	    form_layout.addRow(remote_port_label, remote_port_input)
+	    form_layout.addRow(banddomain_label, banddomain_input)
+	    form_layout.addRow("节点:", node_combo)
+	    form_layout.addRow("类型:", type_combo)
+	    form_layout.addRow(encryption_checkbox)
+	    form_layout.addRow(compression_checkbox)
+	    form_layout.addRow("额外参数:", extra_params_input)
 	
 	    # 初始化控件状态
 	    banddomain_label.hide()
@@ -2698,7 +2701,36 @@ class MainWindow(QMainWindow):
 	    buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
 	    buttons.accepted.connect(dialog.accept)
 	    buttons.rejected.connect(dialog.reject)
-	    layout.addRow(buttons)
+	    form_layout.addRow(buttons)
+	
+	    # 添加详细信息区域
+	    detail_label = QLabel("节点详细信息")
+	    detail_text = QTextEdit()
+	    detail_text.setReadOnly(True)
+	    detail_layout.addWidget(detail_label)
+	    detail_layout.addWidget(detail_text)
+	
+	    layout.addLayout(form_layout)
+	    layout.addLayout(detail_layout)
+	
+	    def on_node_changed(index):
+	        node_name = node_combo.itemText(index)
+	        for node in nodes:
+	            if node['name'] == node_name:
+	                detail_text.setPlainText(f"""
+	                节点名称: {node['name']}
+	                节点地址: {node['area']}
+	                权限组: {node['nodegroup']}
+	                是否属于4*带宽节点: {node['china']}
+	                是否支持web: {node['web']}
+	                是否支持udp: {node['udp']}
+	                是否有防御: {node['fangyu']}
+	                介绍: {node['notes']}
+	                """)
+	                break
+	
+	    node_combo.currentIndexChanged.connect(on_node_changed)
+	    on_node_changed(0)  # 初始化时调用一次
 	
 	    if dialog.exec() == QDialog.DialogCode.Accepted:
 	        try:
