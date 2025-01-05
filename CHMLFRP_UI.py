@@ -14,9 +14,8 @@ import json
 from concurrent.futures import *
 import ipaddress
 import re
-import traceback
 
-import requests 
+import requests
 from PyQt6.QtCore import *
 from PyQt6.QtWidgets import *
 from PyQt6.QtGui import *
@@ -1947,96 +1946,46 @@ class MainWindow(QMainWindow):
         self.delete_domain_button.setEnabled(True)
 
     def setup_tunnel_page(self):
-	    tunnel_widget = QWidget()
-	    layout = QVBoxLayout(tunnel_widget)
-	
-	    self.tunnel_tab_widget = QTabWidget()
-	    self.tunnel_tab_widget.addTab(self.create_tunnel_list_tab(), "隧道列表")
-	    self.tunnel_tab_widget.addTab(self.create_frpc_output_tab(), "frpc命令行输出")
-	
-	    layout.addWidget(self.tunnel_tab_widget)
-	    self.content_stack.addWidget(tunnel_widget)
+        tunnel_widget = QWidget()
+        layout = QVBoxLayout(tunnel_widget)
 
-    def create_tunnel_list_tab(self):
-	    tab = QWidget()
-	    layout = QVBoxLayout(tab)
-	
-	    # 添加刷新按钮
-	    refresh_button = QPushButton("刷新隧道列表")
-	    refresh_button.clicked.connect(self.load_tunnels)
-	    layout.addWidget(refresh_button)
-	
-	    self.tunnel_container = QWidget()
-	    self.tunnel_container.setLayout(QGridLayout())
-	
-	    scroll_area = QScrollArea()
-	    scroll_area.setWidgetResizable(True)
-	    scroll_area.setWidget(self.tunnel_container)
-	
-	    layout.addWidget(scroll_area)
-	
-	    button_layout = QHBoxLayout()
-	    add_tunnel_button = QPushButton("添加隧道")
-	    add_tunnel_button.clicked.connect(self.add_tunnel)
-	    self.edit_tunnel_button = QPushButton("编辑隧道")
-	    self.edit_tunnel_button.clicked.connect(self.edit_tunnel)
-	    self.edit_tunnel_button.setEnabled(False)
-	    self.delete_tunnel_button = QPushButton("删除隧道")
-	    self.delete_tunnel_button.clicked.connect(self.delete_tunnel)
-	    self.delete_tunnel_button.setEnabled(False)
-	    self.batch_edit_button = QPushButton("批量编辑")
-	    self.batch_edit_button.clicked.connect(self.batch_edit_tunnels)
-	    self.batch_edit_button.setEnabled(False)
-	    button_layout.addWidget(add_tunnel_button)
-	    button_layout.addWidget(self.edit_tunnel_button)
-	    button_layout.addWidget(self.delete_tunnel_button)
-	    button_layout.addWidget(self.batch_edit_button)
-	
-	    layout.addLayout(button_layout)
-	    return tab
+        # 添加刷新按钮
+        refresh_button = QPushButton("刷新隧道列表")
+        refresh_button.clicked.connect(self.load_tunnels)
+        layout.addWidget(refresh_button)
 
-    def create_frpc_output_tab(self):
-	    tab = QWidget()
-	    layout = QVBoxLayout(tab)
-	
-	    self.frpc_output_combo = QComboBox()
-	    self.frpc_output_combo.currentTextChanged.connect(self.load_frpc_output)
-	    layout.addWidget(self.frpc_output_combo)
-	
-	    self.frpc_output_display = QTextEdit()
-	    self.frpc_output_display.setReadOnly(True)
-	    layout.addWidget(self.frpc_output_display)
-	
-	    return tab
+        refresh_button = QPushButton("刷新隧道列表")
+        refresh_button.setObjectName("refreshButton")
 
+        self.tunnel_container = QWidget()
+        self.tunnel_container.setLayout(QGridLayout())
 
-    # 加载frpc命令行输出
-    def load_frpc_output(self, tunnel_name):
-	    if tunnel_name in self.tunnel_processes:
-	        process = self.tunnel_processes[tunnel_name]
-	        output_lines = process.stdout.readlines()
-	        self.frpc_output_display.clear()
-	        for line in output_lines:
-	            self.frpc_output_display.append(self.process_frpc_output(line.decode('utf-8')))
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setWidget(self.tunnel_container)
 
-    def process_frpc_output(self, output):
-	    # 替换Token
-	    output = output.replace(self.token, '*******你的token********')
-	
-	    # 隐藏IP地址
-	    output = re.sub(r'\d+\.\d+\.\d+\.\d+', lambda x: x.group(0).split('.')[0] + '.***.***.' + x.group(0).split('.')[-1], output)
-	
-	    # 渲染不同类型信息
-	    if '[I]' in output or '[i]' in output:
-	        return f'<span style="color:green;">{output}</span>'
-	    elif '[E]' in output or '[e]' in output:
-	        return f'<span style="color:red;">{output}</span>'
-	    elif '[W]' in output or '[w]' in output:
-	        return f'<span style="color:orange;">{output}</span>'
-	    else:
-	        return output
+        layout.addWidget(scroll_area)
 
+        button_layout = QHBoxLayout()
+        add_tunnel_button = QPushButton("添加隧道")
+        add_tunnel_button.clicked.connect(self.add_tunnel)
+        self.edit_tunnel_button = QPushButton("编辑隧道")
+        self.edit_tunnel_button.clicked.connect(self.edit_tunnel)
+        self.edit_tunnel_button.setEnabled(False)
+        self.delete_tunnel_button = QPushButton("删除隧道")
+        self.delete_tunnel_button.clicked.connect(self.delete_tunnel)
+        self.delete_tunnel_button.setEnabled(False)
+        self.batch_edit_button = QPushButton("批量编辑")
+        self.batch_edit_button.clicked.connect(self.batch_edit_tunnels)
+        self.batch_edit_button.setEnabled(False)
+        button_layout.addWidget(add_tunnel_button)
+        button_layout.addWidget(self.edit_tunnel_button)
+        button_layout.addWidget(self.delete_tunnel_button)
+        button_layout.addWidget(self.batch_edit_button)
 
+        layout.addLayout(button_layout)
+
+        self.content_stack.addWidget(tunnel_widget)
 
     def setup_domain_page(self):
         domain_widget = QWidget()
@@ -2365,57 +2314,55 @@ class MainWindow(QMainWindow):
                     item.widget().setSelected(False)
 
     def load_tunnels(self):
-	    if not self.token:
-	        raise ValueError("未登录，无法加载隧道列表")
-	
-	    tunnels = get_user_tunnels(self.token)
-	    if tunnels is None:
-	        raise ValueError("获取隧道列表失败")
-	
-	    # 保存当前选中的隧道ID
-	    selected_ids = [t['id'] for t in self.selected_tunnels]
-	
-	    # 清除现有的隧道卡片
-	    while self.tunnel_container.layout().count():
-	        item = self.tunnel_container.layout().takeAt(0)
-	        if item.widget():
-	            item.widget().deleteLater()
-	
-	    # 清除现有的frpc_output_combo和traffic_monitor_combo
-	    self.frpc_output_combo.clear()
-	    self.traffic_monitor_combo.clear()
-	
-	    row, col = 0, 0
-	    for tunnel in tunnels:
-	        try:
-	            tunnel_widget = TunnelCard(tunnel, self.token)
-	            tunnel_widget.clicked.connect(self.on_tunnel_clicked)
-	            tunnel_widget.start_stop_signal.connect(self.start_stop_tunnel)
-	
-	            # 恢复之前的选中状态
-	            if tunnel['id'] in selected_ids:
-	                tunnel_widget.is_selected = True
-	                tunnel_widget.setSelected(True)
-	
-	            self.tunnel_container.layout().addWidget(tunnel_widget, row, col)
-	
-	            col += 1
-	            if col == 2:  # 每行两个卡片
-	                col = 0
-	                row += 1
-	
-	            # 加载隧道名称到frpc_output_combo和traffic_monitor_combo
-	            self.frpc_output_combo.addItem(tunnel['name'])
-	            self.traffic_monitor_combo.addItem(tunnel['name'])
-	
-	        except Exception as e:
-	            self.logger.error(f"创建隧道卡片时发生错误: {str(e)}")
-	            self.logger.error(traceback.format_exc())
-	            continue
-	
-	    # 更新选中的隧道列表
-	    self.selected_tunnels = [t for t in tunnels if t['id'] in selected_ids]
-	    self.update_tunnel_buttons()
+        try:
+            if not self.token:
+                raise ValueError("未登录，无法加载隧道列表")
+
+            tunnels = get_user_tunnels(self.token)
+            if tunnels is None:
+                raise ValueError("获取隧道列表失败")
+
+            # 保存当前选中的隧道ID
+            selected_ids = [t['id'] for t in self.selected_tunnels]
+
+            # 清除现有的隧道卡片
+            while self.tunnel_container.layout().count():
+                item = self.tunnel_container.layout().takeAt(0)
+                if item.widget():
+                    item.widget().deleteLater()
+
+            row, col = 0, 0
+            for tunnel in tunnels:
+                try:
+                    tunnel_widget = TunnelCard(tunnel, self.token)
+                    tunnel_widget.clicked.connect(self.on_tunnel_clicked)
+                    tunnel_widget.start_stop_signal.connect(self.start_stop_tunnel)
+
+                    # 恢复之前的选中状态
+                    if tunnel['id'] in selected_ids:
+                        tunnel_widget.is_selected = True
+                        tunnel_widget.setSelected(True)
+
+                    self.tunnel_container.layout().addWidget(tunnel_widget, row, col)
+
+                    col += 1
+                    if col == 2:  # 每行两个卡片
+                        col = 0
+                        row += 1
+
+                except Exception as e:
+                    self.logger.error(f"创建隧道卡片时发生错误: {str(e)}")
+                    self.logger.error(traceback.format_exc())
+                    continue
+
+            # 更新选中的隧道列表
+            self.selected_tunnels = [t for t in tunnels if t['id'] in selected_ids]
+            self.update_tunnel_buttons()
+
+        except Exception as e:
+            self.logger.error(f"加载隧道列表时发生错误: {str(e)}")
+            self.logger.error(traceback.format_exc())
+            self.show_error_message(f"加载隧道列表时发生错误: {str(e)}")
 
 
     def clear_error_message(self, widget):
@@ -2687,10 +2634,7 @@ class MainWindow(QMainWindow):
 	    """添加隧道"""
 	    dialog = QDialog(self)
 	    dialog.setWindowTitle("添加隧道")
-	    layout = QHBoxLayout(dialog)
-	
-	    form_layout = QFormLayout()
-	    detail_layout = QVBoxLayout()
+	    layout = QFormLayout(dialog)
 	
 	    name_input = QLineEdit()
 	    name_input.setPlaceholderText("如果留空则随机")
@@ -2715,16 +2659,16 @@ class MainWindow(QMainWindow):
 	    remote_port_label = QLabel("远程端口:")
 	    banddomain_label = QLabel("绑定域名:")
 	
-	    form_layout.addRow("隧道名称:", name_input)
-	    form_layout.addRow("本地IP/主机名:", local_ip_input)
-	    form_layout.addRow("本地端口:", local_port_input)
-	    form_layout.addRow(remote_port_label, remote_port_input)
-	    form_layout.addRow(banddomain_label, banddomain_input)
-	    form_layout.addRow("节点:", node_combo)
-	    form_layout.addRow("类型:", type_combo)
-	    form_layout.addRow(encryption_checkbox)
-	    form_layout.addRow(compression_checkbox)
-	    form_layout.addRow("额外参数:", extra_params_input)
+	    layout.addRow("隧道名称:", name_input)
+	    layout.addRow("本地IP/主机名:", local_ip_input)
+	    layout.addRow("本地端口:", local_port_input)
+	    layout.addRow(remote_port_label, remote_port_input)
+	    layout.addRow(banddomain_label, banddomain_input)
+	    layout.addRow("节点:", node_combo)
+	    layout.addRow("类型:", type_combo)
+	    layout.addRow(encryption_checkbox)
+	    layout.addRow(compression_checkbox)
+	    layout.addRow("额外参数:", extra_params_input)
 	
 	    # 初始化控件状态
 	    banddomain_label.hide()
@@ -2754,36 +2698,7 @@ class MainWindow(QMainWindow):
 	    buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
 	    buttons.accepted.connect(dialog.accept)
 	    buttons.rejected.connect(dialog.reject)
-	    form_layout.addRow(buttons)
-	
-	    # 添加详细信息区域
-	    detail_label = QLabel("节点详细信息")
-	    detail_text = QTextEdit()
-	    detail_text.setReadOnly(True)
-	    detail_layout.addWidget(detail_label)
-	    detail_layout.addWidget(detail_text)
-	
-	    layout.addLayout(form_layout)
-	    layout.addLayout(detail_layout)
-	
-	    def on_node_changed(index):
-	        node_name = node_combo.itemText(index)
-	        for node in nodes:
-	            if node['name'] == node_name:
-	                detail_text.setPlainText(f"""
-	                节点名称: {node['name']}
-	                节点地址: {node['area']}
-	                权限组: {node['nodegroup']}
-	                是否属于大陆带宽节点: {node['china']}
-	                是否支持web: {node['web']}
-	                是否支持udp: {node['udp']}
-	                是否有防御: {node['fangyu']}
-	                介绍: {node['notes']}
-	                """)
-	                break
-	
-	    node_combo.currentIndexChanged.connect(on_node_changed)
-	    on_node_changed(0)  # 初始化时调用一次
+	    layout.addRow(buttons)
 	
 	    if dialog.exec() == QDialog.DialogCode.Accepted:
 	        try:
