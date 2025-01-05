@@ -3872,57 +3872,57 @@ class MainWindow(QMainWindow):
         self.update_button_styles(self.ip_tools_button)
 
     def apply_theme(self):
-	if self.dark_theme:
-        self.button_color = "#0D47A1"
-        self.button_hover_color = "#1565C0"
-        self.setStyleSheet("""
-            QWidget {
-                color: #FFFFFF;
-                background-color: #2D2D2D;
-            }
-            #background {
-                background-color: #1E1E1E;
-                border-radius: 10px;
-            }
-            QPushButton {
-                background-color: #0D47A1;
-                color: white;
-                border: none;
-                padding: 5px 10px;
-                text-align: center;
-                text-decoration: none;
-                font-size: 14px;
-                margin: 4px 2px;
-                border-radius: 4px;
-            }
-            QPushButton:hover {
-                background-color: #1565C0;
-            }
-            QPushButton:disabled {
-                background-color: #424242;
-            }
-            QLineEdit, QComboBox, QTextEdit, QMenuBar {
-                padding: 5px;
-                border: 1px solid #424242;
-                border-radius: 4px;
-                background-color: #1E1E1E;
-                color: #FFFFFF;
-            }
-            QMenuBar::item {
-                background-color: #2D2D2D;
-                color: #FFFFFF;
-            }
-            QMenuBar::item:selected {
-                background-color: #3D3D3D;
-            }
-            NodeCard, TunnelCard, DomainCard {
-                background-color: #2D2D2D;
-                border: 1px solid #424242;
-            }
-            NodeCard:hover, TunnelCard:hover, DomainCard:hover {
-                background-color: #3D3D3D;
-            }
-        """)
+        if self.dark_theme:
+            self.button_color = "#0D47A1"
+            self.button_hover_color = "#1565C0"
+            self.setStyleSheet("""
+                QWidget {
+                    color: #FFFFFF;
+                    background-color: #2D2D2D;
+                }
+                #background {
+                    background-color: #1E1E1E;
+                    border-radius: 10px;
+                }
+                QPushButton {
+                    background-color: #0D47A1;
+                    color: white;
+                    border: none;
+                    padding: 5px 10px;
+                    text-align: center;
+                    text-decoration: none;
+                    font-size: 14px;
+                    margin: 4px 2px;
+                    border-radius: 4px;
+                }
+                QPushButton:hover {
+                    background-color: #1565C0;
+                }
+                QPushButton:disabled {
+                    background-color: #424242;
+                }
+                QLineEdit, QComboBox, QTextEdit, QMenuBar {
+                    padding: 5px;
+                    border: 1px solid #424242;
+                    border-radius: 4px;
+                    background-color: #1E1E1E;
+                    color: #FFFFFF;
+                }
+                QMenuBar::item {
+                    background-color: #2D2D2D;
+                    color: #FFFFFF;
+                }
+                QMenuBar::item:selected {
+                    background-color: #3D3D3D;
+                }
+                NodeCard, TunnelCard, DomainCard {
+                    background-color: #2D2D2D;
+                    border: 1px solid #424242;
+                }
+                NodeCard:hover, TunnelCard:hover, DomainCard:hover {
+                    background-color: #3D3D3D;
+                }
+            """)
         else:
             self.button_color = "#4CAF50"
             self.button_hover_color = "#45a049"
