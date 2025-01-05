@@ -2011,11 +2011,17 @@ class MainWindow(QMainWindow):
         self.load_tunnel_names()
 
     def load_tunnel_names(self):
-        if self.token:
-            tunnels = get_user_tunnels(self.token)
-            self.tunnel_select_combo.clear()
-            for tunnel in tunnels:
-                self.tunnel_select_combo.addItem(tunnel['name'])
+	    if self.token:
+	        tunnels = get_user_tunnels(self.token)
+	        if tunnels is None:
+	            QMessageBox.warning(self, "错误", "未能获取隧道列表。请检查网络连接或Token是否正确。")
+	            return
+	        
+	        self.tunnel_select_combo.clear()
+	        for tunnel in tunnels:
+	            self.tunnel_select_combo.addItem(tunnel['name'])
+	    else:
+	        QMessageBox.warning(self, "错误", "未能加载隧道列表，因为Token未设置。")
 
     def update_frpc_output(self):
         selected_tunnel = self.tunnel_select_combo.currentText()
