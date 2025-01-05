@@ -27,7 +27,6 @@ jobs:
           pip install nuitka
           pip install upx
           pip install -r requirements.txt
-          pip install pyqtgraph
 
       - name: Install UPX
         run: |
