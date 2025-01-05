@@ -2748,8 +2748,13 @@ class MainWindow(QMainWindow):
 	    """添加隧道"""
 	    dialog = QDialog(self)
 	    dialog.setWindowTitle("添加隧道")
-	    layout = QFormLayout(dialog)
+	    dialog.setGeometry(100, 100, 800, 600)  # 设置窗口大小
 	
+	    main_layout = QHBoxLayout(dialog)
+	    form_layout = QFormLayout()
+	    main_layout.addLayout(form_layout)
+	
+	    # 左侧表单布局
 	    name_input = QLineEdit()
 	    name_input.setPlaceholderText("如果留空则随机")
 	    local_ip_input = QLineEdit("127.0.0.1")  # 默认值设置为127.0.0.1
@@ -2773,16 +2778,16 @@ class MainWindow(QMainWindow):
 	    remote_port_label = QLabel("远程端口:")
 	    banddomain_label = QLabel("绑定域名:")
 	
-	    layout.addRow("隧道名称:", name_input)
-	    layout.addRow("本地IP/主机名:", local_ip_input)
-	    layout.addRow("本地端口:", local_port_input)
-	    layout.addRow(remote_port_label, remote_port_input)
-	    layout.addRow(banddomain_label, banddomain_input)
-	    layout.addRow("节点:", node_combo)
-	    layout.addRow("类型:", type_combo)
-	    layout.addRow(encryption_checkbox)
-	    layout.addRow(compression_checkbox)
-	    layout.addRow("额外参数:", extra_params_input)
+	    form_layout.addRow("隧道名称:", name_input)
+	    form_layout.addRow("本地IP/主机名:", local_ip_input)
+	    form_layout.addRow("本地端口:", local_port_input)
+	    form_layout.addRow(remote_port_label, remote_port_input)
+	    form_layout.addRow(banddomain_label, banddomain_input)
+	    form_layout.addRow("节点:", node_combo)
+	    form_layout.addRow("类型:", type_combo)
+	    form_layout.addRow(encryption_checkbox)
+	    form_layout.addRow(compression_checkbox)
+	    form_layout.addRow("额外参数:", extra_params_input)
 	
 	    # 初始化控件状态
 	    banddomain_label.hide()
@@ -2812,7 +2817,35 @@ class MainWindow(QMainWindow):
 	    buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
 	    buttons.accepted.connect(dialog.accept)
 	    buttons.rejected.connect(dialog.reject)
-	    layout.addRow(buttons)
+	    form_layout.addRow(buttons)
+	
+	    # 右侧节点状态显示
+	    node_status_layout = QVBoxLayout()
+	    node_status_label = QLabel("节点状态")
+	    node_status_label.setStyleSheet("font-size: 16px; font-weight: bold; margin-bottom: 10px;")
+	    node_status_layout.addWidget(node_status_label)
+	
+	    node_status_text = QTextEdit()
+	    node_status_text.setReadOnly(True)
+	    node_status_layout.addWidget(node_status_text)
+	    main_layout.addLayout(node_status_layout)
+	
+	    def update_node_status(index):
+	        node_info = nodes[index]
+	        node_status = f"""
+	        名称: {node_info.get('name', 'N/A')}
+	        区域: {node_info.get('area', 'N/A')}
+	        节点组: {node_info.get('nodegroup', 'N/A')}
+	        大陆节点: {node_info.get('china', 'N/A')}
+	        搭建Web: {node_info.get('web', 'N/A')}
+	        搭建UDP: {node_info.get('udp', 'N/A')}
+	        防御: {node_info.get('fangyu', 'N/A')}
+	        介绍: {node_info.get('notes', 'N/A')}
+	        """
+	        node_status_text.setPlainText(node_status)
+	
+	    node_combo.currentIndexChanged.connect(update_node_status)
+	    update_node_status(0)  # 初始化时显示第一个节点的状态
 	
 	    if dialog.exec() == QDialog.DialogCode.Accepted:
 	        try:
