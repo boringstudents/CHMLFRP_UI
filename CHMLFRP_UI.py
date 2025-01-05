@@ -2634,6 +2634,7 @@ class MainWindow(QMainWindow):
 	    """添加隧道"""
 	    dialog = QDialog(self)
 	    dialog.setWindowTitle("添加隧道")
+	    dialog.setFixedWidth(750)  # 将宽度设置为原来的2.5倍 (300 * 2.5 = 750)
 	    layout = QHBoxLayout(dialog)
 	
 	    form_layout = QFormLayout()
@@ -2778,7 +2779,6 @@ class MainWindow(QMainWindow):
 	        except Exception as e:
 	            self.logger.exception("添加隧道时发生错误")
 	            QMessageBox.warning(self, "错误", f"添加隧道失败: {str(e)}")
-		
 
     def edit_tunnel(self):
 	    if not self.selected_tunnels:
