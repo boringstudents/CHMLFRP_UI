@@ -1717,8 +1717,8 @@ class MainWindow(QMainWindow):
 	
 	    self.setup_user_info_page()
 	    self.setup_tunnel_page()
-	    self.setup_domain_page()
-	    self.setup_frpc_output_page()
+	    self.setup_frpc_output_page()  # Correctly setup frpc_output_page here
+	    self.setup_domain_page()  # Correctly setup domain_page here
 	    self.setup_node_page()
 	    self.setup_ddns_page()
 	    self.setup_ping_page()
@@ -1746,7 +1746,7 @@ class MainWindow(QMainWindow):
 	    tunnel_widget = QWidget()
 	    layout = QVBoxLayout(tunnel_widget)
 	    self.content_stack.addWidget(tunnel_widget)
-
+	
 	    self.view_button = QPushButton("查看输出")
 	    self.view_button.clicked.connect(self.show_tunnel_output)
 	    self.view_button.setEnabled(False)
@@ -1767,12 +1767,18 @@ class MainWindow(QMainWindow):
 	    
 	    self.content_stack.addWidget(frpc_output_widget)
 	    
+	    # Populate the dropdown with all available tunnels
+	    self.update_tunnel_dropdown()
+	    
     def update_frpc_output(self):
 	    selected_tunnel = self.tunnel_dropdown.currentText()
 	    if selected_tunnel != "选择隧道":
 	        self.frpc_output_text.clear()
 	        output_text = "".join(self.tunnel_outputs.get(selected_tunnel, []))
 	        self.frpc_output_text.setPlainText(output_text)
+	    
+	    # Ensure node status updates correctly
+	    self.update_node_status(selected_tunnel)
 	
     def setup_system_tray(self):
         icon_path = get_absolute_path("favicon.ico")
@@ -1982,8 +1988,13 @@ class MainWindow(QMainWindow):
     def update_tunnel_dropdown(self):
 	    self.tunnel_dropdown.clear()
 	    self.tunnel_dropdown.addItem("选择隧道")
-	    for tunnel in self.selected_tunnels:
-	        self.tunnel_dropdown.addItem(tunnel['name'])
+	    
+	    # Fetch all user tunnels
+	    if self.token:
+	        tunnels = get_user_tunnels(self.token)
+	        if tunnels:
+	            for tunnel in tunnels:
+	                self.tunnel_dropdown.addItem(tunnel['name'])
 
     def update_tunnel_buttons(self):
         selected_count = len(self.selected_tunnels)
