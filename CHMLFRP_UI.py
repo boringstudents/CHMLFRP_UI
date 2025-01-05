@@ -1753,12 +1753,20 @@ class MainWindow(QMainWindow):
 
 
     def setup_frpc_output_page(self):
-        frpc_output_widget = QWidget()
-        layout = QVBoxLayout(frpc_output_widget)
-        frpc_output_text = QTextEdit()
-        frpc_output_text.setReadOnly(True)
-        layout.addWidget(frpc_output_text)
-        self.content_stack.addWidget(frpc_output_widget)
+	    frpc_output_widget = QWidget()
+	    layout = QVBoxLayout(frpc_output_widget)
+	    frpc_output_text = QTextEdit()
+	    frpc_output_text.setReadOnly(True)
+	    layout.addWidget(frpc_output_text)
+	
+	    self.view_button = QPushButton("查看输出")
+	    self.view_button.clicked.connect(self.show_tunnel_output)
+	    self.view_button.setEnabled(True)
+	    layout.addWidget(self.view_button)
+	    
+	    self.tunnel_output_display = frpc_output_text  # 将frpc_output_text作为tunnel_output_display
+	
+	    self.content_stack.addWidget(frpc_output_widget)
 	
     def setup_system_tray(self):
         icon_path = get_absolute_path("favicon.ico")
@@ -2020,24 +2028,15 @@ class MainWindow(QMainWindow):
 	    self.batch_edit_button = QPushButton("批量编辑")
 	    self.batch_edit_button.clicked.connect(self.batch_edit_tunnels)
 	    self.batch_edit_button.setEnabled(False)
-	    view_button = QPushButton("查看输出")
-	    view_button.clicked.connect(self.show_tunnel_output)
-	    view_button.setEnabled(True)
-	    self.view_button = view_button
 	
 	    button_layout.addWidget(add_tunnel_button)
 	    button_layout.addWidget(self.edit_tunnel_button)
 	    button_layout.addWidget(self.delete_tunnel_button)
 	    button_layout.addWidget(self.batch_edit_button)
-	    button_layout.addWidget(view_button)  # Add view button to the right
 	
 	    layout.addLayout(button_layout)
 	
 	    self.content_stack.addWidget(tunnel_widget)
-	
-	    self.tunnel_output_display = QTextEdit()
-	    self.tunnel_output_display.setReadOnly(True)
-	    self.content_stack.addWidget(self.tunnel_output_display)
 
     def setup_domain_page(self):
         domain_widget = QWidget()
