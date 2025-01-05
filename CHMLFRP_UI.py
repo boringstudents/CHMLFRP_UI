@@ -14,6 +14,7 @@ import json
 from concurrent.futures import *
 import ipaddress
 import re
+import traceback
 
 import requests 
 from PyQt6.QtCore import *
