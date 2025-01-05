@@ -2362,9 +2362,40 @@ class MainWindow(QMainWindow):
 	        tunnel_name = tunnel_info['name']
 	        if tunnel_name in self.tunnel_outputs:
 	            self.tunnel_output_display.append(f"隧道 {tunnel_name} 输出:\n")
-	            self.tunnel_output_display.append("".join(self.tunnel_outputs[tunnel_name]))
-	            self.tunnel_output_display.append("\n" + "="*50 + "\n")
+	            output_text = "".join(self.tunnel_outputs[tunnel_name])
+	
+	            # 替换token
+	            token_pattern = re.compile(r'\b\w{32}\b')  # 假设token是32位长
+	            output_text = token_pattern.sub('********你的token********', output_text)
+	
+	            # 替换IP地址
+	            ip_pattern = re.compile(r'(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})')
+	            output_text = ip_pattern.sub(r'\1.***.***.\4', output_text)
+	
+	            # 渲染日志级别
+	            for line in output_text.splitlines():
+	                if "[E]" in line or "[e]" in line or "error" in line.lower():
+	                    self.append_colored_text(line, QColor(255, 0, 0))  # 红色
+	                elif "[W]" in line or "[w]" in line or "warning" in line.lower():
+	                    self.append_colored_text(line, QColor(255, 165, 0))  # 橙色
+	                elif "[I]" in line or "[i]" in line or "info" in line.lower():
+	                    self.append_colored_text(line, QColor(0, 255, 0))  # 绿色
+	                else:
+	                    self.tunnel_output_display.append(line)
+	            self.tunnel_output_display.append("\n" + "=" * 50 + "\n")
 	    self.content_stack.setCurrentWidget(self.tunnel_output_display)
+
+
+    def append_colored_text(self, text, color):
+        """在文本框中添加带颜色的文本"""
+        cursor = self.tunnel_output_display.textCursor()
+        cursor.movePosition(QTextCursor.MoveOperation.End)
+        format = QTextCharFormat()
+        format.setForeground(color)
+        cursor.setCharFormat(format)
+        cursor.insertText(text + "\n")
+        self.tunnel_output_display.setTextCursor(cursor)
+        self.tunnel_output_display.ensureCursorVisible()
 	    
 
     def load_tunnels(self):
