@@ -1949,13 +1949,25 @@ class MainWindow(QMainWindow):
         tunnel_widget = QWidget()
         layout = QVBoxLayout(tunnel_widget)
 
+        # 添加分页
+        self.tunnel_tab_widget = QTabWidget()
+        self.tunnel_tab_widget.addTab(QWidget(), "隧道列表")
+        self.tunnel_tab_widget.addTab(QWidget(), "frpc命令行输出")
+
+        self.setup_tunnel_list_page(self.tunnel_tab_widget.widget(0))  # 设置隧道列表页面
+        self.setup_frpc_output_page(self.tunnel_tab_widget.widget(1))  # 设置frpc命令行输出页面
+
+        layout.addWidget(self.tunnel_tab_widget)
+        self.content_stack.addWidget(tunnel_widget)
+
+
+    def setup_tunnel_list_page(self, tunnel_list_widget):
+        layout = QVBoxLayout(tunnel_list_widget)
+
         # 添加刷新按钮
         refresh_button = QPushButton("刷新隧道列表")
         refresh_button.clicked.connect(self.load_tunnels)
         layout.addWidget(refresh_button)
-
-        refresh_button = QPushButton("刷新隧道列表")
-        refresh_button.setObjectName("refreshButton")
 
         self.tunnel_container = QWidget()
         self.tunnel_container.setLayout(QGridLayout())
@@ -1985,8 +1997,64 @@ class MainWindow(QMainWindow):
 
         layout.addLayout(button_layout)
 
-        self.content_stack.addWidget(tunnel_widget)
+    def setup_frpc_output_page(self, frpc_output_widget):
+        layout = QVBoxLayout(frpc_output_widget)
 
+        self.tunnel_select_combo = QComboBox()
+        self.tunnel_select_combo.currentIndexChanged.connect(self.update_frpc_output)
+        layout.addWidget(self.tunnel_select_combo)
+
+        self.frpc_output_text = QTextEdit()
+        self.frpc_output_text.setReadOnly(True)
+        layout.addWidget(self.frpc_output_text)
+
+        self.load_tunnel_names()
+
+    def load_tunnel_names(self):
+        if self.token:
+            tunnels = get_user_tunnels(self.token)
+            self.tunnel_select_combo.clear()
+            for tunnel in tunnels:
+                self.tunnel_select_combo.addItem(tunnel['name'])
+
+    def update_frpc_output(self):
+        selected_tunnel = self.tunnel_select_combo.currentText()
+        if selected_tunnel:
+            # 获取对应隧道的命令行输出
+            output = self.get_frpc_output(selected_tunnel)
+            self.render_frpc_output(output)
+
+    def get_frpc_output(self, tunnel_name):
+        # 这里实现获取隧道命令行输出的逻辑
+        # 目前返回示例输出
+        return """
+        [I] Info message
+        [E] Error message
+        [W] Warning message
+        Token: 1234567890abcdef
+        IP: 112.123.123.23
+        """
+
+    def render_frpc_output(self, output):
+        output_lines = output.split('\n')
+        rendered_text = ""
+
+        for line in output_lines:
+            if '[I]' in line or '[i]' in line:
+                rendered_text += f'<span style="color: green;">{line}</span><br>'
+            elif '[E]' in line or '[e]' in line:
+                rendered_text += f'<span style="color: red;">{line}</span><br>'
+            elif '[W]' in line or '[w]' in line:
+                rendered_text += f'<span style="color: orange;">{line}</span><br>'
+            else:
+                rendered_text += f'{line}<br>'
+
+        # 替换 Token 和 IP 地址
+        rendered_text = rendered_text.replace(self.token, "*******你的token********")
+        rendered_text = re.sub(r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b', lambda m: '***.***.***.' + m.group(0).split('.')[-1], rendered_text)
+
+        self.frpc_output_text.setHtml(rendered_text)
+	
     def setup_domain_page(self):
         domain_widget = QWidget()
         layout = QVBoxLayout(domain_widget)
