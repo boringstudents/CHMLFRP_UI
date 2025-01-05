@@ -1776,9 +1776,9 @@ class MainWindow(QMainWindow):
 	        self.frpc_output_text.clear()
 	        output_text = "".join(self.tunnel_outputs.get(selected_tunnel, []))
 	        self.frpc_output_text.setPlainText(output_text)
-	    
-	    # Ensure node status updates correctly
-	    self.update_node_status(selected_tunnel)
+	
+	        # Ensure node status updates correctly
+	        self.update_node_status(selected_tunnel)
 	
     def setup_system_tray(self):
         icon_path = get_absolute_path("favicon.ico")
@@ -1988,7 +1988,7 @@ class MainWindow(QMainWindow):
     def update_tunnel_dropdown(self):
 	    self.tunnel_dropdown.clear()
 	    self.tunnel_dropdown.addItem("选择隧道")
-	    
+	
 	    # Fetch all user tunnels
 	    if self.token:
 	        tunnels = get_user_tunnels(self.token)
@@ -2069,42 +2069,41 @@ class MainWindow(QMainWindow):
 	    self.content_stack.addWidget(self.tunnel_output_display)
 
     def setup_domain_page(self):
-        domain_widget = QWidget()
-        layout = QVBoxLayout(domain_widget)
-
-        # 添加刷新按钮
-        refresh_button = QPushButton("刷新域名列表")
-        refresh_button.clicked.connect(self.load_domains)
-        layout.addWidget(refresh_button)
-
-        refresh_button = QPushButton("刷新域名列表")
-        refresh_button.setObjectName("refreshButton")
-
-        self.domain_container = QWidget()
-        self.domain_container.setLayout(QGridLayout())
-
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setWidget(self.domain_container)
-
-        layout.addWidget(scroll_area)
-
-        button_layout = QHBoxLayout()
-        add_domain_button = QPushButton("添加域名")
-        add_domain_button.clicked.connect(self.add_domain)
-        self.edit_domain_button = QPushButton("编辑域名")
-        self.edit_domain_button.clicked.connect(self.edit_domain)
-        self.edit_domain_button.setEnabled(False)
-        self.delete_domain_button = QPushButton("删除域名")
-        self.delete_domain_button.clicked.connect(self.delete_domain)
-        self.delete_domain_button.setEnabled(False)
-        button_layout.addWidget(add_domain_button)
-        button_layout.addWidget(self.edit_domain_button)
-        button_layout.addWidget(self.delete_domain_button)
-
-        layout.addLayout(button_layout)
-
-        self.content_stack.addWidget(domain_widget)
+	    domain_widget = QWidget()
+	    layout = QVBoxLayout(domain_widget)
+	
+	    # 添加刷新按钮
+	    refresh_button = QPushButton("刷新域名列表")
+	    refresh_button.clicked.connect(self.load_domains)
+	    layout.addWidget(refresh_button)
+	
+	    # 域容器
+	    self.domain_container = QWidget()
+	    self.domain_container.setLayout(QGridLayout())
+	
+	    scroll_area = QScrollArea()
+	    scroll_area.setWidgetResizable(True)
+	    scroll_area.setWidget(self.domain_container)
+	
+	    layout.addWidget(scroll_area)
+	
+	    # Buttons for domain actions
+	    button_layout = QHBoxLayout()
+	    add_domain_button = QPushButton("添加域名")
+	    add_domain_button.clicked.connect(self.add_domain)
+	    self.edit_domain_button = QPushButton("编辑域名")
+	    self.edit_domain_button.clicked.connect(self.edit_domain)
+	    self.edit_domain_button.setEnabled(False)
+	    self.delete_domain_button = QPushButton("删除域名")
+	    self.delete_domain_button.clicked.connect(self.delete_domain)
+	    self.delete_domain_button.setEnabled(False)
+	    button_layout.addWidget(add_domain_button)
+	    button_layout.addWidget(self.edit_domain_button)
+	    button_layout.addWidget(self.delete_domain_button)
+	
+	    layout.addLayout(button_layout)
+	
+	    self.content_stack.addWidget(domain_widget)
 
     def setup_node_page(self):
         node_widget = QWidget()
