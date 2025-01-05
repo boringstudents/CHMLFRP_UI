@@ -2721,7 +2721,7 @@ class MainWindow(QMainWindow):
 	                节点名称: {node['name']}
 	                节点地址: {node['area']}
 	                权限组: {node['nodegroup']}
-	                是否属于4*带宽节点: {node['china']}
+	                是否属于大陆带宽节点: {node['china']}
 	                是否支持web: {node['web']}
 	                是否支持udp: {node['udp']}
 	                是否有防御: {node['fangyu']}
