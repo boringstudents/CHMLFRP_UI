@@ -1949,25 +1949,13 @@ class MainWindow(QMainWindow):
         tunnel_widget = QWidget()
         layout = QVBoxLayout(tunnel_widget)
 
-        # 添加分页
-        self.tunnel_tab_widget = QTabWidget()
-        self.tunnel_tab_widget.addTab(QWidget(), "隧道列表")
-        self.tunnel_tab_widget.addTab(QWidget(), "frpc命令行输出")
-
-        self.setup_tunnel_list_page(self.tunnel_tab_widget.widget(0))  # 设置隧道列表页面
-        self.setup_frpc_output_page(self.tunnel_tab_widget.widget(1))  # 设置frpc命令行输出页面
-
-        layout.addWidget(self.tunnel_tab_widget)
-        self.content_stack.addWidget(tunnel_widget)
-
-
-    def setup_tunnel_list_page(self, tunnel_list_widget):
-        layout = QVBoxLayout(tunnel_list_widget)
-
         # 添加刷新按钮
         refresh_button = QPushButton("刷新隧道列表")
         refresh_button.clicked.connect(self.load_tunnels)
         layout.addWidget(refresh_button)
+
+        refresh_button = QPushButton("刷新隧道列表")
+        refresh_button.setObjectName("refreshButton")
 
         self.tunnel_container = QWidget()
         self.tunnel_container.setLayout(QGridLayout())
@@ -1997,70 +1985,8 @@ class MainWindow(QMainWindow):
 
         layout.addLayout(button_layout)
 
-    def setup_frpc_output_page(self, frpc_output_widget):
-        layout = QVBoxLayout(frpc_output_widget)
+        self.content_stack.addWidget(tunnel_widget)
 
-        self.tunnel_select_combo = QComboBox()
-        self.tunnel_select_combo.currentIndexChanged.connect(self.update_frpc_output)
-        layout.addWidget(self.tunnel_select_combo)
-
-        self.frpc_output_text = QTextEdit()
-        self.frpc_output_text.setReadOnly(True)
-        layout.addWidget(self.frpc_output_text)
-
-        self.load_tunnel_names()
-
-    def load_tunnel_names(self):
-	    if self.token:
-	        tunnels = get_user_tunnels(self.token)
-	        if tunnels is None:
-	            QMessageBox.warning(self, "错误", "未能获取隧道列表。请检查网络连接或Token是否正确。")
-	            return
-	        
-	        self.tunnel_select_combo.clear()
-	        for tunnel in tunnels:
-	            self.tunnel_select_combo.addItem(tunnel['name'])
-	    else:
-	        QMessageBox.warning(self, "错误", "未能加载隧道列表，因为Token未设置。")
-
-    def update_frpc_output(self):
-        selected_tunnel = self.tunnel_select_combo.currentText()
-        if selected_tunnel:
-            # 获取对应隧道的命令行输出
-            output = self.get_frpc_output(selected_tunnel)
-            self.render_frpc_output(output)
-
-    def get_frpc_output(self, tunnel_name):
-        # 这里实现获取隧道命令行输出的逻辑
-        # 目前返回示例输出
-        return """
-        [I] Info message
-        [E] Error message
-        [W] Warning message
-        Token: 1234567890abcdef
-        IP: 112.123.123.23
-        """
-
-    def render_frpc_output(self, output):
-        output_lines = output.split('\n')
-        rendered_text = ""
-
-        for line in output_lines:
-            if '[I]' in line or '[i]' in line:
-                rendered_text += f'<span style="color: green;">{line}</span><br>'
-            elif '[E]' in line or '[e]' in line:
-                rendered_text += f'<span style="color: red;">{line}</span><br>'
-            elif '[W]' in line or '[w]' in line:
-                rendered_text += f'<span style="color: orange;">{line}</span><br>'
-            else:
-                rendered_text += f'{line}<br>'
-
-        # 替换 Token 和 IP 地址
-        rendered_text = rendered_text.replace(self.token, "*******你的token********")
-        rendered_text = re.sub(r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b', lambda m: '***.***.***.' + m.group(0).split('.')[-1], rendered_text)
-
-        self.frpc_output_text.setHtml(rendered_text)
-	
     def setup_domain_page(self):
         domain_widget = QWidget()
         layout = QVBoxLayout(domain_widget)
@@ -3901,114 +3827,6 @@ class MainWindow(QMainWindow):
                 QPushButton:disabled {
                     background-color: #424242;
                 }
-                QLineEdit, QComboBox, QTextEdit, QMenuBar {
-                    padding: 5px;
-                    border: 1px solid #424242;
-                    border-radius: 4px;
-                    background-color: #1E1E1E;
-                    color: #FFFFFF;
-                }
-                QMenuBar::item {
-                    background-color: #2D2D2D;
-                    color: #FFFFFF;
-                }
-                QMenuBar::item:selected {
-                    background-color: #3D3D3D;
-                }
-                NodeCard, TunnelCard, DomainCard {
-                    background-color: #2D2D2D;
-                    border: 1px solid #424242;
-                }
-                NodeCard:hover, TunnelCard:hover, DomainCard:hover {
-                    background-color: #3D3D3D;
-                }
-            """)
-        else:
-            self.button_color = "#4CAF50"
-            self.button_hover_color = "#45a049"
-            self.setStyleSheet("""
-                QWidget {
-                    color: #333333;
-                    background-color: #FFFFFF;
-                }
-                #background {
-                    background-color: #F0F0F0;
-                    border-radius: 10px;
-                }
-                QPushButton {
-                    background-color: #4CAF50;
-                    color: white;
-                    border: none;
-                    padding: 5px 10px;
-                    text-align: center;
-                    text-decoration: none;
-                    font-size: 14px;
-                    margin: 4px 2px;
-                    border-radius: 4px;
-                }
-                QPushButton:hover {
-                    background-color: #45a049;
-                }
-                QPushButton:disabled {
-                    background-color: #CCCCCC;
-                }
-                QLineEdit, QComboBox, QTextEdit, QMenuBar {
-                    padding: 5px;
-                    border: 1px solid #DCDCDC;
-                    border-radius: 4px;
-                    background-color: #F0F0F0;
-                    color: #333333;
-                }
-                QMenuBar::item {
-                    background-color: #FFFFFF;
-                    color: #333333;
-                }
-                QMenuBar::item:selected {
-                    background-color: #E0E0E0;
-                }
-                NodeCard, TunnelCard, DomainCard {
-                    background-color: #FFFFFF;
-                    border: 1px solid #D0D0D0;
-                }    
-                NodeCard:hover, TunnelCard:hover, DomainCard:hover {
-                    background-color: #F0F0F0;
-                }
-            """)
-
-        self.ip_tools_widget.update_style(self.dark_theme)
-        self.tunnel_select_combo.setStyleSheet(self.styleSheet())
-        self.frpc_output_text.setStyleSheet(self.styleSheet())
-        self.menuBar().setStyleSheet(self.styleSheet())
-	
-        if self.dark_theme:
-            self.button_color = "#0D47A1"
-            self.button_hover_color = "#1565C0"
-            self.setStyleSheet("""
-                QWidget {
-                    color: #FFFFFF;
-                    background-color: #2D2D2D;
-                }
-                #background {
-                    background-color: #1E1E1E;
-                    border-radius: 10px;
-                }
-                QPushButton {
-                    background-color: #0D47A1;
-                    color: white;
-                    border: none;
-                    padding: 5px 10px;
-                    text-align: center;
-                    text-decoration: none;
-                    font-size: 14px;
-                    margin: 4px 2px;
-                    border-radius: 4px;
-                }
-                QPushButton:hover {
-                    background-color: #1565C0;
-                }
-                QPushButton:disabled {
-                    background-color: #424242;
-                }
                 QLineEdit, QComboBox, QTextEdit {
                     padding: 5px;
                     border: 1px solid #424242;
@@ -4070,6 +3888,7 @@ class MainWindow(QMainWindow):
             """)
         self.ip_tools_widget.update_style(self.dark_theme)
         if self.dark_theme:
+            # ... 其他样式 ...
             refresh_button_style = """
                     QPushButton#refreshButton {
                         background-color: #1E90FF;
@@ -4084,6 +3903,7 @@ class MainWindow(QMainWindow):
                     }
                 """
         else:
+            # ... 其他样式 ...
             refresh_button_style = """
                     QPushButton#refreshButton {
                         background-color: #4CAF50;
@@ -4099,7 +3919,6 @@ class MainWindow(QMainWindow):
                 """
 
         self.setStyleSheet(self.styleSheet() + refresh_button_style)
-	    
 
     def refresh_nodes(self):
         """刷新节点状态"""
