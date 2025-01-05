@@ -1717,8 +1717,8 @@ class MainWindow(QMainWindow):
 	
 	    self.setup_user_info_page()
 	    self.setup_tunnel_page()
-	    self.setup_frpc_output_page()
 	    self.setup_domain_page()
+	    self.setup_frpc_output_page()
 	    self.setup_node_page()
 	    self.setup_ddns_page()
 	    self.setup_ping_page()
@@ -1755,18 +1755,24 @@ class MainWindow(QMainWindow):
     def setup_frpc_output_page(self):
 	    frpc_output_widget = QWidget()
 	    layout = QVBoxLayout(frpc_output_widget)
-	    frpc_output_text = QTextEdit()
-	    frpc_output_text.setReadOnly(True)
-	    layout.addWidget(frpc_output_text)
-	
-	    self.view_button = QPushButton("查看输出")
-	    self.view_button.clicked.connect(self.show_tunnel_output)
-	    self.view_button.setEnabled(True)
-	    layout.addWidget(self.view_button)
 	    
-	    self.tunnel_output_display = frpc_output_text  # 将frpc_output_text作为tunnel_output_display
-	
+	    self.tunnel_dropdown = QComboBox()
+	    self.tunnel_dropdown.addItem("选择隧道")
+	    self.tunnel_dropdown.currentIndexChanged.connect(self.update_frpc_output)
+	    layout.addWidget(self.tunnel_dropdown)
+	    
+	    self.frpc_output_text = QTextEdit()
+	    self.frpc_output_text.setReadOnly(True)
+	    layout.addWidget(self.frpc_output_text)
+	    
 	    self.content_stack.addWidget(frpc_output_widget)
+	    
+    def update_frpc_output(self):
+	    selected_tunnel = self.tunnel_dropdown.currentText()
+	    if selected_tunnel != "选择隧道":
+	        self.frpc_output_text.clear()
+	        output_text = "".join(self.tunnel_outputs.get(selected_tunnel, []))
+	        self.frpc_output_text.setPlainText(output_text)
 	
     def setup_system_tray(self):
         icon_path = get_absolute_path("favicon.ico")
@@ -1963,12 +1969,21 @@ class MainWindow(QMainWindow):
         self.content_stack.addWidget(user_info_widget)
 
     def on_tunnel_clicked(self, tunnel_info, is_selected):
-        if is_selected:
-            if tunnel_info not in self.selected_tunnels:
-                self.selected_tunnels.append(tunnel_info)
-        else:
-            self.selected_tunnels = [t for t in self.selected_tunnels if t['id'] != tunnel_info['id']]
-        self.update_tunnel_buttons()
+	    if is_selected:
+	        if tunnel_info not in self.selected_tunnels:
+	            self.selected_tunnels.append(tunnel_info)
+	    else:
+	        self.selected_tunnels = [t for t in self.selected_tunnels if t['id'] != tunnel_info['id']]
+	    self.update_tunnel_buttons()
+	
+	    # 更新 frpc 输出页面中的下拉列表
+	    self.update_tunnel_dropdown()
+
+    def update_tunnel_dropdown(self):
+	    self.tunnel_dropdown.clear()
+	    self.tunnel_dropdown.addItem("选择隧道")
+	    for tunnel in self.selected_tunnels:
+	        self.tunnel_dropdown.addItem(tunnel['name'])
 
     def update_tunnel_buttons(self):
         selected_count = len(self.selected_tunnels)
@@ -2037,6 +2052,10 @@ class MainWindow(QMainWindow):
 	    layout.addLayout(button_layout)
 	
 	    self.content_stack.addWidget(tunnel_widget)
+	
+	    self.tunnel_output_display = QTextEdit()
+	    self.tunnel_output_display.setReadOnly(True)
+	    self.content_stack.addWidget(self.tunnel_output_display)
 
     def setup_domain_page(self):
         domain_widget = QWidget()
