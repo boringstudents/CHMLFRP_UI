@@ -14,6 +14,7 @@ import json
 from concurrent.futures import *
 import ipaddress
 import re
+import traceback
 
 import requests
 from PyQt6.QtCore import *
@@ -4620,5 +4621,4 @@ if __name__ == '__main__':
         sys.exit(app.exec())
     except Exception as e:
         print(f"发生意外错误: {e}")
-        import traceback
         traceback.print_exc()
