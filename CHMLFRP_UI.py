@@ -2022,6 +2022,19 @@ class MainWindow(QMainWindow):
 
         dialog.exec()
 
+    def get_tunnel_output(self, tunnel_name):
+        if tunnel_name in self.tunnel_processes:
+            process = self.tunnel_processes[tunnel_name]
+            try:
+                output, _ = process.communicate(timeout=1)
+                return output.decode('utf-8')
+            except subprocess.TimeoutExpired:
+                process.kill()
+                output, _ = process.communicate()
+                return output.decode('utf-8')
+        return ""
+	
+
     def render_log_content(self, log_content):
         log_content = log_content.replace(self.token, "*******你的token********")
 
