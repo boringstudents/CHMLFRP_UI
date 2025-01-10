@@ -62,6 +62,7 @@ jobs:
           --nofollow-import-to=psutil.tests.test_testutils `
           --nofollow-import-to=psutil.tests `
           --windows-icon-from-ico=./favicon.ico `
+          --jobs=4 `
           ./CHMLFRP_UI.py
 
       - name: Check if output directory exists
