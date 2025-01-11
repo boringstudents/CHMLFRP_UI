@@ -1995,45 +1995,20 @@ class MainWindow(QMainWindow):
 	    self.content_stack.addWidget(tunnel_widget)
 
 
-    def view_tunnel_output(self):
-        if not self.selected_tunnels:
-            QMessageBox.warning(self, "警告", "请先选择要查看的隧道")
-            return
+    def view_tunnel_output(self, tunnel_name):
+	    process = self.tunnel_processes.get(tunnel_name)
+	    if process:
+	        output = self.get_tunnel_output(process)
+	        QMessageBox.information(self, f"隧道 {tunnel_name} 输出", output)
+	    else:
+	        QMessageBox.warning(self, "警告", f"未找到隧道 {tunnel_name} 的进程")
 
-        if len(self.selected_tunnels) > 1:
-            QMessageBox.warning(self, "警告", "只能选择一个隧道查看输出")
-            return
-
-        tunnel_info = self.selected_tunnels[0]
-        dialog = QDialog(self)
-        dialog.setWindowTitle(f"查看隧道 '{tunnel_info['name']}' 输出")
-        dialog.setFixedSize(800, 600)
-        layout = QVBoxLayout(dialog)
-
-        log_display = QTextEdit()
-        log_display.setReadOnly(True)
-        layout.addWidget(log_display)
-
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
-        buttons.accepted.connect(dialog.accept)
-        layout.addWidget(buttons)
-
-        log_content = self.get_tunnel_output(tunnel_info['name'])
-        log_display.setHtml(self.render_log_content(log_content))
-
-        dialog.exec()
-
-    def get_tunnel_output(self, tunnel_name):
-        if tunnel_name in self.tunnel_processes:
-            process = self.tunnel_processes[tunnel_name]
-            try:
-                output, _ = process.communicate(timeout=1)
-                return output.decode('utf-8')
-            except subprocess.TimeoutExpired:
-                process.kill()
-                output, _ = process.communicate()
-                return output.decode('utf-8')
-        return ""
+    def get_tunnel_output(self, process):
+	    if process is not None:
+	        output = process.readAllStandardOutput().data().decode()
+	        error = process.readAllStandardError().data().decode()
+	        return f"标准输出:\n{output}\n\n标准错误:\n{error}"
+	    return "无法获取隧道输出"
 	
 
     def render_log_content(self, log_content):
@@ -2572,15 +2547,24 @@ class MainWindow(QMainWindow):
         """
         return details
 
-    def start_stop_tunnel(self, tunnel_info, start):
-        if start:
-            self.start_tunnel(tunnel_info)
-        else:
-            self.stop_tunnel(tunnel_info)
-
-        # 更新隧道卡片状态
-        self.update_tunnel_card_status(tunnel_info['name'], start)
-
+    def stop_tunnel(self, tunnel_info):
+	    try:
+	        process = self.tunnel_processes.get(tunnel_info['name'])
+	        if process:
+	            process.terminate()
+	            process.waitForFinished(5000)  # Wait for up to 5 seconds for the process to terminate
+	            if process.state() != QProcess.NotRunning:  # Check if the process is still running
+	                process.kill()
+	            del self.tunnel_processes[tunnel_info['name']]
+	            self.logger.info(f"隧道 {tunnel_info['name']} 已停止")
+	        else:
+	            self.logger.warning(f"未找到隧道 {tunnel_info['name']} 的运行进程")
+	
+	        # 更新UI状态
+	        self.update_tunnel_card_status(tunnel_info['name'], False)
+	    except Exception as e:
+	        self.logger.exception(f"停止隧道时发生错误: {str(e)}")
+		    
     def start_tunnel(self, tunnel_info):
 	    try:
 	        # 首先检查节点是否在线
