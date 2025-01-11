@@ -10,7 +10,7 @@ from logging.handlers import *
 import random
 import socket
 import winreg
-import datetime
+from datetime import *
 import threading
 import json
 from concurrent.futures import *
@@ -2607,27 +2607,27 @@ class MainWindow(QMainWindow):
 
 
     def read_process_output(self, tunnel_name, process):
-        while True:
-            output = process.stdout.readline()
-            if process.poll() is not None and output == b'':
-                break
-            if output:
-                log_text = output.decode().strip()
-                log_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                log_count = len(self.tunnel_logs.get(tunnel_name, [])) + 1
-
-                log_entry = {
-                    "text": log_text,
-                    "time": log_time,
-                    "count": log_count
-                }
-
-                if tunnel_name not in self.tunnel_logs:
-                    self.tunnel_logs[tunnel_name] = []
-                self.tunnel_logs[tunnel_name].append(log_entry)
-
-                # 实时更新日志显示
-                self.append_log(self.log_display, log_entry)
+	    while True:
+	        output = process.stdout.readline()
+	        if process.poll() is not None and output == b'':
+	            break
+	        if output:
+	            log_text = output.decode().strip()
+	            log_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+	            log_count = len(self.tunnel_logs.get(tunnel_name, [])) + 1
+	
+	            log_entry = {
+	                "text": log_text,
+	                "time": log_time,
+	                "count": log_count
+	            }
+	
+	            if tunnel_name not in self.tunnel_logs:
+	                self.tunnel_logs[tunnel_name] = []
+	            self.tunnel_logs[tunnel_name].append(log_entry)
+	
+	            # 实时更新日志显示
+	            self.append_log(self.log_display, log_entry)
 
 
     def update_tunnel_card_status(self, tunnel_name, is_running):
