@@ -1561,20 +1561,23 @@ class OutputDialog(QDialog):
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         separator = f'<hr><b>隧道: {tunnel_name}</b> (启动次数: {run_number}) - <i>{timestamp}</i><br>'
         
-        # Check if the tunnel name exists and the run number is different
-        if tunnel_name in self.tunnel_outputs and self.tunnel_outputs[tunnel_name]['run_number'] == run_number:
-            # Replace the existing output
-            start_idx = self.output_text_edit.toHtml().find(f'<b>隧道: {tunnel_name}</b>')
-            end_idx = self.output_text_edit.toHtml().find('<hr>', start_idx + 1)
-            if end_idx == -1:
-                end_idx = len(self.output_text_edit.toHtml())
-            current_text = self.output_text_edit.toHtml()[:start_idx] + separator + output + self.output_text_edit.toHtml()[end_idx:]
-            self.output_text_edit.setHtml(current_text)
+        if tunnel_name in self.tunnel_outputs:
+            if self.tunnel_outputs[tunnel_name]['run_number'] == run_number:
+                # 覆盖相同次数的输出
+                start_idx = self.output_text_edit.toHtml().find(f'<b>隧道: {tunnel_name}</b>')
+                end_idx = self.output_text_edit.toHtml().find('<hr>', start_idx + 1)
+                if end_idx == -1:
+                    end_idx = len(self.output_text_edit.toHtml())
+                current_text = self.output_text_edit.toHtml()[:start_idx] + separator + output + self.output_text_edit.toHtml()[end_idx:]
+                self.output_text_edit.setHtml(current_text)
+            else:
+                # 追加不同次数的输出
+                self.output_text_edit.append(separator + output)
         else:
-            # Add new output
+            # 新的输出
             self.output_text_edit.append(separator + output)
         
-        # Update the tunnel_outputs dictionary
+        # 更新tunnel_outputs字典
         self.tunnel_outputs[tunnel_name] = {
             'output': output,
             'run_number': run_number
