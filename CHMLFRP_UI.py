@@ -2567,31 +2567,43 @@ class MainWindow(QMainWindow):
         self.update_tunnel_card_status(tunnel_info['name'], start)
 
     def start_tunnel(self, tunnel_info):
-        tunnel_name = tunnel_info['name']
-        frpc_path = get_absolute_path("frpc.exe")
+        try:
+            # 首先检查节点是否在线
+            if not is_node_online(tunnel_info['node']):
+                QMessageBox.warning(self, "警告", f"节点 {tunnel_info['node']} 当前不在线，无法启动隧道。")
+                self.logger.warning(f"尝试启动隧道失败: 节点 {tunnel_info['node']} 不在线")
+                return
+            tunnel_name = tunnel_info['name']
+            frpc_path = get_absolute_path("frpc.exe")
 
-        cmd = [
-            frpc_path,
-            "-u", self.token,
-            "-p", str(tunnel_info['id'])
-        ]
+            cmd = [
+                frpc_path,
+                "-u", self.token,
+                "-p", str(tunnel_info['id'])
+            ]
 
-        process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            creationflags=subprocess.CREATE_NO_WINDOW
-        )
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                creationflags=subprocess.CREATE_NO_WINDOW
+            )
 
-        self.tunnel_processes[tunnel_name] = process
-        self.logger.info(f"frpc已启动，使用节点: {tunnel_info['node']}")
+            self.tunnel_processes[tunnel_name] = process
+            self.logger.info(f"frpc已启动，使用节点: {tunnel_info['node']}")
 
-        # 启动日志读取线程
-        log_thread = threading.Thread(target=self.read_process_output, args=(tunnel_name, process))
-        log_thread.start()
+            # 启动日志读取线程
+            log_thread = threading.Thread(target=self.read_process_output, args=(tunnel_name, process))
+            log_thread.start()
 
-        # 更新UI状态
-        self.update_tunnel_card_status(tunnel_name, True)
+            # 更新UI状态
+            self.update_tunnel_card_status(tunnel_name, True)
+
+	    # 启动状态检查
+            QTimer.singleShot(3000, lambda: self.check_tunnel_status(tunnel_info['name']))
+        except Exception as e:
+            self.logger.exception(f"启动隧道时发生错误: {str(e)}")
+            QMessageBox.warning(self, "错误", f"启动隧道失败: {str(e)}")
 
 
     def read_process_output(self, tunnel_name, process):
