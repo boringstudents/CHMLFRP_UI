@@ -2324,18 +2324,18 @@ class MainWindow(QMainWindow):
             self.logger.error(f"停止API操作时发生错误: {str(e)}")
 
     def load_user_data(self):
-        """加载用户数据"""
-        try:
-            self.user_info = self.get_user_info()
-            self.load_tunnels()
-            self.load_domains()
-            self.load_nodes()
-            self.load_user_domains()  # 为DDNS功能加载域名
-            self.display_user_info()
-        except Exception as e:
-            self.logger.error(f"加载用户数据时发生错误: {str(e)}")
-            self.logger.error(traceback.format_exc())
-            self.show_error_message(f"加载用户数据时发生错误: {str(e)}")
+	    """加载用户数据"""
+	    try:
+	        self.user_info = self.get_user_info()
+	        self.load_tunnels()
+	        self.load_domains()
+	        self.load_nodes()
+	        self.load_user_domains()  # 为DDNS功能加载域名
+	        self.display_user_info()
+	    except Exception as e:
+	        self.logger.error(f"加载用户数据时发生错误: {str(e)}")
+	        self.logger.error(traceback.format_exc())
+	        self.show_error_message(self, f"加载用户数据时发生错误: {str(e)}")
 
     def get_user_info(self):
         """获取用户信息"""
@@ -2440,8 +2440,7 @@ class MainWindow(QMainWindow):
 	    except Exception as e:
 	        self.logger.error(f"加载隧道列表时发生错误: {str(e)}")
 	        self.logger.error(traceback.format_exc())
-	        self.show_error_message(f"加载隧道列表时发生错误: {str(e)}")
-
+	        self.show_error_message(self, f"加载隧道列表时发生错误: {str(e)}")
 
     def clear_error_message(self, widget):
         """清除错误消息"""
