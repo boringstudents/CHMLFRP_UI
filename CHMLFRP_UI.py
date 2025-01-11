@@ -2029,11 +2029,11 @@ class MainWindow(QMainWindow):
 
     # 实现 get_tunnel_output 方法获取隧道的输出
     def get_tunnel_output(self, process):
-        if process is not None:
-            output = process.readAllStandardOutput().data().decode()
-            error = process.readAllStandardError().data().decode()
-            return f"标准输出:\n{output}\n\n标准错误:\n{error}"
-        return "无法获取隧道输出"
+	    if process is not None:
+	        output = process.stdout.read().decode()
+	        error = process.stderr.read().decode()
+	        return f"标准输出:\n{output}\n\n标准错误:\n{error}"
+	    return "无法获取隧道输出"
 
     # 实现 render_log_content 方法渲染日志内容
     def render_log_content(self, log_content):
@@ -2050,6 +2050,7 @@ class MainWindow(QMainWindow):
         log_content = re.sub(r'\[E\]', '<span style="color: red;">[E]</span>', log_content, flags=re.IGNORECASE)
         log_content = re.sub(r'\[W\]', '<span style="color: orange;">[W]</span>', log_content, flags=re.IGNORECASE)
         log_content = re.sub(r'error', '<span style="color: red;">error</span>', log_content, flags=re.IGNORECASE)
+        log_content = re.sub(r'\bwarning\b', '<span style="color: orange;">warning</span>', log_content, flags=re.IGNORECASE)
 
         return f"<pre>{log_content}</pre>"
 
