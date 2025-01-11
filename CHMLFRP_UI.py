@@ -1586,6 +1586,7 @@ class MainWindow(QMainWindow):
         self.log_display = QTextEdit(self)
         self.log_display.setReadOnly(True)
 
+        self.tunnel_outputs = {}
         # 初始化主题相关属性
         self.dark_theme = self.is_system_dark_theme()
         self.button_color = ""
