@@ -2000,43 +2000,46 @@ class MainWindow(QMainWindow):
 
 
     def view_tunnel_output(self):
-        """查看隧道的输出"""
-        if not self.selected_tunnels:
-            QMessageBox.warning(self, "警告", "请先选择一个隧道")
-            return
-
-        if len(self.selected_tunnels) > 1:
-            QMessageBox.warning(self, "警告", "查看输出时只能选择一个隧道")
-            return
-
-        tunnel_info = self.selected_tunnels[0]
-        tunnel_name = tunnel_info['name']
-        
-        output = ""
-        if tunnel_name in self.tunnel_processes:
-            process = self.tunnel_processes[tunnel_name]
-            output = self.get_tunnel_output(process)
-            self.last_tunnel_output[tunnel_name] = output  # 保存最新的输出
-        else:
-            output = self.last_tunnel_output.get(tunnel_name, "未找到隧道的运行进程，也没有上一次的输出")
-
-        # 分割输出并显示运行的时间和次数
-        outputs = output.split("#")
-        formatted_output = ""
-        for idx, out in enumerate(outputs):
-            formatted_output += f"运行次数: {idx + 1}\n运行时间: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n输出:\n{out}\n\n"
-
-        dialog = QDialog(self)
-        dialog.setWindowTitle(f"隧道 {tunnel_name} 输出")
-        dialog.setFixedSize(800, 600)
-        layout = QVBoxLayout(dialog)
-
-        text_edit = QTextEdit()
-        text_edit.setReadOnly(True)
-        text_edit.setHtml(self.render_log_content(formatted_output))
-
-        layout.addWidget(text_edit)
-        dialog.exec()
+	    if not self.selected_tunnels:
+	        QMessageBox.warning(self, "警告", "请先选择一个隧道")
+	        return
+	
+	    if len(self.selected_tunnels) > 1:
+	        QMessageBox.warning(self, "警告", "只能选择一个隧道查看输出")
+	        return
+	
+	    tunnel_info = self.selected_tunnels[0]
+	    tunnel_name = tunnel_info['name']
+	    
+	    output = ""
+	    if tunnel_name in self.tunnel_processes:
+	        process = self.tunnel_processes[tunnel_name]
+	        output = self.get_tunnel_output(process)
+	        self.last_tunnel_output[tunnel_name] = output  # 保存最新的输出
+	    else:
+	        output = self.last_tunnel_output.get(tunnel_name, "未找到隧道的运行进程，也没有上一次的输出")
+	
+	    dialog = QDialog(self)
+	    dialog.setWindowTitle(f"隧道 {tunnel_name} 输出")
+	    dialog.setFixedSize(800, 550)
+	    layout = QVBoxLayout(dialog)
+	
+	    text_edit = QTextEdit()
+	    text_edit.setReadOnly(True)
+	    text_edit.setHtml(self.render_log_content(output))
+	
+	    layout.addWidget(text_edit)
+	    dialog.exec()
+	
+    def get_tunnel_output(self, process):
+	    if process is not None:
+	        try:
+	            output = process.stdout.read().decode()
+	            error = process.stderr.read().decode()
+	            return f"标准输出:\n{output}\n\n标准错误:\n{error}"
+	        except Exception as e:
+	            return f"获取输出时发生错误: {str(e)}"
+	    return "无法获取隧道输出"
 
     # 实现 get_tunnel_output 方法获取隧道的输出
     def get_tunnel_output(self, process):
