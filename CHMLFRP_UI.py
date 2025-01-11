@@ -1544,6 +1544,28 @@ class StopWorker(QObject):
             self.progress.emit(f"已终止 {killed_count} 个残留的 frpc.exe 进程")
         else:
             self.progress.emit("没有发现残留的 frpc.exe 进程")
+
+
+class OutputDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("隧道输出")
+        self.setGeometry(100, 100, 800, 600)
+        self.layout = QVBoxLayout(self)
+
+        self.output_text_edit = QTextEdit()
+        self.output_text_edit.setReadOnly(True)
+        self.layout.addWidget(self.output_text_edit)
+
+        self.close_button = QPushButton("关闭")
+        self.close_button.clicked.connect(self.close)
+        self.layout.addWidget(self.close_button)
+
+    def add_output(self, tunnel_name, output, run_number):
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        separator = f'<hr><b>隧道: {tunnel_name}</b> (启动次数: {run_number}) - <i>{timestamp}</i><br>'
+        self.output_text_edit.append(separator + output)
+	    
             
 class MainWindow(QMainWindow):
     """主窗口"""
@@ -1949,46 +1971,69 @@ class MainWindow(QMainWindow):
         self.delete_domain_button.setEnabled(True)
 
     def setup_tunnel_page(self):
-        tunnel_widget = QWidget()
-        layout = QVBoxLayout(tunnel_widget)
+	    tunnel_widget = QWidget()
+	    layout = QVBoxLayout(tunnel_widget)
+	
+	    # 添加刷新按钮
+	    refresh_button = QPushButton("刷新隧道列表")
+	    refresh_button.clicked.connect(self.load_tunnels)
+	    layout.addWidget(refresh_button)
+	
+	    refresh_button = QPushButton("刷新隧道列表")
+	    refresh_button.setObjectName("refreshButton")
+	
+	    self.tunnel_container = QWidget()
+	    self.tunnel_container.setLayout(QGridLayout())
+	
+	    scroll_area = QScrollArea()
+	    scroll_area.setWidgetResizable(True)
+	    scroll_area.setWidget(self.tunnel_container)
+	
+	    layout.addWidget(scroll_area)
+	
+	    button_layout = QHBoxLayout()
+	    add_tunnel_button = QPushButton("添加隧道")
+	    add_tunnel_button.clicked.connect(self.add_tunnel)
+	    self.edit_tunnel_button = QPushButton("编辑隧道")
+	    self.edit_tunnel_button.clicked.connect(self.edit_tunnel)
+	    self.edit_tunnel_button.setEnabled(False)
+	    self.delete_tunnel_button = QPushButton("删除隧道")
+	    self.delete_tunnel_button.clicked.connect(self.delete_tunnel)
+	    self.delete_tunnel_button.setEnabled(False)
+	    self.batch_edit_button = QPushButton("批量编辑")
+	    self.batch_edit_button.clicked.connect(self.batch_edit_tunnels)
+	    self.batch_edit_button.setEnabled(False)
+	    
+	    # 添加查看输出按钮
+	    self.view_output_button = QPushButton("查看输出")
+	    self.view_output_button.clicked.connect(self.view_output)
+	    self.view_output_button.setEnabled(False)
+	    
+	    button_layout.addWidget(add_tunnel_button)
+	    button_layout.addWidget(self.edit_tunnel_button)
+	    button_layout.addWidget(self.delete_tunnel_button)
+	    button_layout.addWidget(self.batch_edit_button)
+	    button_layout.addWidget(self.view_output_button)  # 添加查看输出按钮
+	
+	    layout.addLayout(button_layout)
+	
+	    self.content_stack.addWidget(tunnel_widget)
 
-        # 添加刷新按钮
-        refresh_button = QPushButton("刷新隧道列表")
-        refresh_button.clicked.connect(self.load_tunnels)
-        layout.addWidget(refresh_button)
 
-        refresh_button = QPushButton("刷新隧道列表")
-        refresh_button.setObjectName("refreshButton")
-
-        self.tunnel_container = QWidget()
-        self.tunnel_container.setLayout(QGridLayout())
-
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setWidget(self.tunnel_container)
-
-        layout.addWidget(scroll_area)
-
-        button_layout = QHBoxLayout()
-        add_tunnel_button = QPushButton("添加隧道")
-        add_tunnel_button.clicked.connect(self.add_tunnel)
-        self.edit_tunnel_button = QPushButton("编辑隧道")
-        self.edit_tunnel_button.clicked.connect(self.edit_tunnel)
-        self.edit_tunnel_button.setEnabled(False)
-        self.delete_tunnel_button = QPushButton("删除隧道")
-        self.delete_tunnel_button.clicked.connect(self.delete_tunnel)
-        self.delete_tunnel_button.setEnabled(False)
-        self.batch_edit_button = QPushButton("批量编辑")
-        self.batch_edit_button.clicked.connect(self.batch_edit_tunnels)
-        self.batch_edit_button.setEnabled(False)
-        button_layout.addWidget(add_tunnel_button)
-        button_layout.addWidget(self.edit_tunnel_button)
-        button_layout.addWidget(self.delete_tunnel_button)
-        button_layout.addWidget(self.batch_edit_button)
-
-        layout.addLayout(button_layout)
-
-        self.content_stack.addWidget(tunnel_widget)
+    def view_output(self):
+	    selected_tunnels = self.get_selected_tunnels()
+	    if not selected_tunnels:
+	        QMessageBox.warning(self, "警告", "请先选择一个隧道")
+	        return
+	
+	    for tunnel_info in selected_tunnels:
+	        tunnel_name = tunnel_info['name']
+	        if tunnel_name in self.tunnel_outputs:
+	            if not self.tunnel_outputs[tunnel_name]['dialog']:
+	                self.tunnel_outputs[tunnel_name]['dialog'] = OutputDialog(self)
+	            self.tunnel_outputs[tunnel_name]['dialog'].show()
+	            self.tunnel_outputs[tunnel_name]['dialog'].add_output(tunnel_name, self.tunnel_outputs[tunnel_name]['output'],
+	                                                                  self.tunnel_outputs[tunnel_name]['run_number'])
 
     def setup_domain_page(self):
         domain_widget = QWidget()
@@ -2508,37 +2553,86 @@ class MainWindow(QMainWindow):
         self.update_tunnel_card_status(tunnel_info['name'], start)
 
     def start_tunnel(self, tunnel_info):
-        try:
-            # 首先检查节点是否在线
-            if not is_node_online(tunnel_info['node']):
-                QMessageBox.warning(self, "警告", f"节点 {tunnel_info['node']} 当前不在线，无法启动隧道。")
-                self.logger.warning(f"尝试启动隧道失败: 节点 {tunnel_info['node']} 不在线")
-                return
+	    try:
+	        # 首先检查节点是否在线
+	        if not is_node_online(tunnel_info['node']):
+	            QMessageBox.warning(self, "警告", f"节点 {tunnel_info['node']} 当前不在线，无法启动隧道。")
+	            self.logger.warning(f"尝试启动隧道失败: 节点 {tunnel_info['node']} 不在线")
+	            return
+	
+	        frpc_path = get_absolute_path("frpc.exe")
+	        cmd = [
+	            frpc_path,
+	            "-u", self.token,
+	            "-p", str(tunnel_info['id'])
+	        ]
+	
+	        process = subprocess.Popen(
+	            cmd,
+	            stdout=subprocess.PIPE,
+	            stderr=subprocess.PIPE,
+	            creationflags=subprocess.CREATE_NO_WINDOW
+	        )
+	        self.logger.info(f"frpc已启动，使用节点: {tunnel_info['node']}")
+	        self.tunnel_processes[tunnel_info['name']] = process
+	
+	        # 捕获输出并存储
+	        self.capture_output(tunnel_info['name'], process)
+	
+	        # 更新UI状态
+	        self.update_tunnel_card_status(tunnel_info['name'], True)
+	
+	        # 启动状态检查
+	        QTimer.singleShot(3000, lambda: self.check_tunnel_status(tunnel_info['name']))
+	    except Exception as e:
+	        self.logger.exception(f"启动隧道时发生错误: {str(e)}")
+	        QMessageBox.warning(self, "错误", f"启动隧道失败: {str(e)}")
 
-            frpc_path = get_absolute_path("frpc.exe")
-            cmd = [
-                frpc_path,
-                "-u", self.token,
-                "-p", str(tunnel_info['id'])
-            ]
 
-            process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                creationflags=subprocess.CREATE_NO_WINDOW
-            )
-            self.logger.info(f"frpc已启动，使用节点: {tunnel_info['node']}")
-            self.tunnel_processes[tunnel_info['name']] = process
+    def obfuscate_sensitive_data(self, text):
+	    obfuscated_text = re.sub(re.escape(self.token), '*******你的token********', text, flags=re.IGNORECASE)
+	    obfuscated_text = re.sub(r'\b(?:\d{1,3}\.){3}\d{1,3}\b', lambda x: '{}.***.***.{}'.format(x.group(0).split('.')[0], x.group(0).split('.')[-1]), obfuscated_text)
+	    return obfuscated_text
 
-            # 更新UI状态
-            self.update_tunnel_card_status(tunnel_info['name'], True)
+    def render_html(self, text):
+	    text = re.sub(r'\[I\]', '<span style="color: green;">[I]</span>', text, flags=re.IGNORECASE)
+	    text = re.sub(r'\[E\]', '<span style="color: red;">[E]</span>', text, flags=re.IGNORECASE)
+	    text = re.sub(r'\[W\]', '<span style="color: orange;">[W]</span>', text, flags=re.IGNORECASE)
+	    return text
 
-            # 启动状态检查
-            QTimer.singleShot(3000, lambda: self.check_tunnel_status(tunnel_info['name']))
-        except Exception as e:
-            self.logger.exception(f"启动隧道时发生错误: {str(e)}")
-            QMessageBox.warning(self, "错误", f"启动隧道失败: {str(e)}")
+    def capture_output(self, tunnel_name, process):
+	    def read_output(pipe, callback):
+	        for line in iter(pipe.readline, b''):
+	            callback(line.decode())
+	        pipe.close()
+	
+	    def update_output(line):
+	        obfuscated_line = self.obfuscate_sensitive_data(line)
+	        self.tunnel_outputs[tunnel_name]['output'] += self.render_html(obfuscated_line)
+	
+	        if self.tunnel_outputs[tunnel_name]['dialog']:
+	            self.tunnel_outputs[tunnel_name]['dialog'].add_output(tunnel_name, self.tunnel_outputs[tunnel_name]['output'],
+	                                                                  self.tunnel_outputs[tunnel_name]['run_number'])
+	
+	    self.tunnel_outputs[tunnel_name] = {
+	        'output': '',
+	        'run_number': self.tunnel_outputs.get(tunnel_name, {}).get('run_number', 0) + 1,
+	        'dialog': None
+	    }
+	
+	    stdout_thread = threading.Thread(target=read_output, args=(process.stdout, update_output))
+	    stderr_thread = threading.Thread(target=read_output, args=(process.stderr, update_output))
+	
+	    stdout_thread.start()
+	    stderr_thread.start()
+	    
+    def update_output(self, tunnel_name, line):
+	    obfuscated_line = self.obfuscate_sensitive_data(line)
+	    self.tunnel_outputs[tunnel_name]['output'] += self.render_html(obfuscated_line)
+	
+	    if self.tunnel_outputs[tunnel_name]['dialog']:
+	        self.tunnel_outputs[tunnel_name]['dialog'].add_output(tunnel_name, self.tunnel_outputs[tunnel_name]['output'],
+	                                                              self.tunnel_outputs[tunnel_name]['run_number'])
 
     def update_tunnel_card_status(self, tunnel_name, is_running):
         for i in range(self.tunnel_container.layout().count()):
