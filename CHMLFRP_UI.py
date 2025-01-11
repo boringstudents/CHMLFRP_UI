@@ -2023,7 +2023,7 @@ class MainWindow(QMainWindow):
 
 
     def view_output(self):
-	    selected_tunnels = self.get_selected_tunnels()
+	    selected_tunnels = self.selected_tunnels()
 	    if not selected_tunnels:
 	        QMessageBox.warning(self, "警告", "请先选择一个隧道")
 	        return
