@@ -2014,11 +2014,25 @@ class MainWindow(QMainWindow):
 	    output = ""
 	    if tunnel_name in self.tunnel_processes:
 	        process = self.tunnel_processes[tunnel_name]
-	        output = self.get_tunnel_output(process)
-	        self.last_tunnel_output[tunnel_name] = output  # 保存最新的输出
+	        output_thread = threading.Thread(target=self.read_process_output, args=(process, tunnel_name))
+	        output_thread.start()
 	    else:
 	        output = self.last_tunnel_output.get(tunnel_name, "未找到隧道的运行进程，也没有上一次的输出")
-	
+	        self.show_output_dialog(tunnel_name, output)
+
+    def read_process_output(self, process, tunnel_name):
+	    output = ""
+	    try:
+	        while True:
+	            output += process.stdout.read().decode()
+	            if process.poll() is not None:
+	                break
+	    except Exception as e:
+	        output += f"获取输出时发生错误: {str(e)}"
+	    self.last_tunnel_output[tunnel_name] = output
+	    self.show_output_dialog(tunnel_name, output)
+
+    def show_output_dialog(self, tunnel_name, output):
 	    dialog = QDialog(self)
 	    dialog.setWindowTitle(f"隧道 {tunnel_name} 输出")
 	    dialog.setFixedSize(800, 550)
