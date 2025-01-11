@@ -1925,6 +1925,7 @@ class MainWindow(QMainWindow):
         self.edit_tunnel_button.setEnabled(selected_count == 1)
         self.delete_tunnel_button.setEnabled(selected_count > 0)
         self.batch_edit_button.setEnabled(selected_count > 0)
+        self.view_output_button.setEnabled(selected_count == 1)
 
     def get_selected_tunnel_count(self):
         count = 0
@@ -1948,46 +1949,109 @@ class MainWindow(QMainWindow):
         self.delete_domain_button.setEnabled(True)
 
     def setup_tunnel_page(self):
-        tunnel_widget = QWidget()
-        layout = QVBoxLayout(tunnel_widget)
+	    tunnel_widget = QWidget()
+	    layout = QVBoxLayout(tunnel_widget)
+	
+	    # 添加刷新按钮
+	    refresh_button = QPushButton("刷新隧道列表")
+	    refresh_button.clicked.connect(self.load_tunnels)
+	    layout.addWidget(refresh_button)
+	
+	    refresh_button = QPushButton("刷新隧道列表")
+	    refresh_button.setObjectName("refreshButton")
+	
+	    self.tunnel_container = QWidget()
+	    self.tunnel_container.setLayout(QGridLayout())
+	
+	    scroll_area = QScrollArea()
+	    scroll_area.setWidgetResizable(True)
+	    scroll_area.setWidget(self.tunnel_container)
+	
+	    layout.addWidget(scroll_area)
+	
+	    button_layout = QHBoxLayout()
+	    add_tunnel_button = QPushButton("添加隧道")
+	    add_tunnel_button.clicked.connect(self.add_tunnel)
+	    self.edit_tunnel_button = QPushButton("编辑隧道")
+	    self.edit_tunnel_button.clicked.connect(self.edit_tunnel)
+	    self.edit_tunnel_button.setEnabled(False)
+	    self.delete_tunnel_button = QPushButton("删除隧道")
+	    self.delete_tunnel_button.clicked.connect(self.delete_tunnel)
+	    self.delete_tunnel_button.setEnabled(False)
+	    self.batch_edit_button = QPushButton("批量编辑")
+	    self.batch_edit_button.clicked.connect(self.batch_edit_tunnels)
+	    self.batch_edit_button.setEnabled(False)
+	    self.view_output_button = QPushButton("查看输出")
+	    self.view_output_button.clicked.connect(self.view_tunnel_output)
+	    self.view_output_button.setEnabled(False)
+	    
+	    button_layout.addWidget(add_tunnel_button)
+	    button_layout.addWidget(self.edit_tunnel_button)
+	    button_layout.addWidget(self.delete_tunnel_button)
+	    button_layout.addWidget(self.batch_edit_button)
+	    button_layout.addWidget(self.view_output_button)
+	
+	    layout.addLayout(button_layout)
+	
+	    self.content_stack.addWidget(tunnel_widget)
 
-        # 添加刷新按钮
-        refresh_button = QPushButton("刷新隧道列表")
-        refresh_button.clicked.connect(self.load_tunnels)
-        layout.addWidget(refresh_button)
 
-        refresh_button = QPushButton("刷新隧道列表")
-        refresh_button.setObjectName("refreshButton")
+    def view_tunnel_output(self):
+        if not self.selected_tunnels:
+            QMessageBox.warning(self, "警告", "请先选择一个隧道")
+            return
 
-        self.tunnel_container = QWidget()
-        self.tunnel_container.setLayout(QGridLayout())
+        if len(self.selected_tunnels) > 1:
+            QMessageBox.warning(self, "警告", "查看输出时只能选择一个隧道")
+            return
 
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setWidget(self.tunnel_container)
+        tunnel_info = self.selected_tunnels[0]
+        tunnel_name = tunnel_info['name']
 
-        layout.addWidget(scroll_area)
+        if tunnel_name in self.tunnel_processes:
+            process = self.tunnel_processes[tunnel_name]
+            output = self.get_tunnel_output(process)
+        
+            dialog = QDialog(self)
+            dialog.setWindowTitle(f"隧道 {tunnel_name} 输出")
+            dialog.setFixedSize(800, 600)
+        
+            layout = QVBoxLayout(dialog)
+        
+            text_edit = QTextEdit()
+            text_edit.setReadOnly(True)
+            text_edit.setHtml(self.render_log_content(output))
 
-        button_layout = QHBoxLayout()
-        add_tunnel_button = QPushButton("添加隧道")
-        add_tunnel_button.clicked.connect(self.add_tunnel)
-        self.edit_tunnel_button = QPushButton("编辑隧道")
-        self.edit_tunnel_button.clicked.connect(self.edit_tunnel)
-        self.edit_tunnel_button.setEnabled(False)
-        self.delete_tunnel_button = QPushButton("删除隧道")
-        self.delete_tunnel_button.clicked.connect(self.delete_tunnel)
-        self.delete_tunnel_button.setEnabled(False)
-        self.batch_edit_button = QPushButton("批量编辑")
-        self.batch_edit_button.clicked.connect(self.batch_edit_tunnels)
-        self.batch_edit_button.setEnabled(False)
-        button_layout.addWidget(add_tunnel_button)
-        button_layout.addWidget(self.edit_tunnel_button)
-        button_layout.addWidget(self.delete_tunnel_button)
-        button_layout.addWidget(self.batch_edit_button)
+            layout.addWidget(text_edit)
+            dialog.exec()
+        else:
+            QMessageBox.warning(self, "警告", f"未找到隧道 {tunnel_name} 的运行进程")
 
-        layout.addLayout(button_layout)
+    # 实现 get_tunnel_output 方法获取隧道的输出
+    def get_tunnel_output(self, process):
+        if process is not None:
+            output = process.readAllStandardOutput().data().decode()
+            error = process.readAllStandardError().data().decode()
+            return f"标准输出:\n{output}\n\n标准错误:\n{error}"
+        return "无法获取隧道输出"
 
-        self.content_stack.addWidget(tunnel_widget)
+    # 实现 render_log_content 方法渲染日志内容
+    def render_log_content(self, log_content):
+        log_content = log_content.replace(self.token, "*******你的token********")
+
+        def mask_ip(match):
+            ip = match.group(0)
+            parts = ip.split('.')
+            return f"{parts[0]}.***.***.{parts[3]}"
+
+        log_content = re.sub(r'\b(?:\d{1,3}\.){3}\d{1,3}\b', mask_ip, log_content)
+    
+        log_content = re.sub(r'\[I\]', '<span style="color: green;">[I]</span>', log_content, flags=re.IGNORECASE)
+        log_content = re.sub(r'\[E\]', '<span style="color: red;">[E]</span>', log_content, flags=re.IGNORECASE)
+        log_content = re.sub(r'\[W\]', '<span style="color: orange;">[W]</span>', log_content, flags=re.IGNORECASE)
+        log_content = re.sub(r'error', '<span style="color: red;">error</span>', log_content, flags=re.IGNORECASE)
+
+        return f"<pre>{log_content}</pre>"
 
     def setup_domain_page(self):
         domain_widget = QWidget()
