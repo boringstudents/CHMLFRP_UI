@@ -2582,37 +2582,44 @@ class MainWindow(QMainWindow):
         self.update_tunnel_card_status(tunnel_info['name'], start)
 
     def start_tunnel(self, tunnel_info):
-        try:
-            # 首先检查节点是否在线
-            if not is_node_online(tunnel_info['node']):
-                QMessageBox.warning(self, "警告", f"节点 {tunnel_info['node']} 当前不在线，无法启动隧道。")
-                self.logger.warning(f"尝试启动隧道失败: 节点 {tunnel_info['node']} 不在线")
-                return
+	    try:
+	        # 首先检查节点是否在线
+	        if not is_node_online(tunnel_info['node']):
+	            QMessageBox.warning(self, "警告", f"节点 {tunnel_info['node']} 当前不在线，无法启动隧道。")
+	            self.logger.warning(f"尝试启动隧道失败: 节点 {tunnel_info['node']} 不在线")
+	            return
+	
+	        frpc_path = get_absolute_path("frpc.exe")
+	        cmd = [
+	            frpc_path,
+	            "-u", self.token,
+	            "-p", str(tunnel_info['id'])
+	        ]
+	
+	        process = QProcess(self)
+	        process.setProgram(cmd[0])
+	        process.setArguments(cmd[1:])
+	        process.readyReadStandardOutput.connect(lambda: self.update_log_output(process))
+	        process.readyReadStandardError.connect(lambda: self.update_log_output(process))
+	        process.finished.connect(lambda: self.handle_tunnel_finished(tunnel_info['name'], process))
+	        process.start()
+	        
+	        self.logger.info(f"frpc已启动，使用节点: {tunnel_info['node']}")
+	        self.tunnel_processes[tunnel_info['name']] = process
+	
+	        # 更新UI状态
+	        self.update_tunnel_card_status(tunnel_info['name'], True)
+	
+	    except Exception as e:
+	        self.logger.exception(f"启动隧道时发生错误: {str(e)}")
+	        QMessageBox.warning(self, "错误", f"启动隧道失败: {str(e)}")
 
-            frpc_path = get_absolute_path("frpc.exe")
-            cmd = [
-                frpc_path,
-                "-u", self.token,
-                "-p", str(tunnel_info['id'])
-            ]
-
-            process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                creationflags=subprocess.CREATE_NO_WINDOW
-            )
-            self.logger.info(f"frpc已启动，使用节点: {tunnel_info['node']}")
-            self.tunnel_processes[tunnel_info['name']] = process
-
-            # 更新UI状态
-            self.update_tunnel_card_status(tunnel_info['name'], True)
-
-            # 启动状态检查
-            QTimer.singleShot(3000, lambda: self.check_tunnel_status(tunnel_info['name']))
-        except Exception as e:
-            self.logger.exception(f"启动隧道时发生错误: {str(e)}")
-            QMessageBox.warning(self, "错误", f"启动隧道失败: {str(e)}")
+    def update_log_output(self, process):
+        while process.canReadLine():
+            output = process.readLine().data().decode().strip()
+            self.log_display.append(output)
+            self.log_display.verticalScrollBar().setValue(self.log_display.verticalScrollBar().maximum())
+	
 
     def update_tunnel_card_status(self, tunnel_name, is_running):
         for i in range(self.tunnel_container.layout().count()):
@@ -2623,22 +2630,22 @@ class MainWindow(QMainWindow):
                 break
 
     def stop_tunnel(self, tunnel_info):
-        try:
-            process = self.tunnel_processes.get(tunnel_info['name'])
-            if process:
-                process.terminate()
-                process.wait(timeout=5)
-                if process.poll() is None:
-                    process.kill()
-                del self.tunnel_processes[tunnel_info['name']]
-                self.logger.info(f"隧道 {tunnel_info['name']} 已停止")
-            else:
-                self.logger.warning(f"未找到隧道 {tunnel_info['name']} 的运行进程")
-
-            # 更新UI状态
-            self.update_tunnel_card_status(tunnel_info['name'], False)
-        except Exception as e:
-            self.logger.exception(f"停止隧道时发生错误: {str(e)}")
+	    try:
+	        process = self.tunnel_processes.get(tunnel_info['name'])
+	        if process:
+	            process.terminate()
+	            process.waitForFinished(5000)
+	            if process.state() != QProcess.NotRunning:
+	                process.kill()
+	            del self.tunnel_processes[tunnel_info['name']]
+	            self.logger.info(f"隧道 {tunnel_info['name']} 已停止")
+	        else:
+	            self.logger.warning(f"未找到隧道 {tunnel_info['name']} 的运行进程")
+	
+	        # 更新UI状态
+	        self.update_tunnel_card_status(tunnel_info['name'], False)
+	    except Exception as e:
+	        self.logger.exception(f"停止隧道时发生错误: {str(e)}")
 
     def check_tunnel_status(self, tunnel_name):
         process = self.tunnel_processes.get(tunnel_name)
@@ -4535,16 +4542,11 @@ class MainWindow(QMainWindow):
             # 在切换到下一个节点之前稍作等待
             time.sleep(5)
 
-    def handle_tunnel_finished(self, tunnel_name):
-        with QMutexLocker(self.running_tunnels_mutex):
-            if tunnel_name in self.running_tunnels:
-                del self.running_tunnels[tunnel_name]
-                items = self.dt_running_list.findItems(tunnel_name, Qt.MatchStartsWith)
-                for item in items:
-                    self.dt_running_list.takeItem(self.dt_running_list.row(item))
-
-            if not self.running_tunnels:
-                self.dt_stop_button.setEnabled(False)
+    def handle_tunnel_finished(self, tunnel_name, process):
+	    self.logger.info(f"隧道 {tunnel_name} 已结束")
+	    self.update_tunnel_card_status(tunnel_name, False)
+	    if tunnel_name in self.tunnel_processes:
+	        del self.tunnel_processes[tunnel_name]
 
 
 class NodeCard(QFrame):
