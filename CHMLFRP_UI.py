@@ -2024,18 +2024,16 @@ class MainWindow(QMainWindow):
         dialog.setLayout(layout)
         dialog.exec()
 
-
     def append_log(self, log_display, log):
         log_text = log['text']
         log_time = log['time']
         log_count = log['count']
 
-        formatted_log = f"{log_time} (启动次数: {log_count})\n{log_text}\n{'-'*80}\n"
+        formatted_log = f"{log_time} (启动次数: {log_count})<br>{log_text}<br>{'-'*80}<br>"
         formatted_log = self.highlight_keywords(formatted_log)
         log_display.append(formatted_log)
 
     def highlight_keywords(self, text):
-        # 渲染关键词
         keywords = {
             "[I]": "<span style='color: green;'>[I]</span>",
             "[E]": "<span style='color: red;'>[E]</span>",
@@ -2047,7 +2045,7 @@ class MainWindow(QMainWindow):
         for keyword, replacement in keywords.items():
             text = re.sub(keyword, replacement, text, flags=re.IGNORECASE)
 
-        # 替换 token 和 IP 地址
+        # Replace token and IP addresses
         text = re.sub(self.token, "*******你的token********", text, flags=re.IGNORECASE)
         text = re.sub(r'\d+\.\d+\.\d+\.\d+', lambda x: x.group(0).split('.')[0] + ".***.***." + x.group(0).split('.')[-1], text)
 
