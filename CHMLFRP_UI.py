@@ -310,6 +310,7 @@ def parse_domain(domain):
 class QtHandler(QObject, logging.Handler):
     """Qt日志处理器"""
     new_record = pyqtSignal(str)
+    records = []
 
     def __init__(self, parent):
         super(QtHandler, self).__init__(parent)  # 只调用一次 super()
@@ -318,7 +319,10 @@ class QtHandler(QObject, logging.Handler):
 
     def emit(self, record):
         msg = self.format(record)
-        self.new_record.emit(msg)
+        # 防止重复日志记录
+        if msg not in self.records:
+            self.records.append(msg)
+            self.new_record.emit(msg)
 
 def setup_logging(parent):
     """设置日志系统"""
