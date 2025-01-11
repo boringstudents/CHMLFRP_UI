@@ -2336,10 +2336,8 @@ class MainWindow(QMainWindow):
 	            layout.addWidget(no_tunnel_label)
 	            return
 	
-	        # 保存当前选中的隧道ID
 	        selected_ids = [t['id'] for t in self.selected_tunnels]
 	
-	        # 清除现有的隧道卡片
 	        while self.tunnel_container.layout().count():
 	            item = self.tunnel_container.layout().takeAt(0)
 	            if item.widget():
@@ -2352,7 +2350,6 @@ class MainWindow(QMainWindow):
 	                tunnel_widget.clicked.connect(self.on_tunnel_clicked)
 	                tunnel_widget.start_stop_signal.connect(self.start_stop_tunnel)
 	
-	                # 恢复之前的选中状态
 	                if tunnel['id'] in selected_ids:
 	                    tunnel_widget.is_selected = True
 	                    tunnel_widget.setSelected(True)
@@ -2360,7 +2357,7 @@ class MainWindow(QMainWindow):
 	                self.tunnel_container.layout().addWidget(tunnel_widget, row, col)
 	
 	                col += 1
-	                if col == 2:  # 每行两个卡片
+	                if col == 2:
 	                    col = 0
 	                    row += 1
 	
@@ -2369,14 +2366,13 @@ class MainWindow(QMainWindow):
 	                self.logger.error(traceback.format_exc())
 	                continue
 	
-	        # 更新选中的隧道列表
 	        self.selected_tunnels = [t for t in tunnels if t['id'] in selected_ids]
 	        self.update_tunnel_buttons()
 	
 	    except Exception as e:
-	        self.logger.error(f"加载隧道列表时发生错误: {str(e)}")
+	        self.logger.error(f"加载隧道列表时发生错误,可能是当前没有隧道添加一个试试?: {str(e)}")
 	        self.logger.error(traceback.format_exc())
-	        self.show_error_message(self, f"加载隧道列表时发生错误: {str(e)}")
+	        self.show_error_message(f"加载隧道列表时发生错误,可能是当前没有隧道添加一个试试?: {str(e)}")
 
 
     def clear_error_message(self, widget):
