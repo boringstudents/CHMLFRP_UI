@@ -31,7 +31,7 @@ import pyperclip
 # 设置全局日志
 logger = logging.getLogger('CHMLFRP_UI')
 logger.setLevel(logging.DEBUG)
-file_handler = RotatingFileHandler('CHMLFRP_UI.log', maxBytes=5 * 1024 * 1024, backupCount=5)
+file_handler = RotatingFileHandler('CHMLFRP_UI.log', maxBytes=10 * 1024 * 1024, backupCount=30)
 file_handler.setLevel(logging.DEBUG)
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.INFO)
@@ -51,10 +51,12 @@ def get_pos(event):
         return event.globalPosition().toPoint()
 
 def is_valid_domain(domain):
+    """IPV4格式检测"""
     pattern = re.compile(r'^(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z]{2,})+$')
     return bool(pattern.match(domain))
 
 def is_valid_ipv4(ip):
+    """IPV4数字检测"""
     try:
         parts = ip.split('.')
         return len(parts) == 4 and all(0 <= int(part) < 256 for part in parts)
@@ -62,6 +64,7 @@ def is_valid_ipv4(ip):
         return False
 
 def is_valid_ipv6(ip):
+    """IPV6检测"""
     try:
         ipaddress.IPv6Address(ip)
         return True
@@ -69,15 +72,18 @@ def is_valid_ipv6(ip):
         return False
 
 def remove_http_https(url):
+    """htpp头去除"""
     return re.sub(r'^https?://', '', url)
 
 def parse_srv_target(target):
+    """srv解析操作"""
     parts = target.split()
     if len(parts) == 4:
         return parts[0], parts[1], parts[2], parts[3]
     return None, None, None, target
 
 def validate_port(port):
+    """端口检查"""
     try:
         port_num = int(port)
         return 0 < port_num <= 65535
@@ -88,7 +94,7 @@ def get_nodes(max_retries=3, retry_delay=1):
     """获取节点数据"""
     logger.info("开始获取节点数据")
     url = "http://cf-v2.uapis.cn/node"
-    headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
+    headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
 
     for attempt in range(max_retries):
         try:
@@ -115,7 +121,7 @@ def login(username, password):
     """用户登录返回token"""
     logger.info(f"尝试登录用户: {username}")
     url = f"http://cf-v2.uapis.cn/login?username={username}&password={password}"
-    headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
+    headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
     try:
         response = requests.get(url, headers=headers)
         response_data = response.json()
@@ -149,10 +155,10 @@ def validate_and_resolve_ip(ip_or_hostname):
 def get_user_tunnels(token):
     """获取用户隧道列表"""
     url = f"http://cf-v2.uapis.cn/tunnel?token={token}"
-    headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
+    headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
     try:
         response = requests.get(url, headers=headers)
-        response.raise_for_status()  # 这会在HTTP错误时抛出异常
+        response.raise_for_status()  # 在HTTP错误时抛出异常
         data = response.json()
         if data['code'] == 200:
             tunnels = data.get("data", [])
@@ -161,17 +167,17 @@ def get_user_tunnels(token):
             logger.error(f"获取隧道列表失败: {data.get('msg', '未知错误')}")
             return None
     except requests.RequestException as e:
-        logger.exception("获取用户隧道列表时发生网络错误")
+        logger.exception("获取隧道列表时发生网络错误")
         return None
     except Exception as e:
-        logger.exception("获取用户隧道列表时发生未知错误")
+        logger.exception("获取隧道列表时发生未知错误")
         return None
 
 def get_node_ip(token, node):
     """获取节点IP"""
     logger.info(f"获取节点 {node} 的IP")
     url = f"http://cf-v2.uapis.cn/nodeinfo?token={token}&node={node}"
-    headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
+    headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
     try:
         response = requests.get(url, headers=headers)
         ip = response.json()["data"]["realIp"]
@@ -196,7 +202,7 @@ def update_subdomain(token, domain, record, target, record_type):
         "remarks": ""
     }
     headers = {
-        'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)',
+        'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)',
         'Content-Type': 'application/json'
     }
     try:
@@ -239,7 +245,7 @@ def update_tunnel(token, tunnel_info, node):
     }
 
     headers = {
-        'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)',
+        'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)',
         'Content-Type': 'application/json'
     }
     try:
@@ -255,7 +261,7 @@ def update_tunnel(token, tunnel_info, node):
 
 def is_node_online(node_name):
     url = "http://cf-v2.uapis.cn/node_stats"
-    headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
+    headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
     try:
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
@@ -1008,7 +1014,7 @@ class WorkerThread(QThread):
             self.update_signal.emit(str(result))
             if self.isInterruptionRequested():
                 break
-            self.msleep(100)  # 短暂休眠，检查中断
+            self.msleep(100)
 
 class BaseCard(QFrame):
     clicked = pyqtSignal()
@@ -1059,7 +1065,6 @@ class TunnelCard(QFrame):
 
         self.status_label = QLabel("状态: 未启动")
 
-        # 添加连接链接标签，放在启动按钮上方
         self.link_label = QLabel(f"连接: {self.get_link()}")
         self.link_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self.link_label.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -1074,16 +1079,16 @@ class TunnelCard(QFrame):
         layout.addWidget(remote_label)
         layout.addWidget(node_label)
         layout.addWidget(self.status_label)
-        layout.addWidget(self.link_label)  # 放在启动按钮上方
+        layout.addWidget(self.link_label)
         layout.addWidget(self.start_stop_button)
 
         self.setLayout(layout)
-        self.setFixedSize(250, 250)  # 可能需要调整高度以适应新的布局
+        self.setFixedSize(250, 250)
 
     def fetch_node_info(self):
         node = self.tunnel_info.get('node', '')
         url = f"http://cf-v2.uapis.cn/nodeinfo?token={self.token}&node={node}"
-        headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
+        headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
         try:
             response = requests.get(url, headers=headers)
             data = response.json()
@@ -1261,7 +1266,7 @@ class DomainCard(QFrame):
         layout.addWidget(self.link_label)
 
         self.setLayout(layout)
-        self.setFixedSize(250, 200)  # 增加高度以容纳新的链接标签
+        self.setFixedSize(250, 200)
 
     def get_link(self):
         return f"{self.domain_info['record']}.{self.domain_info['domain']}"
@@ -1316,20 +1321,16 @@ class ConfigEditorDialog(QDialog):
 
         layout = QVBoxLayout(self)
 
-        # 创建选项卡小部件
         self.tab_widget = QTabWidget()
         layout.addWidget(self.tab_widget)
 
-        # 文本编辑选项卡
         self.text_edit = QTextEdit()
         self.tab_widget.addTab(self.text_edit, "文本编辑")
 
-        # 可视化编辑选项卡
         visual_edit_widget = QWidget()
         visual_edit_layout = QFormLayout(visual_edit_widget)
         self.tab_widget.addTab(visual_edit_widget, "可视化编辑")
 
-        # 添加可视化编辑的输入字段
         self.token_input = QLineEdit()
         self.nodes_input = QLineEdit()
         self.tunnel_name_input = QLineEdit()
@@ -1345,7 +1346,6 @@ class ConfigEditorDialog(QDialog):
         visual_edit_layout.addRow("子域名:", self.subdomain_input)
         visual_edit_layout.addRow("记录类型:", self.record_type_combo)
 
-        # SRV 特定输入
         self.srv_widget = QWidget()
         srv_layout = QFormLayout(self.srv_widget)
         self.priority_input = QLineEdit("10")
@@ -1358,7 +1358,6 @@ class ConfigEditorDialog(QDialog):
 
         self.record_type_combo.currentTextChanged.connect(self.on_record_type_changed)
 
-        # 添加保存和取消按钮
         button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)
@@ -1431,7 +1430,6 @@ class ConfigEditorDialog(QDialog):
 
     def get_config(self):
         if self.tab_widget.currentIndex() == 0:
-            # 文本编辑模式
             return self.text_edit.toPlainText()
         else:
             # 可视化编辑模式
@@ -1746,7 +1744,6 @@ class MainWindow(QMainWindow):
         self.tray_icon = QSystemTrayIcon(self)
         self.tray_icon.setIcon(QIcon(icon_path))
 
-        # 创建托盘菜单
         tray_menu = QMenu()
         show_action = tray_menu.addAction("显示")
         show_action.triggered.connect(self.show)
@@ -1754,7 +1751,6 @@ class MainWindow(QMainWindow):
         quit_action.triggered.connect(self.quit_application)
         self.tray_icon.setContextMenu(tray_menu)
 
-        # 连接双击事件
         self.tray_icon.activated.connect(self.tray_icon_activated)
 
         self.tray_icon.show()
@@ -1766,7 +1762,7 @@ class MainWindow(QMainWindow):
             self.activateWindow()
 
     def quit_application(self):
-        self.cleanup()  # 确保您有一个cleanup方法来处理必要的清理工作
+        self.cleanup()
         QApplication.quit()
 
     def closeEvent(self, event):
@@ -1782,7 +1778,6 @@ class MainWindow(QMainWindow):
     def setup_ip_tools_page(self):
         self.ip_tools_widget = IPToolsWidget()
         self.content_stack.addWidget(self.ip_tools_widget)
-        # 初始化时应用当前主题
         self.ip_tools_widget.update_style(self.dark_theme)
 
     def check_node_status(self):
@@ -1877,11 +1872,11 @@ class MainWindow(QMainWindow):
 	                # 验证远程端口是否有效
 	                if "dorp" in changes:
 	                    if not validate_port(changes["dorp"]):
-	                        raise ValueError(f"隧道 '{tunnel_info['name']}': 远程端口必须是1-65535之间的整数")
+	                        raise ValueError(f"隧道 '{tunnel_info['name']}': 远程端口必须是10000-65535之间的整数")
 	                    payload["remoteport"] = int(changes["dorp"])
 	
 	                headers = {
-	                    'User-Agent': 'CHMLFRP_UI/1.0 (Python/3.9; Windows NT 10.0)',
+	                    'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)',
 	                    'Content-Type': 'application/json'
 	                }
 	                response = requests.post(url, headers=headers, json=payload)
@@ -1914,7 +1909,7 @@ class MainWindow(QMainWindow):
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.token_input = QLineEdit(self)
         self.token_input.setPlaceholderText('Token (可选)')
-        self.token_input.setEchoMode(QLineEdit.EchoMode.Password)  # 设置为密码模式
+        self.token_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.login_button = QPushButton('登录', self)
         self.login_button.clicked.connect(self.login)
         self.logout_button = QPushButton('退出登录', self)
@@ -2006,7 +2001,6 @@ class MainWindow(QMainWindow):
 	    self.batch_edit_button.clicked.connect(self.batch_edit_tunnels)
 	    self.batch_edit_button.setEnabled(False)
 	    
-	    # 添加查看输出按钮
 	    self.view_output_button = QPushButton("查看输出")
 	    self.view_output_button.clicked.connect(self.view_output)
 	    self.view_output_button.setEnabled(False)
@@ -2015,7 +2009,7 @@ class MainWindow(QMainWindow):
 	    button_layout.addWidget(self.edit_tunnel_button)
 	    button_layout.addWidget(self.delete_tunnel_button)
 	    button_layout.addWidget(self.batch_edit_button)
-	    button_layout.addWidget(self.view_output_button)  # 添加查看输出按钮
+	    button_layout.addWidget(self.view_output_button)
 	
 	    layout.addLayout(button_layout)
 	
@@ -2096,7 +2090,7 @@ class MainWindow(QMainWindow):
 
         self.details_button = QPushButton("查看详细信息")
         self.details_button.clicked.connect(self.show_node_details)
-        self.details_button.setEnabled(False)  # 初始时禁用按钮
+        self.details_button.setEnabled(False)
         button_layout.addWidget(self.details_button)
 
         layout.addLayout(button_layout)
@@ -2124,7 +2118,6 @@ class MainWindow(QMainWindow):
         layout.addWidget(QLabel("选择IP获取API:"))
         layout.addWidget(self.ddns_api_combo)
 
-        # 添加简单的IPv6提示
         ipv6_note = QLabel("提示：如果使用IPv6地址，请确保已手动创建AAAA类型的DNS记录。")
         ipv6_note.setWordWrap(True)
         ipv6_note.setStyleSheet("color: #666; font-style: italic;")
@@ -2181,7 +2174,6 @@ class MainWindow(QMainWindow):
             del self.api_protocol_combo
 
     def on_ping_type_changed(self, ping_type):
-        # 当选择API Ping时显示协议选择，否则隐藏
         self.api_protocol_combo.setVisible(ping_type == "API")
 
     def load_credentials(self):
@@ -2324,7 +2316,7 @@ class MainWindow(QMainWindow):
     def get_user_info(self):
         """获取用户信息"""
         url = f"http://cf-v2.uapis.cn/userinfo?token={self.token}"
-        headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
+        headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
         try:
             response = requests.get(url, headers=headers)
             data = response.json()
@@ -2388,7 +2380,6 @@ class MainWindow(QMainWindow):
                     tunnel_widget.clicked.connect(self.on_tunnel_clicked)
                     tunnel_widget.start_stop_signal.connect(self.start_stop_tunnel)
 
-                    # 恢复之前的选中状态
                     if tunnel['id'] in selected_ids:
                         tunnel_widget.is_selected = True
                         tunnel_widget.setSelected(True)
@@ -2440,7 +2431,7 @@ class MainWindow(QMainWindow):
                 raise ValueError("未登录，无法加载域名列表")
 
             url = f"http://cf-v2.uapis.cn/get_user_free_subdomains?token={self.token}"
-            headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
+            headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
             response = requests.get(url, headers=headers)
             response.raise_for_status()
             data = response.json()
@@ -2480,7 +2471,7 @@ class MainWindow(QMainWindow):
         """加载节点列表"""
         try:
             url = "http://cf-v2.uapis.cn/node_stats"
-            headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
+            headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
             response = requests.get(url, headers=headers)
             response.raise_for_status()
             data = response.json()
@@ -2863,7 +2854,7 @@ class MainWindow(QMainWindow):
 	                payload["banddomain"] = banddomain_input.text()
 	
 	            headers = {
-	                'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)',
+	                'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)',
 	                'Content-Type': 'application/json'
 	            }
 	            response = requests.post(url, headers=headers, json=payload)
@@ -2959,7 +2950,7 @@ class MainWindow(QMainWindow):
 	                return
 	
 	            headers = {
-	                'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)',
+	                'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)',
 	                'Content-Type': 'application/json'
 	            }
 	            response = requests.post(url, headers=headers, json=payload)
@@ -2981,9 +2972,9 @@ class MainWindow(QMainWindow):
 	        QMessageBox.warning(self, "警告", "请先选择要删除的隧道")
 	        return
 	
-	    tunnels_to_delete = self.selected_tunnels.copy()  # 创建副本,因为可能会修改原列表
+	    tunnels_to_delete = self.selected_tunnels.copy()
 	
-	    # Step 1: Get the user ID and user token from v2 API
+	    # Step 1: v2 API
 	    try:
 	        url = f"http://cf-v2.uapis.cn/userinfo?token={self.token}"
 	        response = requests.get(url)
@@ -3008,9 +2999,8 @@ class MainWindow(QMainWindow):
 	
 	        if reply == QMessageBox.StandardButton.Yes:
 	            try:
-	                # Try v2 API first
 	                url_v2 = f"http://cf-v2.uapis.cn/deletetunnel?token={self.token}&tunnelid={tunnel_info['id']}"
-	                headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
+	                headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
 	                response = requests.post(url_v2, headers=headers)
 	                if response.status_code == 200:
 	                    self.logger.info(f"隧道 '{tunnel_info['name']}' 删除成功 (v2 API)")
@@ -3256,7 +3246,7 @@ class MainWindow(QMainWindow):
                 }
 
                 headers = {
-                    'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)',
+                    'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)',
                     'Content-Type': 'application/json'
                 }
                 response = requests.post(url, headers=headers, json=payload)
@@ -3274,7 +3264,7 @@ class MainWindow(QMainWindow):
         """加载主域名到下拉框"""
         try:
             url = "http://cf-v2.uapis.cn/list_available_domains"
-            headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
+            headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
             response = requests.get(url, headers=headers)
             if response.status_code == 200:
                 data = response.json()
@@ -3294,7 +3284,7 @@ class MainWindow(QMainWindow):
         """获取可用的主域名列表"""
         try:
             url = "http://cf-v2.uapis.cn/list_available_domains"
-            headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
+            headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
             response = requests.get(url, headers=headers)
             if response.status_code == 200:
                 data = response.json()
@@ -3411,7 +3401,7 @@ class MainWindow(QMainWindow):
                     }
 
                     headers = {
-                        'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)',
+                        'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)',
                         'Content-Type': 'application/json'
                     }
                     response = requests.post(url, headers=headers, json=payload)
@@ -3445,7 +3435,7 @@ class MainWindow(QMainWindow):
                     }
 
                     headers = {
-                        'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)',
+                        'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)',
                         'Content-Type': 'application/json'
                     }
                     response = requests.post(url, headers=headers, json=payload)
@@ -3588,7 +3578,7 @@ class MainWindow(QMainWindow):
                 }
 
                 headers = {
-                    'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)',
+                    'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)',
                     'Content-Type': 'application/json'
                 }
                 response = requests.post(url, headers=headers, json=payload)
@@ -3612,7 +3602,7 @@ class MainWindow(QMainWindow):
 
     def get_current_record_type(self, domain, record):
         url = f"http://cf-v2.uapis.cn/get_user_free_subdomains?token={self.token}"
-        headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
+        headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
         try:
             response = requests.get(url, headers=headers)
             data = response.json()
@@ -3626,7 +3616,7 @@ class MainWindow(QMainWindow):
 
     def get_existing_srv_record(self, domain, record):
         url = f"http://cf-v2.uapis.cn/get_user_free_subdomains?token={self.token}"
-        headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
+        headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
         try:
             response = requests.get(url, headers=headers)
             data = response.json()
@@ -4193,7 +4183,7 @@ class MainWindow(QMainWindow):
     def dt_load_domains(self):
         if self.token:
             url = f"http://cf-v2.uapis.cn/get_user_free_subdomains?token={self.token}"
-            headers = {'User-Agent': 'CHMLFRP_UI/1.4.5 (Python/3.12.8; Windows NT 10.0)'}
+            headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
             try:
                 response = requests.get(url, headers=headers)
                 data = response.json()
