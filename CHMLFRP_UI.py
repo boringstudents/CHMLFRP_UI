@@ -1559,6 +1559,8 @@ class MainWindow(QMainWindow):
         self.logger.addHandler(self.qt_handler)
         self.qt_handler.new_record.connect(self.update_log)
 
+        self.tunnel_logs = {}
+
         # 初始化日志显示
         self.log_display = QTextEdit(self)
         self.log_display.setReadOnly(True)
@@ -1925,6 +1927,7 @@ class MainWindow(QMainWindow):
         self.edit_tunnel_button.setEnabled(selected_count == 1)
         self.delete_tunnel_button.setEnabled(selected_count > 0)
         self.batch_edit_button.setEnabled(selected_count > 0)
+        self.view_output_button.setEnabled(selected_count > 0)
 
     def get_selected_tunnel_count(self):
         count = 0
@@ -1956,9 +1959,6 @@ class MainWindow(QMainWindow):
         refresh_button.clicked.connect(self.load_tunnels)
         layout.addWidget(refresh_button)
 
-        refresh_button = QPushButton("刷新隧道列表")
-        refresh_button.setObjectName("refreshButton")
-
         self.tunnel_container = QWidget()
         self.tunnel_container.setLayout(QGridLayout())
 
@@ -1980,14 +1980,73 @@ class MainWindow(QMainWindow):
         self.batch_edit_button = QPushButton("批量编辑")
         self.batch_edit_button.clicked.connect(self.batch_edit_tunnels)
         self.batch_edit_button.setEnabled(False)
+        view_output_button = QPushButton("查看输出")
+        view_output_button.clicked.connect(self.view_tunnel_output)
+        view_output_button.setEnabled(False)
+        self.view_output_button = view_output_button
+
         button_layout.addWidget(add_tunnel_button)
         button_layout.addWidget(self.edit_tunnel_button)
         button_layout.addWidget(self.delete_tunnel_button)
         button_layout.addWidget(self.batch_edit_button)
+        button_layout.addWidget(view_output_button)
 
         layout.addLayout(button_layout)
 
         self.content_stack.addWidget(tunnel_widget)
+
+
+    def view_tunnel_output(self):
+        if not self.selected_tunnels:
+            QMessageBox.warning(self, "警告", "请先选择一个隧道")
+            return
+
+        dialog = QDialog(self)
+        dialog.setWindowTitle("查看输出")
+        dialog.setFixedWidth(800)
+        layout = QVBoxLayout(dialog)
+
+        log_display = QTextEdit()
+        log_display.setReadOnly(True)
+        layout.addWidget(log_display)
+
+        for tunnel_info in self.selected_tunnels:
+            tunnel_name = tunnel_info['name']
+            logs = self.tunnel_logs.get(tunnel_name, [])
+            for log in logs:
+                self.append_log(log_display, log)
+
+        dialog.setLayout(layout)
+        dialog.exec()
+
+
+    def append_log(self, log_display, log):
+        log_text = log['text']
+        log_time = log['time']
+        log_count = log['count']
+
+        formatted_log = f"{log_time} (启动次数: {log_count})\n{log_text}\n{'-'*80}\n"
+        formatted_log = self.highlight_keywords(formatted_log)
+        log_display.append(formatted_log)
+
+    def highlight_keywords(self, text):
+        # 渲染关键词
+        keywords = {
+            "[I]": "<span style='color: green;'>[I]</span>",
+            "[E]": "<span style='color: red;'>[E]</span>",
+            "[W]": "<span style='color: orange;'>[W]</span>",
+            "error": "<span style='color: red;'>error</span>",
+            "info": "<span style='color: green;'>info</span>",
+            "warning": "<span style='color: orange;'>warning</span>"
+        }
+        for keyword, replacement in keywords.items():
+            text = re.sub(keyword, replacement, text, flags=re.IGNORECASE)
+
+        # 替换 token 和 IP 地址
+        text = re.sub(self.token, "*******你的token********", text, flags=re.IGNORECASE)
+        text = re.sub(r'\d+\.\d+\.\d+\.\d+', lambda x: x.group(0).split('.')[0] + ".***.***." + x.group(0).split('.')[-1], text)
+
+        return text
 
     def setup_domain_page(self):
         domain_widget = QWidget()
@@ -2507,37 +2566,56 @@ class MainWindow(QMainWindow):
         self.update_tunnel_card_status(tunnel_info['name'], start)
 
     def start_tunnel(self, tunnel_info):
-        try:
-            # 首先检查节点是否在线
-            if not is_node_online(tunnel_info['node']):
-                QMessageBox.warning(self, "警告", f"节点 {tunnel_info['node']} 当前不在线，无法启动隧道。")
-                self.logger.warning(f"尝试启动隧道失败: 节点 {tunnel_info['node']} 不在线")
-                return
+        tunnel_name = tunnel_info['name']
+        frpc_path = get_absolute_path("frpc.exe")
 
-            frpc_path = get_absolute_path("frpc.exe")
-            cmd = [
-                frpc_path,
-                "-u", self.token,
-                "-p", str(tunnel_info['id'])
-            ]
+        cmd = [
+            frpc_path,
+            "-u", self.token,
+            "-p", str(tunnel_info['id'])
+        ]
 
-            process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                creationflags=subprocess.CREATE_NO_WINDOW
-            )
-            self.logger.info(f"frpc已启动，使用节点: {tunnel_info['node']}")
-            self.tunnel_processes[tunnel_info['name']] = process
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            creationflags=subprocess.CREATE_NO_WINDOW
+        )
 
-            # 更新UI状态
-            self.update_tunnel_card_status(tunnel_info['name'], True)
+        self.tunnel_processes[tunnel_name] = process
+        self.logger.info(f"frpc已启动，使用节点: {tunnel_info['node']}")
 
-            # 启动状态检查
-            QTimer.singleShot(3000, lambda: self.check_tunnel_status(tunnel_info['name']))
-        except Exception as e:
-            self.logger.exception(f"启动隧道时发生错误: {str(e)}")
-            QMessageBox.warning(self, "错误", f"启动隧道失败: {str(e)}")
+        # 启动日志读取线程
+        log_thread = threading.Thread(target=self.read_process_output, args=(tunnel_name, process))
+        log_thread.start()
+
+        # 更新UI状态
+        self.update_tunnel_card_status(tunnel_name, True)
+
+
+    def read_process_output(self, tunnel_name, process):
+        while True:
+            output = process.stdout.readline()
+            if process.poll() is not None and output == b'':
+                break
+            if output:
+                log_text = output.decode().strip()
+                log_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                log_count = len(self.tunnel_logs.get(tunnel_name, [])) + 1
+
+                log_entry = {
+                    "text": log_text,
+                    "time": log_time,
+                    "count": log_count
+                }
+
+                if tunnel_name not in self.tunnel_logs:
+                    self.tunnel_logs[tunnel_name] = []
+                self.tunnel_logs[tunnel_name].append(log_entry)
+
+                # 实时更新日志显示
+                self.append_log(self.log_display, log_entry)
+
 
     def update_tunnel_card_status(self, tunnel_name, is_running):
         for i in range(self.tunnel_container.layout().count()):
@@ -2548,22 +2626,18 @@ class MainWindow(QMainWindow):
                 break
 
     def stop_tunnel(self, tunnel_info):
-        try:
-            process = self.tunnel_processes.get(tunnel_info['name'])
-            if process:
-                process.terminate()
-                process.wait(timeout=5)
-                if process.poll() is None:
-                    process.kill()
-                del self.tunnel_processes[tunnel_info['name']]
-                self.logger.info(f"隧道 {tunnel_info['name']} 已停止")
-            else:
-                self.logger.warning(f"未找到隧道 {tunnel_info['name']} 的运行进程")
+        tunnel_name = tunnel_info['name']
+        process = self.tunnel_processes.get(tunnel_name)
+        if process:
+            process.terminate()
+            process.wait(timeout=5)
+            if process.poll() is None:
+                process.kill()
+            del self.tunnel_processes[tunnel_name]
+            self.logger.info(f"隧道 {tunnel_name} 已停止")
 
-            # 更新UI状态
-            self.update_tunnel_card_status(tunnel_info['name'], False)
-        except Exception as e:
-            self.logger.exception(f"停止隧道时发生错误: {str(e)}")
+        # 更新UI状态
+        self.update_tunnel_card_status(tunnel_name, False)
 
     def check_tunnel_status(self, tunnel_name):
         process = self.tunnel_processes.get(tunnel_name)
