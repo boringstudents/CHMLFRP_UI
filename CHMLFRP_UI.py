@@ -1555,14 +1555,30 @@ class OutputDialog(QDialog):
         self.output_text_edit.setReadOnly(True)
         self.layout.addWidget(self.output_text_edit)
 
-        self.close_button = QPushButton("关闭")
-        self.close_button.clicked.connect(self.close)
-        self.layout.addWidget(self.close_button)
+        self.tunnel_outputs = {}
 
     def add_output(self, tunnel_name, output, run_number):
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         separator = f'<hr><b>隧道: {tunnel_name}</b> (启动次数: {run_number}) - <i>{timestamp}</i><br>'
-        self.output_text_edit.append(separator + output)
+        
+        # Check if the tunnel name exists and the run number is different
+        if tunnel_name in self.tunnel_outputs and self.tunnel_outputs[tunnel_name]['run_number'] == run_number:
+            # Replace the existing output
+            start_idx = self.output_text_edit.toHtml().find(f'<b>隧道: {tunnel_name}</b>')
+            end_idx = self.output_text_edit.toHtml().find('<hr>', start_idx + 1)
+            if end_idx == -1:
+                end_idx = len(self.output_text_edit.toHtml())
+            current_text = self.output_text_edit.toHtml()[:start_idx] + separator + output + self.output_text_edit.toHtml()[end_idx:]
+            self.output_text_edit.setHtml(current_text)
+        else:
+            # Add new output
+            self.output_text_edit.append(separator + output)
+        
+        # Update the tunnel_outputs dictionary
+        self.tunnel_outputs[tunnel_name] = {
+            'output': output,
+            'run_number': run_number
+        }
 	    
             
 class MainWindow(QMainWindow):
@@ -2028,8 +2044,8 @@ class MainWindow(QMainWindow):
 	            if not self.tunnel_outputs[tunnel_name]['dialog']:
 	                self.tunnel_outputs[tunnel_name]['dialog'] = OutputDialog(self)
 	            self.tunnel_outputs[tunnel_name]['dialog'].show()
-	            self.tunnel_outputs[tunnel_name]['dialog'].add_output(tunnel_name, self.tunnel_outputs[tunnel_name]['output'],
-	                                                                  self.tunnel_outputs[tunnel_name]['run_number'])
+	            output_text = self.tunnel_outputs[tunnel_name]['output'].replace('\n', '<br>')
+	            self.tunnel_outputs[tunnel_name]['dialog'].add_output(tunnel_name, output_text, self.tunnel_outputs[tunnel_name]['run_number'])
 
     def setup_domain_page(self):
         domain_widget = QWidget()
