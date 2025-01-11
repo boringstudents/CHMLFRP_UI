@@ -1560,6 +1560,7 @@ class MainWindow(QMainWindow):
         self.qt_handler.new_record.connect(self.update_log)
 
         self.last_tunnel_output = {}
+        self.tunnel_start_counts = {}
 
         # 初始化日志显示
         self.log_display = QTextEdit(self)
@@ -2027,7 +2028,7 @@ class MainWindow(QMainWindow):
 
         dialog = QDialog(self)
         dialog.setWindowTitle(f"隧道 {tunnel_name} 输出")
-        dialog.setFixedSize(800, 550)
+        dialog.setFixedSize(800, 600)
         layout = QVBoxLayout(dialog)
 
         text_edit = QTextEdit()
@@ -2594,6 +2595,7 @@ class MainWindow(QMainWindow):
         self.update_tunnel_card_status(tunnel_info['name'], start)
 
     def start_tunnel(self, tunnel_info):
+        """启动隧道"""
         try:
             # 首先检查节点是否在线
             if not is_node_online(tunnel_info['node']):
@@ -2601,6 +2603,7 @@ class MainWindow(QMainWindow):
                 self.logger.warning(f"尝试启动隧道失败: 节点 {tunnel_info['node']} 不在线")
                 return
 
+            # 启动隧道
             frpc_path = get_absolute_path("frpc.exe")
             cmd = [
                 frpc_path,
@@ -2616,6 +2619,11 @@ class MainWindow(QMainWindow):
             )
             self.logger.info(f"frpc已启动，使用节点: {tunnel_info['node']}")
             self.tunnel_processes[tunnel_info['name']] = process
+
+            # 记录启动次数
+            if tunnel_info['name'] not in self.tunnel_start_counts:
+                self.tunnel_start_counts[tunnel_info['name']] = 0
+            self.tunnel_start_counts[tunnel_info['name']] += 1
 
             # 更新UI状态
             self.update_tunnel_card_status(tunnel_info['name'], True)
@@ -2635,6 +2643,7 @@ class MainWindow(QMainWindow):
                 break
 
     def stop_tunnel(self, tunnel_info):
+        """停止隧道"""
         try:
             process = self.tunnel_processes.get(tunnel_info['name'])
             if process:
