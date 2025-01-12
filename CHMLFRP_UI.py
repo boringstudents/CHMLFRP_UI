@@ -1991,14 +1991,17 @@ class MainWindow(QMainWindow):
 	    layout = QVBoxLayout(tunnel_widget)
 	
 	    # 添加刷新按钮
+	    button_layout = QHBoxLayout()
 	    refresh_button = QPushButton("刷新隧道列表")
 	    refresh_button.clicked.connect(self.load_tunnels)
-	    layout.addWidget(refresh_button)
+	    button_layout.addWidget(refresh_button)
 	
 	    # 添加清除frpc进程按钮
 	    clear_frpc_button = QPushButton("清除frpc进程")
 	    clear_frpc_button.clicked.connect(self.clear_frpc_processes)
-	    layout.addWidget(clear_frpc_button)
+	    button_layout.addWidget(clear_frpc_button)
+
+	    layout.addLayout(button_layout)
 	
 	    self.tunnel_container = QWidget()
 	    self.tunnel_container.setLayout(QGridLayout())
