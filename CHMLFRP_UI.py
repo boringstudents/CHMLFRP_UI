@@ -2049,8 +2049,7 @@ class MainWindow(QMainWindow):
 	                subprocess.run(['taskkill', '/f', '/im', 'frpc.exe'], check=True)
 	                self.logger.info("所有frpc.exe进程已被清除")
 	            except subprocess.CalledProcessError as e:
-	                self.logger.error(f"清除frpc.exe进程失败: {str(e)}")
-	                QMessageBox.warning(self, "错误", f"清除frpc.exe进程失败: {str(e)}")
+	                self.logger.error(f"没有frpc进程: {str(e)}")
 
 
     def view_output(self):
