@@ -1963,7 +1963,7 @@ class MainWindow(QMainWindow):
         self.edit_tunnel_button.setEnabled(selected_count == 1)
         self.delete_tunnel_button.setEnabled(selected_count > 0)
         self.batch_edit_button.setEnabled(selected_count > 0)
-        self.view_output_button.setEnabled(selected_count == 0)
+        self.view_output_button.setEnabled(selected_count == 1)
 
     def get_selected_tunnel_count(self):
         count = 0
