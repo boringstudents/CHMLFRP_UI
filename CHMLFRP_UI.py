@@ -3848,30 +3848,52 @@ class MainWindow(QMainWindow):
 
         # 调用原有的清理逻辑
         self.cleanup()
+        time.sleep(1)
 
         super().closeEvent(event)
 
     def forcefully_terminate_frpc(self):
-        """ 强制终止当前目录下的 frpc.exe 进程 """
-        self.logger.info("正在终止当前目录下的 frpc.exe 进程...")
-        current_directory = os.path.dirname(os.path.abspath(__file__))  # 获取当前脚本目录
-        frpc_path = os.path.join(current_directory, 'frpc.exe')  # 当前目录下的 frpc.exe 完整路径
-
-        # 使用 PowerShell 命令来终止进程
-        try:
-            powershell_command = f"Get-Process | Where-Object {{ $_.Path -eq '{frpc_path}' }} | Stop-Process -Force"
-            startupinfo = subprocess.STARTUPINFO()
-            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-            startupinfo.wShowWindow = subprocess.SW_HIDE  # 隐藏窗口
-
-            # 使用 subprocess.Popen 执行 PowerShell 命令
-            subprocess.Popen(['powershell.exe', '-Command', powershell_command],
-                             stdout=subprocess.DEVNULL,
-                             stderr=subprocess.DEVNULL,
-                             startupinfo=startupinfo)
-            self.logger.info("已通过 PowerShell 强制终止 frpc.exe 进程")
-        except Exception as e:
-            self.logger.error(f"使用 PowerShell 终止 frpc.exe 时发生错误: {str(e)}")
+	    self.logger.info("正在终止当前目录下的 frpc.exe 进程...")
+	    current_directory = os.path.dirname(os.path.abspath(__file__))  # 获取当前脚本目录
+	    frpc_path = os.path.join(current_directory, 'frpc.exe')  # 当前目录下的 frpc.exe 完整路径
+	
+	    # 检查 frpc.exe 是否存在
+	    if not os.path.exists(frpc_path):
+	        self.logger.error(f"{frpc_path} 不存在")
+	        return False
+	
+	    # 封装进程终止逻辑
+	    def terminate_process(proc):
+	        try:
+	            self.logger.info(f"正在终止进程: {proc.info['pid']} - {frpc_path}")
+	            proc.terminate()  # 终止进程
+	            proc.wait()  # 等待进程完全结束
+	            self.logger.info(f"进程 {proc.info['pid']} 已终止")
+	        except psutil.NoSuchProcess:
+	            self.logger.error(f"进程 {proc.info['pid']} 已不存在")
+	        except psutil.AccessDenied:
+	            self.logger.error(f"访问被拒绝，无法终止进程 {proc.info['pid']}")
+	        except Exception as e:
+	            self.logger.error(f"终止进程 {proc.info['pid']} 时发生错误: {str(e)}")
+	
+	    try:
+	        # 使用 psutil 获取所有进程
+	        for proc in psutil.process_iter(['pid', 'exe']):
+	            # 检查进程路径是否与指定路径匹配
+	            if proc.info['exe'] and os.path.normpath(proc.info['exe']) == os.path.normpath(frpc_path):
+	                terminate_process(proc)  # 调用封装的终止进程函数
+	
+	        self.logger.info("所有匹配的 frpc.exe 进程已终止")
+	        return True
+	    except psutil.NoSuchProcess:
+	        self.logger.error("未找到指定的 frpc.exe 进程")
+	        return False
+	    except psutil.AccessDenied:
+	        self.logger.error("访问被拒绝。您可能需要以管理员身份运行")
+	        return False
+	    except Exception as e:
+	        self.logger.error(f"终止 frpc.exe 进程时发生错误: {str(e)}")
+	        return False
 
     
     def cleanup(self):
@@ -3884,6 +3906,8 @@ class MainWindow(QMainWindow):
 
         # 强制终止所有 frpc 进程
         self.forcefully_terminate_frpc()
+
+        time.sleep(1)
 
         # 等待所有线程结束
         QThreadPool.globalInstance().waitForDone()
