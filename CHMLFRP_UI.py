@@ -1995,8 +1995,10 @@ class MainWindow(QMainWindow):
 	    refresh_button.clicked.connect(self.load_tunnels)
 	    layout.addWidget(refresh_button)
 	
-	    refresh_button = QPushButton("刷新隧道列表")
-	    refresh_button.setObjectName("refreshButton")
+	    # 添加清除frpc进程按钮
+	    clear_frpc_button = QPushButton("清除frpc进程")
+	    clear_frpc_button.clicked.connect(self.clear_frpc_processes)
+	    layout.addWidget(clear_frpc_button)
 	
 	    self.tunnel_container = QWidget()
 	    self.tunnel_container.setLayout(QGridLayout())
@@ -2019,11 +2021,11 @@ class MainWindow(QMainWindow):
 	    self.batch_edit_button = QPushButton("批量编辑")
 	    self.batch_edit_button.clicked.connect(self.batch_edit_tunnels)
 	    self.batch_edit_button.setEnabled(False)
-	    
+	
 	    self.view_output_button = QPushButton("查看输出")
 	    self.view_output_button.clicked.connect(self.view_output)
 	    self.view_output_button.setEnabled(False)
-	    
+	
 	    button_layout.addWidget(add_tunnel_button)
 	    button_layout.addWidget(self.edit_tunnel_button)
 	    button_layout.addWidget(self.delete_tunnel_button)
@@ -2033,6 +2035,22 @@ class MainWindow(QMainWindow):
 	    layout.addLayout(button_layout)
 	
 	    self.content_stack.addWidget(tunnel_widget)
+
+    def clear_frpc_processes(self):
+	    reply = QMessageBox.question(self, '确认清除frpc进程',
+	                                 "您确定要清除所有frpc.exe进程吗？",
+	                                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+	    if reply == QMessageBox.StandardButton.Yes:
+	        reply = QMessageBox.question(self, '再次确认清除frpc进程',
+	                                     "这将会终止所有frpc.exe进程，您确保所有都准备好了吗？",
+	                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+	        if reply == QMessageBox.StandardButton.Yes:
+	            try:
+	                subprocess.run(['taskkill', '/f', '/im', 'frpc.exe'], check=True)
+	                self.logger.info("所有frpc.exe进程已被清除")
+	            except subprocess.CalledProcessError as e:
+	                self.logger.error(f"清除frpc.exe进程失败: {str(e)}")
+	                QMessageBox.warning(self, "错误", f"清除frpc.exe进程失败: {str(e)}")
 
 
     def view_output(self):
