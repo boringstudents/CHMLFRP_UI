@@ -2897,11 +2897,14 @@ class MainWindow(QMainWindow):
 	                'Content-Type': 'application/json'
 	            }
 	            response = requests.post(url, headers=headers, json=payload)
+	            response_data = response.json()
 	            if response.status_code == 200:
-	                self.logger.info("隧道添加成功")
+	                self.logger.info(f"隧道添加成功: {response_data.get('msg', '无额外信息')}")
+	                QMessageBox.information(self, "成功", f"隧道添加成功: {response_data.get('msg')}")
 	                self.load_tunnels()  # 刷新隧道列表
 	            else:
-	                self.logger.error(f"添加隧道失败: {response.text}")
+	                self.logger.error(f"添加隧道失败: {response_data.get('msg')}")
+	                QMessageBox.warning(self, "错误", f"添加隧道失败: {response_data.get('msg')}")
 	        except ValueError as ve:
 	            self.logger.error(f"添加隧道失败: {str(ve)}")
 	            QMessageBox.warning(self, "错误", str(ve))
