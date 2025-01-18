@@ -22,7 +22,6 @@ import requests
 from PyQt6.QtCore import *
 from PyQt6.QtWidgets import *
 from PyQt6.QtGui import *
-from PyQt6.QtNetwork import *
 from mcstatus import *
 from requests import *
 import psutil
