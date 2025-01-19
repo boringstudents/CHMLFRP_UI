@@ -7,21 +7,9 @@
 下载解压运行即可(仅支持win10以上版本)，如有bug请提出谢谢!
 有bug请投稿至boring_student@qq.com谢谢
 
-# **target一周一个**
 | 目标 | 预计实现时间 |
 | ------- | ------- |
 | 找一个合适的程序名称，总不能一直叫CHMLFRP_UI吧 | 不道a |
-
-| 设置内容 | 预计实现 |
-| ------- | ------- |
-| 主题 | 2025年六月 |
-| 程序自启动 | 2025年六月 |
-| 启动时是为ui还是后台 | 2025年六月 |
-| 最小化是状态栏还是任务栏 | 2025年六月 |
-| 程序启动后启动的隧道 | 2025年六月 |
-| 兑换码 | 2025年六月 |
-| 头像更换 | 2025年六月 |
-| 自带一个多线程下载 | 2025年六月 |
 
 ## 相关链接
 [https://github.com/Qianyiaz/ChmlFrp_Professional_Launcher](https://github.com/Qianyiaz/ChmlFrp_Professional_Launcher)  #千依🅥的cpl

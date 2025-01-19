@@ -27,6 +27,29 @@ from requests import *
 import psutil
 import pyperclip
 
+# 程序信息
+APP_NAME = "CHMLFRP_UI"
+APP_VERSION = "1.5.1"
+PY_VERSION = "3.13.1"
+WINDOWS_VERSION = "Windows NT 10.0"
+
+# 生成统一的 User-Agent
+USER_AGENT = f"{APP_NAME}/{APP_VERSION} (Python/{PY_VERSION}; {WINDOWS_VERSION})"
+
+# 生成统一的请求头
+def get_headers(json=False):
+    """
+    获取统一的请求头
+    Args:
+        json: 是否添加 Content-Type: application/json
+    Returns:
+        dict: 请求头字典
+    """
+    headers = {'User-Agent': USER_AGENT}
+    if json:
+        headers['Content-Type'] = 'application/json'
+    return headers
+
 # 设置全局日志
 logger = logging.getLogger('CHMLFRP_UI')
 logger.setLevel(logging.DEBUG)
@@ -39,7 +62,6 @@ file_handler.setFormatter(formatter)
 console_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 logger.addHandler(console_handler)
-
 
 def get_pos(event):
     """获取事件的全局位置"""
@@ -97,14 +119,13 @@ def validate_port(port):
 
 def get_nodes(max_retries=3, retry_delay=1):
     """获取节点数据"""
-    logger.info("开始获取节点数据")
     url = "http://cf-v2.uapis.cn/node"
-    headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
+    headers = get_headers()
 
     for attempt in range(max_retries):
         try:
             response = requests.post(url, headers=headers)
-            response.raise_for_status()  # 如果响应状态不是200，将引发HTTPError异常
+            response.raise_for_status()
             data = response.json()
             if data['code'] == 200:
                 return data['data']
@@ -127,7 +148,7 @@ def login(username, password):
     """用户登录返回token"""
     logger.info(f"尝试登录用户: {username}")
     url = f"http://cf-v2.uapis.cn/login?username={username}&password={password}"
-    headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
+    headers = get_headers()
     try:
         response = requests.get(url, headers=headers)
         response_data = response.json()
@@ -164,21 +185,21 @@ def validate_and_resolve_ip(ip_or_hostname):
 def get_user_tunnels(token):
     """获取用户隧道列表"""
     url = f"http://cf-v2.uapis.cn/tunnel?token={token}"
-    headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
+    headers = get_headers()
     try:
         response = requests.get(url, headers=headers)
-        response.raise_for_status()  # 在HTTP错误时抛出异常
+        response.raise_for_status()
         data = response.json()
         if data['code'] == 200:
             tunnels = data.get("data", [])
             return tunnels
         else:
-            logger.error(f"获取隧道列表失败: {data.get('msg', '未知错误')}")
+            logger.error(f"获取隧道列表失败: {data.get('msg')}")
             return None
-    except requests.RequestException as e:
+    except requests.RequestException:
         logger.exception("获取隧道列表时发生网络错误")
         return None
-    except Exception as e:
+    except Exception:
         logger.exception("获取隧道列表时发生未知错误")
         return None
 
@@ -187,7 +208,7 @@ def get_node_ip(token, node):
     """获取节点IP"""
     logger.info(f"获取节点 {node} 的IP")
     url = f"http://cf-v2.uapis.cn/nodeinfo?token={token}&node={node}"
-    headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
+    headers = get_headers()
     try:
         response = requests.get(url, headers=headers)
         ip = response.json()["data"]["realIp"]
@@ -212,10 +233,7 @@ def update_subdomain(token, domain, record, target, record_type):
         "ttl": "1分钟",
         "remarks": ""
     }
-    headers = {
-        'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)',
-        'Content-Type': 'application/json'
-    }
+    headers = get_headers(json=True)
     try:
         response = requests.post(url, headers=headers, json=payload)
         if response.status_code == 200:
@@ -257,10 +275,7 @@ def update_tunnel(token, tunnel_info, node):
         "extraparams": ""
     }
 
-    headers = {
-        'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)',
-        'Content-Type': 'application/json'
-    }
+    headers = get_headers(json=True)
     try:
         response = requests.post(url, headers=headers, json=payload)
         if response.status_code == 200:
@@ -274,7 +289,7 @@ def update_tunnel(token, tunnel_info, node):
 
 def is_node_online(node_name):
     url = "http://cf-v2.uapis.cn/node_stats"
-    headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
+    headers = get_headers()
     try:
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
@@ -284,7 +299,7 @@ def is_node_online(node_name):
                     if node['node_name'] == node_name:
                         return node['state'] == "online"
         return False
-    except Exception as e:
+    except Exception:
         logger.exception("检查节点在线状态时发生错误")
         return False
 
@@ -348,14 +363,12 @@ def setup_logging(parent):
     logger = logging.getLogger('CHMLFRP_UI')
     logger.setLevel(logging.DEBUG)
 
-    # 文件处理器
     file_handler = RotatingFileHandler('CHMLFRP_UI.log', maxBytes=5 * 1024 * 1024, backupCount=5)
     file_handler.setLevel(logging.DEBUG)
     file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     file_handler.setFormatter(file_formatter)
     logger.addHandler(file_handler)
 
-    # Qt处理器
     qt_handler = QtHandler(parent)
     qt_handler.setLevel(logging.INFO)
     logger.addHandler(qt_handler)
@@ -769,7 +782,6 @@ class IPToolsWidget(QWidget):
 		"""
         self.setStyleSheet(style)
 
-        # 更新所有子部件的样式
         for i in range(self.tab_widget.count()):
             tab = self.tab_widget.widget(i)
             tab.setStyleSheet(style)
@@ -843,7 +855,6 @@ class PingThread(QThread):
             else:
                 return "Ping 成功，但无法提取延迟信息"
         except subprocess.CalledProcessError as e:
-            # 捕获并返回错误输出
             error_output = e.output.strip()
             if "无法访问目标主机" in error_output:
                 return "无法访问目标主机"
@@ -1110,7 +1121,7 @@ class TunnelCard(QFrame):
     def fetch_node_info(self):
         node = self.tunnel_info.get('node', '')
         url = f"http://cf-v2.uapis.cn/nodeinfo?token={self.token}&node={node}"
-        headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
+        headers = get_headers()
         try:
             response = requests.get(url, headers=headers)
             data = response.json()
@@ -1274,7 +1285,6 @@ class DomainCard(QFrame):
         ttl_label = QLabel(f"TTL: {self.domain_info['ttl']}")
         remarks_label = QLabel(f"备注: {self.domain_info.get('remarks', '无')}")
 
-        # 添加连接链接标签
         self.link_label = QLabel(f"链接: {self.get_link()}")
         self.link_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self.link_label.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -1598,10 +1608,8 @@ class OutputDialog(QDialog):
                 # 追加不同次数的输出
                 self.output_text_edit.append(separator + output)
         else:
-            # 新的输出
             self.output_text_edit.append(separator + output)
 
-        # 更新tunnel_outputs字典
         self.tunnel_outputs[tunnel_name] = {
             'output': output,
             'run_number': run_number
@@ -1621,20 +1629,16 @@ class SettingsDialog(QDialog):
     def init_ui(self):
         layout = QVBoxLayout(self)
 
-        # 创建选项卡
         tab_widget = QTabWidget()
         layout.addWidget(tab_widget)
 
-        # 常规设置选项卡
         general_tab = QWidget()
         general_layout = QVBoxLayout(general_tab)
 
-        # 自启动选项
         self.autostart_checkbox = QCheckBox("开机自启动")
         self.autostart_checkbox.stateChanged.connect(self.toggle_autostart)
         general_layout.addWidget(self.autostart_checkbox)
 
-        # 主题设置
         theme_group = QGroupBox("主题设置")
         theme_layout = QVBoxLayout()
         self.theme_light = QRadioButton("浅色")
@@ -1649,18 +1653,97 @@ class SettingsDialog(QDialog):
         general_layout.addStretch()
         tab_widget.addTab(general_tab, "常规")
 
-        # 隧道设置选项卡
         tunnel_tab = QWidget()
         tunnel_layout = QVBoxLayout(tunnel_tab)
 
-        # 自动启动的隧道
         tunnel_layout.addWidget(QLabel("程序启动时自动启动以下隧道:"))
         self.tunnel_list = QListWidget()
         tunnel_layout.addWidget(self.tunnel_list)
 
         tab_widget.addTab(tunnel_tab, "隧道")
 
-        # 按钮
+        # 关于开发者选项卡
+        about_tab = QWidget()
+        about_layout = QVBoxLayout(about_tab)
+        about_layout.setSpacing(15)
+
+        # Logo图片
+        logo_label = QLabel()
+        logo_pixmap = QPixmap("/api/placeholder/100/100")  # 100x100 的占位图
+        logo_label.setPixmap(logo_pixmap)
+        logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        logo_label.setStyleSheet("margin-top: 20px;")
+        about_layout.addWidget(logo_label)
+
+        # 标题
+        title_label = QLabel(APP_NAME)
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title_label.setStyleSheet("font-size: 24px; font-weight: bold; margin: 10px 0px;")
+        about_layout.addWidget(title_label)
+
+        # 版本信息
+        version_label = QLabel(f"Version {APP_VERSION}")
+        version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        version_label.setStyleSheet("font-size: 14px; color: #666666;")
+        about_layout.addWidget(version_label)
+
+        # 描述文本
+        desc_text = QTextBrowser()  # 使用QTextBrowser代替QTextEdit以支持链接点击
+        desc_text.setOpenLinks(True)  # 允许打开链接
+        desc_text.setOpenExternalLinks(True)  # 在外部浏览器中打开链接
+        desc_text.setStyleSheet("""
+                    QTextBrowser {
+                        border: 1px solid #cccccc;
+                        border-radius: 5px;
+                        padding: 10px;
+                        background-color: transparent;
+                    }
+                    QTextBrowser:hover {
+                        border-color: #999999;
+                    }
+                """)
+
+        desc_text.setHtml(f"""
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <p style="font-size: 14px; line-height: 1.6;">
+                            基于chmlfrp api开发的chmlfrp ui版本的客户端<br>
+                            如有bug请提出谢谢!
+                        </p>
+                        <p style="color: #666666;">
+                            有bug请投稿至 <a href="mailto:boring_student@qq.com" style="color: #0066cc;">boring_student@qq.com</a>
+                        </p>
+                    </div>
+
+                    <div style="margin: 20px 0;">
+                        <h3 style="color: #333333; border-bottom: 1px solid #eeeeee; padding-bottom: 8px;">相关链接</h3>
+                        <ul style="list-style-type: none; padding-left: 0;">
+                            <li style="margin: 8px 0;"><a href="https://github.com/Qianyiaz/ChmlFrp_Professional_Launcher" style="color: #0066cc; text-decoration: none;">▸ 千依🅥的cpl</a></li>
+                            <li style="margin: 8px 0;"><a href="https://github.com/FengXiang2233/Xingcheng-Chmlfrp-Lanucher" style="color: #0066cc; text-decoration: none;">▸ 枫相的xcl2</a></li>
+                            <li style="margin: 8px 0;"><a href="https://github.com/boringstudents/CHMLFRP_UI" style="color: #0066cc; text-decoration: none;">▸ 我的"不道a"</a></li>
+                            <li style="margin: 8px 0;"><a href="https://github.com/TechCat-Team/ChmlFrp-Frp" style="color: #0066cc; text-decoration: none;">▸ chmlfrp官方魔改的frpc</a></li>
+                        </ul>
+                    </div>
+
+                    <div style="margin: 20px 0;">
+                        <h3 style="color: #333333; border-bottom: 1px solid #eeeeee; padding-bottom: 8px;">API文档</h3>
+                        <ul style="list-style-type: none; padding-left: 0;">
+                            <li style="margin: 8px 0;"><a href="https://docs.northwind.top/#/" style="color: #0066cc; text-decoration: none;">▸ 群友的api文档</a></li>
+                            <li style="margin: 8px 0;"><a href="https://apifox.com/apidoc/shared-24b31bd1-e48b-44ab-a486-81cf5f964422/" style="color: #0066cc; text-decoration: none;">▸ 官方api v2文档</a></li>
+                        </ul>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 20px;">
+                        <p style="margin: 8px 0;"><a href="http://chmlfrp.cn" style="color: #0066cc; text-decoration: none;">官网：chmlfrp.cn</a></p>
+                        <p style="margin: 8px 0;"><a href="http://panel.chmlfrp.cn" style="color: #0066cc; text-decoration: none;">v2控制面板：panel.chmlfrp.cn</a></p>
+                        <p style="margin: 8px 0;"><a href="http://preview.panel.chmlfrp.cn" style="color: #0066cc; text-decoration: none;">v3控制面板：preview.panel.chmlfrp.cn</a></p>
+                    </div>
+                """)
+        desc_text.setMinimumHeight(300)
+        about_layout.addWidget(desc_text)
+
+        about_layout.addStretch()
+        tab_widget.addTab(about_tab, "关于")
+
         button_layout = QHBoxLayout()
         save_button = QPushButton("保存")
         save_button.clicked.connect(self.save_settings)
@@ -1688,56 +1771,14 @@ class SettingsDialog(QDialog):
                 QTabBar::tab:selected {
                     background-color: #4D4D4D;
                 }
-                QGroupBox {
-                    border: 1px solid #555555;
-                    margin-top: 1em;
-                    padding-top: 0.5em;
+                QTextEdit {
+                    background-color: #2D2D2D;
                     color: #FFFFFF;
                 }
-                QGroupBox::title {
-                    subcontrol-origin: margin;
-                    left: 10px;
-                    padding: 0 3px 0 3px;
+                QTextEdit a {
+                    color: #00A0FF;
                 }
-                QCheckBox, QRadioButton {
-                    color: #FFFFFF;
-                }
-                QCheckBox::indicator:unchecked, QRadioButton::indicator:unchecked {
-                    background-color: #3D3D3D;
-                    border: 1px solid #555555;
-                }
-                QCheckBox::indicator:checked, QRadioButton::indicator:checked {
-                    background-color: #0D47A1;
-                    border: 1px solid #555555;
-                }
-                QListWidget {
-                    background-color: #3D3D3D;
-                    border: 1px solid #555555;
-                    color: #FFFFFF;
-                }
-                QListWidget::item:hover {
-                    background-color: #4D4D4D;
-                }
-                QListWidget::item:selected {
-                    background-color: #0D47A1;
-                }
-                QPushButton {
-                    background-color: #0D47A1;
-                    color: white;
-                    border: none;
-                    padding: 5px 10px;
-                    border-radius: 4px;
-                }
-                QPushButton:hover {
-                    background-color: #1565C0;
-                }
-                QPushButton:pressed {
-                    background-color: #0D47A1;
-                }
-                QLabel {
-                    color: #FFFFFF;
-                }
-            """
+                """ + self.get_base_dark_style()
         else:
             style = """
                 QDialog, QTabWidget, QWidget {
@@ -1755,57 +1796,68 @@ class SettingsDialog(QDialog):
                 QTabBar::tab:selected {
                     background-color: #FFFFFF;
                 }
-                QGroupBox {
-                    border: 1px solid #CCCCCC;
-                    margin-top: 1em;
-                    padding-top: 0.5em;
-                    color: #000000;
-                }
-                QGroupBox::title {
-                    subcontrol-origin: margin;
-                    left: 10px;
-                    padding: 0 3px 0 3px;
-                }
-                QCheckBox, QRadioButton {
-                    color: #000000;
-                }
-                QCheckBox::indicator:unchecked, QRadioButton::indicator:unchecked {
+                QTextEdit {
                     background-color: #FFFFFF;
-                    border: 1px solid #CCCCCC;
-                }
-                QCheckBox::indicator:checked, QRadioButton::indicator:checked {
-                    background-color: #4CAF50;
-                    border: 1px solid #CCCCCC;
-                }
-                QListWidget {
-                    background-color: #FFFFFF;
-                    border: 1px solid #CCCCCC;
                     color: #000000;
                 }
-                QListWidget::item:hover {
-                    background-color: #F5F5F5;
+                QTextEdit a {
+                    color: #0066CC;
                 }
-                QListWidget::item:selected {
-                    background-color: #E3F2FD;
-                }
-                QPushButton {
-                    background-color: #4CAF50;
-                    color: white;
-                    border: none;
-                    padding: 5px 10px;
-                    border-radius: 4px;
-                }
-                QPushButton:hover {
-                    background-color: #45a049;
-                }
-                QPushButton:pressed {
-                    background-color: #4CAF50;
-                }
-                QLabel {
-                    color: #000000;
-                }
-            """
+                """ + self.get_base_light_style()
+
         self.setStyleSheet(style)
+
+    def get_base_dark_style(self):
+        return """
+            QGroupBox {
+                border: 1px solid #555555;
+                margin-top: 1em;
+                padding-top: 0.5em;
+            }
+            QCheckBox, QRadioButton {
+                color: #FFFFFF;
+            }
+            QPushButton {
+                background-color: #0D47A1;
+                color: white;
+                border: none;
+                padding: 5px 10px;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #1565C0;
+            }
+            QListWidget {
+                background-color: #3D3D3D;
+                border: 1px solid #555555;
+            }
+        """
+
+    def get_base_light_style(self):
+        return """
+            QGroupBox {
+                border: 1px solid #CCCCCC;
+                margin-top: 1em;
+                padding-top: 0.5em;
+            }
+            QCheckBox, QRadioButton {
+                color: #000000;
+            }
+            QPushButton {
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                padding: 5px 10px;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+            QListWidget {
+                background-color: #FFFFFF;
+                border: 1px solid #CCCCCC;
+            }
+        """
 
     def load_settings(self):
         settings_path = get_absolute_path("settings.json")
@@ -1842,8 +1894,7 @@ class SettingsDialog(QDialog):
         # 读取自动启动的隧道配置
         auto_start_tunnels = settings.get('auto_start_tunnels', [])
 
-        # 加载所有隧道
-        self.tunnel_list.clear()  # 清除现有项目
+        self.tunnel_list.clear()
         if self.parent.token:
             tunnels = get_user_tunnels(self.parent.token)
             if tunnels:
@@ -1992,7 +2043,7 @@ class MainWindow(QMainWindow):
 
 
     def initUI(self):
-        self.setWindowTitle('ChmlFrp UI程序')
+        self.setWindowTitle(APP_NAME+" UI程序")
         self.setGeometry(100, 100, 800, 600)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
@@ -2009,7 +2060,7 @@ class MainWindow(QMainWindow):
 
         title_bar = QWidget()
         title_layout = QHBoxLayout(title_bar)
-        title_label = QLabel("ChmlFrp UI程序")
+        title_label = QLabel(APP_NAME+" UI程序")
         title_layout.addWidget(title_label)
         title_layout.addStretch(1)
 
@@ -2121,7 +2172,6 @@ class MainWindow(QMainWindow):
                     else:  # light
                         self.dark_theme = False
 
-                    self.logger.info(f"已加载主题设置: {theme_setting}")
             else:
                 self.dark_theme = self.is_system_dark_theme()
                 self.logger.info("使用系统默认主题设置")
@@ -2289,10 +2339,7 @@ class MainWindow(QMainWindow):
                             raise ValueError(f"隧道 '{tunnel_info['name']}': 远程端口必须是10000-65535之间的整数")
                         payload["remoteport"] = int(changes["dorp"])
 
-                    headers = {
-                        'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)',
-                        'Content-Type': 'application/json'
-                    }
+                    headers = get_headers(json=True)
                     response = requests.post(url, headers=headers, json=payload)
                     if response.status_code == 200:
                         self.logger.info(f"隧道 {tunnel_info['name']} 更新成功")
@@ -2377,7 +2424,6 @@ class MainWindow(QMainWindow):
                 item.widget().setSelected(False)
         self.sender().setSelected(True)
         self.selected_domain = domain_info
-        # 在这里可以启用编辑和删除按钮
         self.edit_domain_button.setEnabled(True)
         self.delete_domain_button.setEnabled(True)
 
@@ -2602,7 +2648,6 @@ class MainWindow(QMainWindow):
 
         self.content_stack.addWidget(ping_widget)
 
-        # 移除之前的 API 协议选择
         if hasattr(self, 'api_protocol_combo'):
             self.api_protocol_combo.deleteLater()
             del self.api_protocol_combo
@@ -2634,7 +2679,6 @@ class MainWindow(QMainWindow):
         try:
             with open(credentials_path, 'w') as f:
                 json.dump(credentials, f)
-            self.logger.info("凭证保存成功")
         except Exception as e:
             self.logger.error(f"保存凭证时发生错误: {str(e)}")
 
@@ -2647,7 +2691,7 @@ class MainWindow(QMainWindow):
         elif self.username_input.text() and self.password_input.text():
             self.token = login(self.username_input.text(), self.password_input.text())
             if self.token:
-                self.logger.info("使用保存的用户名和密码自动登录成功")
+                self.logger.info("使用保存的密码自动登录成功")
                 self.login_success()
             else:
                 self.logger.warning("自动登录失败，请手动登录")
@@ -2656,19 +2700,42 @@ class MainWindow(QMainWindow):
         """登录功能"""
         token = self.token_input.text()
         if token:
-            self.token = token
-            self.logger.info("使用Token登录成功")
+            try:
+                url = f"http://cf-v2.uapis.cn/userinfo?token={token}"
+                headers = get_headers()
+                response = requests.get(url, headers=headers)
+                data = response.json()
+                if data['code'] == 200:
+                    self.token = token
+                else:
+                    self.logger.error(f"Token登录失败: {data.get('msg', '未知错误')}")
+                    QMessageBox.warning(self, "登录失败", f"Token登录失败: {data.get('msg', '未知错误')}")
+                    return
+            except Exception as e:
+                self.logger.error(f"Token验证失败: {str(e)}")
+                QMessageBox.warning(self, "登录失败", f"Token验证失败: {str(e)}")
+                return
         else:
-            username = self.username_input.text()
-            password = self.password_input.text()
-            self.token = login(username, password)
+            try:
+                url = f"http://cf-v2.uapis.cn/login?username={self.username_input.text()}&password={self.password_input.text()}"
+                headers = get_headers()
+                response = requests.get(url, headers=headers)
+                data = response.json()
+                if data['code'] == 200:
+                    self.token = data['data']['usertoken']
+                else:
+                    self.logger.error(f"登录失败: {data.get('msg', '未知错误')}")
+                    QMessageBox.warning(self, "登录失败", f"登录失败: {data.get('msg', '未知错误')}")
+                    return
+            except Exception as e:
+                self.logger.error(f"登录请求失败: {str(e)}")
+                QMessageBox.warning(self, "登录失败", f"登录请求失败: {str(e)}")
+                return
 
         if self.token:
             self.logger.info("登录成功")
             self.save_credentials()
             self.login_success()
-        else:
-            self.logger.error("登录失败，请检查用户名、密码或Token")
 
     def login_success(self):
         """登录成功后的操作"""
@@ -2703,7 +2770,6 @@ class MainWindow(QMainWindow):
         self.password_input.clear()
         self.token_input.clear()
 
-        # 清空并格式化凭证文件
         credentials_path = get_absolute_path('credentials.json')
         try:
             with open(credentials_path, 'w') as f:
@@ -2718,18 +2784,14 @@ class MainWindow(QMainWindow):
     def stop_all_api_operations(self):
         """停止所有使用token的API操作"""
         try:
-            # 停止DDNS
             if self.ddns_active:
                 self.stop_ddns()
 
-            # 停止所有隧道
             for tunnel_name in list(self.tunnel_processes.keys()):
                 self.stop_tunnel({"name": tunnel_name})
 
-            # 停止动态隧道
             self.dt_stop_program()
 
-            # 等待所有操作完成
             QApplication.processEvents()
         except Exception as e:
             self.logger.error(f"停止API操作时发生错误: {str(e)}")
@@ -2751,7 +2813,7 @@ class MainWindow(QMainWindow):
     def get_user_info(self):
         """获取用户信息"""
         url = f"http://cf-v2.uapis.cn/userinfo?token={self.token}"
-        headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
+        headers = get_headers()
         try:
             response = requests.get(url, headers=headers)
             data = response.json()
@@ -2799,10 +2861,8 @@ class MainWindow(QMainWindow):
             if tunnels is None:
                 raise ValueError("获取隧道列表失败")
 
-            # 保存当前选中的隧道ID
             selected_ids = [t['id'] for t in self.selected_tunnels]
 
-            # 清除现有的隧道卡片
             while self.tunnel_container.layout().count():
                 item = self.tunnel_container.layout().takeAt(0)
                 if item.widget():
@@ -2831,7 +2891,6 @@ class MainWindow(QMainWindow):
                     self.logger.error(traceback.format_exc())
                     continue
 
-            # 更新选中的隧道列表
             self.selected_tunnels = [t for t in tunnels if t['id'] in selected_ids]
             self.update_tunnel_buttons()
 
@@ -2865,7 +2924,7 @@ class MainWindow(QMainWindow):
                 raise ValueError("未登录，无法加载域名列表")
 
             url = f"http://cf-v2.uapis.cn/get_user_free_subdomains?token={self.token}"
-            headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
+            headers = get_headers()
             response = requests.get(url, headers=headers)
             response.raise_for_status()
             data = response.json()
@@ -2905,7 +2964,7 @@ class MainWindow(QMainWindow):
         """加载节点列表"""
         try:
             url = "http://cf-v2.uapis.cn/node_stats"
-            headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
+            headers = get_headers()
             response = requests.get(url, headers=headers)
             response.raise_for_status()
             data = response.json()
@@ -3291,10 +3350,7 @@ class MainWindow(QMainWindow):
                         raise ValueError("绑定域名是必须的")
                     payload["banddomain"] = banddomain_input.text()
 
-                headers = {
-                    'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)',
-                    'Content-Type': 'application/json'
-                }
+                headers = get_headers(json=True)
                 response = requests.post(url, headers=headers, json=payload)
                 response_data = response.json()
                 if response.status_code == 200:
@@ -3336,11 +3392,9 @@ class MainWindow(QMainWindow):
         extra_params_input = QLineEdit(tunnel_info.get("extraparams", ""))
         extra_params_input.setPlaceholderText("额外参数（可选）")
 
-        # Ensure the values are boolean
         encryption_checkbox.setChecked(bool(tunnel_info.get("encryption", False)))
         compression_checkbox.setChecked(bool(tunnel_info.get("compression", False)))
 
-        # 获取节点列表
         nodes = get_nodes()
         for node in nodes:
             node_combo.addItem(node['name'])
@@ -3368,7 +3422,6 @@ class MainWindow(QMainWindow):
             try:
                 url = "http://cf-v2.uapis.cn/update_tunnel"
 
-                # 这里不再进行IP解析
                 local_ip = local_ip_input.text()  # 直接使用输入的本地IP或主机名
 
                 payload = {
@@ -3390,10 +3443,7 @@ class MainWindow(QMainWindow):
                     QMessageBox.warning(self, "错误", "端口必须是1-65535之间的整数")
                     return
 
-                headers = {
-                    'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)',
-                    'Content-Type': 'application/json'
-                }
+                headers = get_headers(json=True)
                 response = requests.post(url, headers=headers, json=payload)
                 if response.status_code == 200:
                     self.logger.info("隧道更新成功")
@@ -3415,7 +3465,6 @@ class MainWindow(QMainWindow):
 
         tunnels_to_delete = self.selected_tunnels.copy()
 
-        # Step 1: v2 API
         try:
             url = f"http://cf-v2.uapis.cn/userinfo?token={self.token}"
             response = requests.get(url)
@@ -3433,26 +3482,25 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "错误", f"无法获取用户信息: {str(e)}")
             return
 
-        # Step 2: Try to delete tunnel using v2 API
         for tunnel_info in tunnels_to_delete:
+            time.sleep(0.8)  # 避免频繁请求导致服务器拒绝连接
             reply = QMessageBox.question(self, '确认删除', f"确定要删除隧道 '{tunnel_info['name']}' 吗？",
                                          QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
 
             if reply == QMessageBox.StandardButton.Yes:
                 try:
                     url_v2 = f"http://cf-v2.uapis.cn/deletetunnel?token={self.token}&tunnelid={tunnel_info['id']}"
-                    headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
+                    headers = get_headers()
                     response = requests.post(url_v2, headers=headers)
                     if response.status_code == 200:
                         self.logger.info(f"隧道 '{tunnel_info['name']}' 删除成功 (v2 API)")
-                        self.selected_tunnels.remove(tunnel_info)  # 从选中列表中移除
+                        self.selected_tunnels.remove(tunnel_info)
                     else:
-                        self.logger.error(f"v2 API 删除隧道失败: {response.text}")
-                        raise Exception(f"v2 API 删除失败: {response.text}")
-                except Exception as e_v2:
-                    self.logger.error(f"v2 API 删除失败，尝试 v1 API: {str(e_v2)}")
+                        self.logger.error(f"v2 API 删除隧道失败")
+                        raise Exception(f"v2 API 删除失败")
+                except Exception:
+                    self.logger.error(f"v2 API 删除失败，尝试 v1 API...")
                     try:
-                        # Fallback to v1 API using requests
                         url_v1 = f"http://cf-v1.uapis.cn/api/deletetl.php?token={user_token}&userid={user_id}&nodeid={tunnel_info['id']}"
                         response_v1 = requests.get(url_v1)
                         if response_v1.status_code == 200:
@@ -3487,7 +3535,7 @@ class MainWindow(QMainWindow):
         ttl_combo.addItems(TTL_OPTIONS)
         ttl_combo.setCurrentText("1分钟")
 
-        # SRV特定输入
+        # SRV输入
         srv_widget = QWidget()
         srv_layout = QFormLayout(srv_widget)
         priority_input = QLineEdit("10")
@@ -3554,7 +3602,7 @@ class MainWindow(QMainWindow):
                                     return
                             else:
                                 raise Exception("解析失败")
-                        except Exception as e:
+                        except Exception:
                             cname_reply = QMessageBox.question(self, "解析失败",
                                                                "无法将域名解析为 IP 地址。是否要切换到 CNAME 记录？",
                                                                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
@@ -3686,10 +3734,7 @@ class MainWindow(QMainWindow):
                     "remarks": ""
                 }
 
-                headers = {
-                    'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)',
-                    'Content-Type': 'application/json'
-                }
+                headers = get_headers(json=True)
                 response = requests.post(url, headers=headers, json=payload)
                 if response.status_code == 200:
                     self.logger.info("域名添加成功")
@@ -3705,7 +3750,7 @@ class MainWindow(QMainWindow):
         """加载主域名到下拉框"""
         try:
             url = "http://cf-v2.uapis.cn/list_available_domains"
-            headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
+            headers = get_headers()
             response = requests.get(url, headers=headers)
             if response.status_code == 200:
                 data = response.json()
@@ -3713,19 +3758,18 @@ class MainWindow(QMainWindow):
                     combo_box.clear()
                     for domain_info in data['data']:
                         combo_box.addItem(domain_info['domain'])
-                    self.logger.info(f"成功加载 {len(data['data'])} 个主域名")
                 else:
                     self.logger.error(f"获取主域名失败: {data['msg']}")
             else:
                 self.logger.error(f"获取主域名请求失败: 状态码 {response.status_code}")
-        except Exception as e:
+        except Exception:
             self.logger.exception("加载主域名时发生错误")
 
     def get_available_main_domains(self):
         """获取可用的主域名列表"""
         try:
             url = "http://cf-v2.uapis.cn/list_available_domains"
-            headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
+            headers = get_headers()
             response = requests.get(url, headers=headers)
             if response.status_code == 200:
                 data = response.json()
@@ -3738,28 +3782,32 @@ class MainWindow(QMainWindow):
             return []
 
     def edit_domain(self):
+        """编辑域名 - 仅允许修改 TTL 和目标"""
         TTL_OPTIONS = [
             "1分钟", "2分钟", "5分钟", "10分钟", "15分钟", "30分钟",
             "1小时", "2小时", "5小时", "12小时", "1天"
         ]
+
         if hasattr(self, 'selected_domain'):
             domain_info = self.selected_domain
             dialog = QDialog(self)
             dialog.setWindowTitle("编辑域名")
             layout = QFormLayout(dialog)
 
-            domain_input = QLineEdit(domain_info['domain'])
-            domain_input.setReadOnly(True)
-            record_input = QLineEdit(domain_info['record'])
-            record_input.setReadOnly(True)
+            # 只读字段
+            domain_label = QLabel(domain_info['domain'])
+            record_label = QLabel(domain_info['record'])
             type_label = QLabel(domain_info['type'])
+
+            # 可编辑字段
             target_input = QLineEdit(domain_info['target'])
             ttl_combo = QComboBox()
             ttl_combo.addItems(TTL_OPTIONS)
             ttl_combo.setCurrentText(domain_info['ttl'])
 
-            layout.addRow("域名:", domain_input)
-            layout.addRow("记录:", record_input)
+            # 添加字段到布局
+            layout.addRow("域名:", domain_label)
+            layout.addRow("记录:", record_label)
             layout.addRow("类型:", type_label)
             layout.addRow("目标:", target_input)
             layout.addRow("TTL:", ttl_combo)
@@ -3768,17 +3816,12 @@ class MainWindow(QMainWindow):
             ttl_note.setWordWrap(True)
             layout.addRow(ttl_note)
 
-            # SRV特定输入
+            # SRV记录特殊处理
             srv_widget = QWidget()
             srv_layout = QFormLayout(srv_widget)
             priority_input = QLineEdit()
             weight_input = QLineEdit()
             port_input = QLineEdit()
-            srv_layout.addRow("优先级:", priority_input)
-            srv_layout.addRow("权重:", weight_input)
-            srv_layout.addRow("端口:", port_input)
-            srv_widget.setVisible(domain_info['type'] == "SRV")
-            layout.addRow(srv_widget)
 
             if domain_info['type'] == "SRV":
                 priority, weight, port, srv_target = parse_srv_target(domain_info['target'])
@@ -3786,6 +3829,12 @@ class MainWindow(QMainWindow):
                 weight_input.setText(weight or "")
                 port_input.setText(port or "")
                 target_input.setText(srv_target)
+
+                srv_layout.addRow("优先级:", priority_input)
+                srv_layout.addRow("权重:", weight_input)
+                srv_layout.addRow("端口:", port_input)
+                srv_widget.setVisible(True)
+                layout.addRow(srv_widget)
 
             buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
             buttons.accepted.connect(dialog.accept)
@@ -3796,14 +3845,13 @@ class MainWindow(QMainWindow):
                 record_type = domain_info['type']
                 target = remove_http_https(target_input.text().strip())
 
-                if record_type in ["A", "AAAA"]:
-                    if record_type == "A" and not is_valid_ipv4(target):
-                        QMessageBox.warning(self, "无效IP", "请输入有效的IPv4地址")
-                        return
-                    elif record_type == "AAAA" and not is_valid_ipv6(target):
-                        QMessageBox.warning(self, "无效IP", "请输入有效的IPv6地址")
-                        return
-
+                # 验证输入
+                if record_type == "A" and not is_valid_ipv4(target):
+                    QMessageBox.warning(self, "无效IP", "请输入有效的IPv4地址")
+                    return
+                elif record_type == "AAAA" and not is_valid_ipv6(target):
+                    QMessageBox.warning(self, "无效IP", "请输入有效的IPv6地址")
+                    return
                 elif record_type == "CNAME":
                     if is_valid_ipv4(target) or is_valid_ipv6(target):
                         QMessageBox.warning(self, "无效CNAME", "CNAME记录不能指向IP地址")
@@ -3811,7 +3859,6 @@ class MainWindow(QMainWindow):
                     elif not is_valid_domain(target):
                         QMessageBox.warning(self, "无效域名", "请输入有效的目标域名")
                         return
-
                 elif record_type == "SRV":
                     if not all(x.isdigit() and 0 <= int(x) <= 65535 for x in
                                [priority_input.text(), weight_input.text(), port_input.text()]):
@@ -3841,10 +3888,7 @@ class MainWindow(QMainWindow):
                         "remarks": domain_info.get('remarks', '')
                     }
 
-                    headers = {
-                        'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)',
-                        'Content-Type': 'application/json'
-                    }
+                    headers = get_headers(json=True)
                     response = requests.post(url, headers=headers, json=payload)
                     if response.status_code == 200:
                         self.logger.info("域名更新成功")
@@ -3875,10 +3919,7 @@ class MainWindow(QMainWindow):
                         "record": domain_info['record']
                     }
 
-                    headers = {
-                        'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)',
-                        'Content-Type': 'application/json'
-                    }
+                    headers = get_headers(json=True)
                     response = requests.post(url, headers=headers, json=payload)
                     if response.status_code == 200:
                         self.logger.info(f"域名 '{domain_info['record']}.{domain_info['domain']}' 删除成功")
@@ -4018,10 +4059,7 @@ class MainWindow(QMainWindow):
                     "target": target
                 }
 
-                headers = {
-                    'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)',
-                    'Content-Type': 'application/json'
-                }
+                headers = get_headers(json=True)
                 response = requests.post(url, headers=headers, json=payload)
                 response.raise_for_status()
 
@@ -4043,7 +4081,7 @@ class MainWindow(QMainWindow):
 
     def get_current_record_type(self, domain, record):
         url = f"http://cf-v2.uapis.cn/get_user_free_subdomains?token={self.token}"
-        headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
+        headers = get_headers()
         try:
             response = requests.get(url, headers=headers)
             data = response.json()
@@ -4057,7 +4095,7 @@ class MainWindow(QMainWindow):
 
     def get_existing_srv_record(self, domain, record):
         url = f"http://cf-v2.uapis.cn/get_user_free_subdomains?token={self.token}"
-        headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
+        headers = get_headers()
         try:
             response = requests.get(url, headers=headers)
             data = response.json()
@@ -4201,8 +4239,7 @@ class MainWindow(QMainWindow):
                 self.logger.info("文件下载、提取和清理完成")
             except Exception as e:
                 self.logger.error(f"下载或处理文件时发生错误: {str(e)}")
-        else:
-            self.logger.info("所需文件已存在，无需下载")
+
 
     def mousePressEvent(self, event):
         """鼠标按下事件"""
@@ -4440,7 +4477,6 @@ class MainWindow(QMainWindow):
 			""")
         self.ip_tools_widget.update_style(self.dark_theme)
         if self.dark_theme:
-            # ... 其他样式 ...
             refresh_button_style = """
 					QPushButton#refreshButton {
 						background-color: #1E90FF;
@@ -4455,7 +4491,6 @@ class MainWindow(QMainWindow):
 					}
 				"""
         else:
-            # ... 其他样式 ...
             refresh_button_style = """
 					QPushButton#refreshButton {
 						background-color: #4CAF50;
@@ -4497,7 +4532,7 @@ class MainWindow(QMainWindow):
 
     def finalize_ddns_stop(self):
         if self.ddns_thread and self.ddns_thread.is_alive():
-            self.ddns_thread.join(timeout=0.1)  # 等待线程结束，但最多等待 0.1 秒
+            self.ddns_thread.join(timeout=0.1)
 
         self.ddns_status_label.setText("DDNS状态: 已停止")
         self.ddns_start_button.setText("启动DDNS")
@@ -4539,7 +4574,6 @@ class MainWindow(QMainWindow):
         elif tab_name == "ip_tools":
             self.content_stack.setCurrentIndex(7)
 
-        # 更新按钮样式
         for button in self.tab_buttons:
             if button.text().lower().replace(" ", "_") == tab_name:
                 self.update_button_styles(button)
@@ -4619,7 +4653,6 @@ class MainWindow(QMainWindow):
         token = self.dt_token_input.text()
         if token:
             self.dt_token = token
-            self.logger.info("使用Token登录成功")
         else:
             username = self.dt_username_input.text()
             password = self.dt_password_input.text()
@@ -4647,7 +4680,7 @@ class MainWindow(QMainWindow):
     def dt_load_domains(self):
         if self.token:
             url = f"http://cf-v2.uapis.cn/get_user_free_subdomains?token={self.token}"
-            headers = {'User-Agent': 'CHMLFRP_UI/1.5.1 (Python/3.13.1; Windows NT 10.0)'}
+            headers = get_headers()
             try:
                 response = requests.get(url, headers=headers)
                 data = response.json()
@@ -5099,7 +5132,6 @@ if __name__ == '__main__':
         while traceback:
             traceback = traceback.tb_next
         sys.__excepthook__(exctype, value, traceback)
-
 
     sys.excepthook = exception_hook
 
