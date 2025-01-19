@@ -10,7 +10,7 @@ from logging.handlers import *
 import random
 import socket
 import winreg
-from datetime import *
+from datetime import datetime
 import threading
 import json
 from concurrent.futures import *
@@ -965,10 +965,10 @@ class PingThread(QThread):
                 '延迟': status.latency,
                 '版本': status.version.name,
                 '协议': status.version.protocol,
-                '在线玩家': status.players_online,
-                '最大玩家': status.players_max,
+                '在线玩家': status.players.online,
+                '最大玩家': status.players.max,
                 '游戏模式': status.gamemode,
-                '地图': status.map
+                '地图': status.map_name
             }
         except Exception as e:
             return f"错误: {str(e)}"
@@ -2581,15 +2581,29 @@ class MainWindow(QMainWindow):
         ddns_widget = QWidget()
         layout = QVBoxLayout(ddns_widget)
 
+        # 创建水平布局来容纳下拉框和刷新按钮
+        ddns_domain_layout = QHBoxLayout()
+
+        # 添加下拉框
         self.ddns_domain_combo = QComboBox()
         self.ddns_domain_combo.addItem("选择域名")
+        self.ddns_domain_combo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+
+        # 创建刷新按钮
+        refresh_domain_button = QPushButton()
+        refresh_domain_button.setFixedSize(30, 30)
+        refresh_domain_button.setIcon(QIcon.fromTheme("view-refresh"))
+        refresh_domain_button.setToolTip("刷新域名列表")
+        refresh_domain_button.clicked.connect(self.load_user_domains)
+
+        # 将下拉框和按钮添加到水平布局
         layout.addWidget(QLabel("选择DDNS域名:"))
-        layout.addWidget(self.ddns_domain_combo)
+        ddns_domain_layout.addWidget(self.ddns_domain_combo)
+        ddns_domain_layout.addWidget(refresh_domain_button)
+        layout.addLayout(ddns_domain_layout)
 
         self.ddns_api_combo = QComboBox()
         self.ddns_api_combo.addItems([
-            "2024.ipchaxun.com",
-            "searchplugin.csdn.net",
             "ipplus360.com",
             "uapis.cn",
             "v4.ident.me",
@@ -2830,14 +2844,14 @@ class MainWindow(QMainWindow):
         """显示用户信息"""
         if self.user_info:
             info_text = f"""
-			用户名: {self.user_info['username']}
-			邮箱: {self.user_info['email']}
-			用户组: {self.user_info['usergroup']}
-			国内带宽: {self.user_info['bandwidth']} Mbps
-			国外带宽: {int(self.user_info['bandwidth']) * 4} Mbps
-			隧道数量: {self.user_info['tunnel']}
-			积分: {self.user_info['integral']}
-			到期时间: {self.user_info['term']}
+		用户名: {self.user_info['username']}
+		邮箱: {self.user_info['email']}
+		用户组: {self.user_info['usergroup']}
+		国内带宽: {self.user_info['bandwidth']} Mbps
+		国外带宽: {int(self.user_info['bandwidth']) * 4} Mbps
+		隧道数量: {self.user_info['tunnel']}
+		积分: {self.user_info['integral']}
+		到期时间: {self.user_info['term']}
 			"""
             self.user_info_display.setPlainText(info_text)
         else:
@@ -3016,17 +3030,15 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "警告", "请先选择一个节点")
 
     def format_node_details(self, node_info):
-        details = f"""
-		节点名称: {node_info.get('node_name', 'N/A')}
-		状态: {'在线' if node_info.get('state') == 'online' else '离线'}
-		节点组: {node_info.get('nodegroup', 'N/A')}
-		带宽使用率: {node_info.get('bandwidth_usage_percent', 'N/A')}%
-		CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
-		当前连接数: {node_info.get('cur_counts', 'N/A')}
-		客户端数量: {node_info.get('client_counts', 'N/A')}
-		总流入流量: {self.format_traffic(node_info.get('total_traffic_in', 0))}
-		总流出流量: {self.format_traffic(node_info.get('total_traffic_out', 0))}
-		"""
+        details = f"""节点名称: {node_info.get('node_name', 'N/A')}
+状态: {'在线' if node_info.get('state') == 'online' else '离线'}
+节点组: {node_info.get('nodegroup', 'N/A')}
+带宽使用率: {node_info.get('bandwidth_usage_percent', 'N/A')}%
+CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
+当前连接数: {node_info.get('cur_counts', 'N/A')}
+客户端数量: {node_info.get('client_counts', 'N/A')}
+总流入流量: {self.format_traffic(node_info.get('total_traffic_in', 0))}
+总流出流量: {self.format_traffic(node_info.get('total_traffic_out', 0))}"""
         return details
 
     def start_stop_tunnel(self, tunnel_info, start):
@@ -3949,8 +3961,6 @@ class MainWindow(QMainWindow):
 
         # 如果选择的API失败，再尝试其他API
         all_apis = [
-            "2024.ipchaxun.com",
-            "searchplugin.csdn.net",
             "ipplus360.com",
             "uapis.cn",
             "v4.ident.me",
@@ -3972,15 +3982,7 @@ class MainWindow(QMainWindow):
         return None, None
 
     def fetch_ip_from_api(self, api):
-        if api == "2024.ipchaxun.com":
-            response = requests.get("http://2024.ipchaxun.com")
-            data = response.json()
-            return data['ip']
-        elif api == "searchplugin.csdn.net":
-            response = requests.get("http://searchplugin.csdn.net/api/v1/ip/get")
-            data = response.json()
-            return data['data']['ip']
-        elif api == "ipplus360.com":
+        if api == "ipplus360.com":
             response = requests.get("https://ipplus360.com/getIP")
             data = response.json()
             return data['data']
@@ -4169,17 +4171,57 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.ping_result.append(f"API Ping 错误: {str(e)}")
 
+    def clean_minecraft_text(self, text):
+        if not isinstance(text, str):
+            return str(text)
+
+        # 移除所有格式代码（格式为 §x，其中x可以是任意字符）
+        import re
+        cleaned_text = re.sub('§[0-9a-fk-or]', '', text)
+        return cleaned_text
+
     def update_ping_result(self, target, result):
-        if isinstance(result, dict):
-            self.ping_result.append(f"Ping {target} 结果:")
-            self.ping_result.append(f"最小延迟: {result['min']:.2f} ms")
-            self.ping_result.append(f"最大延迟: {result['max']:.2f} ms")
-            self.ping_result.append(f"平均延迟: {result['avg']:.2f} ms")
-            self.ping_result.append(f"丢包率: {result.get('loss', 'N/A')}%")
-        elif isinstance(result, (int, float)):
-            self.ping_result.append(f"Ping {target}: {result:.2f} ms")
-        else:
-            self.ping_result.append(f"Ping {target}: {result}")
+        try:
+            if isinstance(result, dict):
+                self.ping_result.append(f"Ping {target} 结果:")
+
+                # 处理 Minecraft 服务器响应
+                if '延迟' in result:
+                    self.ping_result.append(f"延迟: {result['延迟']:.2f} ms")
+                    if '版本' in result:
+                        self.ping_result.append(f"版本: {self.clean_minecraft_text(result['版本'])}")
+                    if '协议' in result:
+                        self.ping_result.append(f"协议版本: {result['协议']}")
+                    if '在线玩家' in result:
+                        self.ping_result.append(f"在线玩家: {result['在线玩家']}")
+                    if '最大玩家' in result:
+                        self.ping_result.append(f"最大玩家数: {result['最大玩家']}")
+                    if '描述' in result:
+                        self.ping_result.append(f"服务器描述: {self.clean_minecraft_text(result['描述'])}")
+                    if '游戏模式' in result:
+                        self.ping_result.append(f"游戏模式: {self.clean_minecraft_text(result['游戏模式'])}")
+                    if '地图' in result:
+                        self.ping_result.append(f"地图: {self.clean_minecraft_text(result['地图'])}")
+                else:
+                    # 常规 ping 统计
+                    if 'min' in result:
+                        self.ping_result.append(f"最小延迟: {result['min']:.2f} ms")
+                    if 'max' in result:
+                        self.ping_result.append(f"最大延迟: {result['max']:.2f} ms")
+                    if 'avg' in result:
+                        self.ping_result.append(f"平均延迟: {result['avg']:.2f} ms")
+                    if 'loss' in result:
+                        self.ping_result.append(f"丢包率: {result['loss']}%")
+
+            elif isinstance(result, (int, float)):
+                self.ping_result.append(f"Ping {target}: {result:.2f} ms")
+
+            else:
+                self.ping_result.append(f"Ping {target}: {str(result)}")
+
+        except Exception as e:
+            self.ping_result.append(f"处理 Ping {target} 结果时出错: {str(e)}")
+            self.logger.error(f"处理 ping 结果时出错: {str(e)}")
 
     def auto_update(self):
         """自动更新函数"""
