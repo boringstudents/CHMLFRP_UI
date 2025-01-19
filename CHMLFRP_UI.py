@@ -139,7 +139,7 @@ def get_nodes(max_retries=3, retry_delay=1):
             else:
                 logger.error("获取节点数据失败，已达到最大重试次数")
                 return []
-        except Exception as e:
+        except Exception:
             logger.exception("获取节点数据时发生未知错误")
             return []
 
@@ -147,10 +147,11 @@ def get_nodes(max_retries=3, retry_delay=1):
 def login(username, password):
     """用户登录返回token"""
     logger.info(f"尝试登录用户: {username}")
-    url = f"http://cf-v2.uapis.cn/login?username={username}&password={password}"
+    url = f"http://cf-v2.uapis.cn/login"
+    params = {"username": username, "password": password}
     headers = get_headers()
     try:
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, params=params)
         response_data = response.json()
         token = response_data.get("data", {}).get("usertoken")
         if token:
@@ -184,10 +185,13 @@ def validate_and_resolve_ip(ip_or_hostname):
 
 def get_user_tunnels(token):
     """获取用户隧道列表"""
-    url = f"http://cf-v2.uapis.cn/tunnel?token={token}"
+    url = f"http://cf-v2.uapis.cn/tunnel"
+    params = {
+        "token": token
+    }
     headers = get_headers()
     try:
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, params=params)
         response.raise_for_status()
         data = response.json()
         if data['code'] == 200:
@@ -207,10 +211,14 @@ def get_user_tunnels(token):
 def get_node_ip(token, node):
     """获取节点IP"""
     logger.info(f"获取节点 {node} 的IP")
-    url = f"http://cf-v2.uapis.cn/nodeinfo?token={token}&node={node}"
+    url = f"http://cf-v2.uapis.cn/nodeinfo"
+    params = {
+        "token": token,
+        "node": node
+    }
     headers = get_headers()
     try:
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, params=params)
         ip = response.json()["data"]["realIp"]
         logger.info(f"节点 {node} 的IP为 {ip}")
         return ip
@@ -1120,10 +1128,14 @@ class TunnelCard(QFrame):
 
     def fetch_node_info(self):
         node = self.tunnel_info.get('node', '')
-        url = f"http://cf-v2.uapis.cn/nodeinfo?token={self.token}&node={node}"
+        url = f"http://cf-v2.uapis.cn/nodeinfo"
+        params = {
+            'token': self.token,
+            'node': node
+        }
         headers = get_headers()
         try:
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, params=params)
             data = response.json()
             if data['code'] == 200:
                 self.node_domain = data['data']['ip']
@@ -2043,7 +2055,7 @@ class MainWindow(QMainWindow):
 
 
     def initUI(self):
-        self.setWindowTitle(APP_NAME+" UI程序")
+        self.setWindowTitle(APP_NAME+" 程序")
         self.setGeometry(100, 100, 800, 600)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
@@ -2060,7 +2072,7 @@ class MainWindow(QMainWindow):
 
         title_bar = QWidget()
         title_layout = QHBoxLayout(title_bar)
-        title_label = QLabel(APP_NAME+" UI程序")
+        title_label = QLabel(APP_NAME+" 程序")
         title_layout.addWidget(title_label)
         title_layout.addStretch(1)
 
@@ -2715,9 +2727,12 @@ class MainWindow(QMainWindow):
         token = self.token_input.text()
         if token:
             try:
-                url = f"http://cf-v2.uapis.cn/userinfo?token={token}"
+                url = f"http://cf-v2.uapis.cn/userinfo"
                 headers = get_headers()
-                response = requests.get(url, headers=headers)
+                params = {
+                    "token": token
+                }
+                response = requests.get(url, params=params, headers=headers)
                 data = response.json()
                 if data['code'] == 200:
                     self.token = token
@@ -2731,9 +2746,13 @@ class MainWindow(QMainWindow):
                 return
         else:
             try:
-                url = f"http://cf-v2.uapis.cn/login?username={self.username_input.text()}&password={self.password_input.text()}"
+                url = f"http://cf-v2.uapis.cn/login"
                 headers = get_headers()
-                response = requests.get(url, headers=headers)
+                params = {
+                    "username": self.username_input.text(),
+                    "password": self.password_input.text()
+                }
+                response = requests.get(url, headers=headers, params=params)
                 data = response.json()
                 if data['code'] == 200:
                     self.token = data['data']['usertoken']
@@ -2826,17 +2845,20 @@ class MainWindow(QMainWindow):
 
     def get_user_info(self):
         """获取用户信息"""
-        url = f"http://cf-v2.uapis.cn/userinfo?token={self.token}"
+        url = f"http://cf-v2.uapis.cn/userinfo"
+        params = {
+            "token": self.token
+        }
         headers = get_headers()
         try:
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, params=params)
             data = response.json()
             if data['code'] == 200:
                 return data['data']
             else:
                 self.logger.error(f"获取用户信息失败: {data['msg']}")
                 return None
-        except Exception as e:
+        except Exception:
             self.logger.exception("获取用户信息时发生错误")
             return None
 
@@ -2937,13 +2959,16 @@ class MainWindow(QMainWindow):
             if not self.token:
                 raise ValueError("未登录，无法加载域名列表")
 
-            url = f"http://cf-v2.uapis.cn/get_user_free_subdomains?token={self.token}"
+            url = f"http://cf-v2.uapis.cn/get_user_free_subdomains"
+            params = {
+                "token": self.token
+            }
             headers = get_headers()
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, params=params)
             response.raise_for_status()
             data = response.json()
             if data['code'] != 200:
-                raise ValueError(data.get('msg', '未知错误'))
+                raise ValueError(data.get('msg'))
 
             domains = data['data']
 
@@ -3501,9 +3526,10 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
 
             if reply == QMessageBox.StandardButton.Yes:
                 try:
-                    url_v2 = f"http://cf-v2.uapis.cn/deletetunnel?token={self.token}&tunnelid={tunnel_info['id']}"
+                    url_v2 = f"http://cf-v2.uapis.cn/deletetunnel"
+                    params = {"token": self.token, "tunnelid": tunnel_info["id"]}
                     headers = get_headers()
-                    response = requests.post(url_v2, headers=headers)
+                    response = requests.post(url_v2, headers=headers, params=params)
                     if response.status_code == 200:
                         self.logger.info(f"隧道 '{tunnel_info['name']}' 删除成功 (v2 API)")
                         self.selected_tunnels.remove(tunnel_info)
@@ -3513,8 +3539,14 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                 except Exception:
                     self.logger.error(f"v2 API 删除失败，尝试 v1 API...")
                     try:
-                        url_v1 = f"http://cf-v1.uapis.cn/api/deletetl.php?token={user_token}&userid={user_id}&nodeid={tunnel_info['id']}"
-                        response_v1 = requests.get(url_v1)
+                        url_v1 = f"http://cf-v1.uapis.cn/api/deletetl.php"
+                        params = {
+                            "token": user_token,
+                            "userid": user_id,
+                            "nodeid": tunnel_info["id"],
+                        }
+                        headers = get_headers()
+                        response_v1 = requests.get(url_v1, params=params, headers=headers)
                         if response_v1.status_code == 200:
                             self.logger.info(f"隧道 '{tunnel_info['name']}' 删除成功 (v1 API)")
                             self.selected_tunnels.remove(tunnel_info)  # 从选中列表中移除
@@ -4082,10 +4114,13 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
         return False
 
     def get_current_record_type(self, domain, record):
-        url = f"http://cf-v2.uapis.cn/get_user_free_subdomains?token={self.token}"
+        url = f"http://cf-v2.uapis.cn/get_user_free_subdomains"
+        params = {
+            "token": self.token
+        }
         headers = get_headers()
         try:
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, params=params)
             data = response.json()
             if data['code'] == 200:
                 for subdomain in data['data']:
@@ -4096,10 +4131,11 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
         return None
 
     def get_existing_srv_record(self, domain, record):
-        url = f"http://cf-v2.uapis.cn/get_user_free_subdomains?token={self.token}"
+        url = f"http://cf-v2.uapis.cn/get_user_free_subdomains"
+        params = { "token": self.token }
         headers = get_headers()
         try:
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, params=params)
             data = response.json()
             if data['code'] == 200:
                 for subdomain in data['data']:
@@ -4721,17 +4757,20 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
 
     def dt_load_domains(self):
         if self.token:
-            url = f"http://cf-v2.uapis.cn/get_user_free_subdomains?token={self.token}"
+            url = f"http://cf-v2.uapis.cn/get_user_free_subdomains"
+            params = {
+                "token": self.token
+            }
             headers = get_headers()
             try:
-                response = requests.get(url, headers=headers)
+                response = requests.get(url, headers=headers, params=params)
                 data = response.json()
                 if data['code'] == 200:
                     domains = data['data']
                     self.dt_domain_input.clear()
                     for domain in domains:
                         self.dt_domain_input.addItem(f"{domain['record']}.{domain['domain']}")
-            except Exception as e:
+            except Exception:
                 self.logger.exception("获取域名列表时发生错误")
 
     def load_dt_configs(self):
