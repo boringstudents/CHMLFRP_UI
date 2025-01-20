@@ -28,10 +28,29 @@ import psutil
 import pyperclip
 
 # 程序信息
-APP_NAME = "CHMLFRP_UI"
-APP_VERSION = "1.5.1"
-PY_VERSION = "3.13.1"
-WINDOWS_VERSION = "Windows NT 10.0"
+APP_NAME = "CHMLFRP_UI" # 程序名称
+APP_VERSION = "1.5.1" # 程序版本
+PY_VERSION = "3.13.1" # Python 版本
+WINDOWS_VERSION = "Windows NT 10.0" # 系统版本
+
+def get_absolute_path(relative_path):
+    return os.path.abspath(os.path.join(os.path.split(sys.argv[0])[0], relative_path))
+
+# 从配置文件加载日志设置
+try:
+    settings_path = get_absolute_path("settings.json")
+    if os.path.exists(settings_path):
+        with open(settings_path, 'r') as f:
+            settings = json.load(f)
+            maxBytes = settings.get('log_size_mb', 10) * 1024 * 1024  # 默认10MB
+            backupCount = settings.get('backup_count', 30)  # 默认30个备份
+    else:
+        maxBytes = 10 * 1024 * 1024  # 默认10MB
+        backupCount = 30  # 默认30个备份
+except Exception as e:
+    print(f"加载日志设置失败: {str(e)}")
+    maxBytes = 10 * 1024 * 1024  # 默认10MB
+    backupCount = 30  # 默认30个备份
 
 # 生成统一的 User-Agent
 USER_AGENT = f"{APP_NAME}/{APP_VERSION} (Python/{PY_VERSION}; {WINDOWS_VERSION})"
@@ -53,7 +72,7 @@ def get_headers(json=False):
 # 设置全局日志
 logger = logging.getLogger('CHMLFRP_UI')
 logger.setLevel(logging.DEBUG)
-file_handler = RotatingFileHandler('CHMLFRP_UI.log', maxBytes=10 * 1024 * 1024, backupCount=30)
+file_handler = RotatingFileHandler('CHMLFRP_UI.log', maxBytes=maxBytes, backupCount=backupCount)
 file_handler.setLevel(logging.DEBUG)
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.INFO)
@@ -283,10 +302,6 @@ def is_node_online(node_name):
         logger.exception("检查节点在线状态时发生错误")
         return False
 
-
-def get_absolute_path(relative_path):
-    return os.path.abspath(os.path.join(os.path.split(sys.argv[0])[0], relative_path))
-
 def parse_domain(domain):
     """解析域名"""
     logger.info(f"解析域名: {domain}")
@@ -320,7 +335,7 @@ def setup_logging(parent):
     logger = logging.getLogger('CHMLFRP_UI')
     logger.setLevel(logging.DEBUG)
 
-    file_handler = RotatingFileHandler('CHMLFRP_UI.log', maxBytes=5 * 1024 * 1024, backupCount=5)
+    file_handler = RotatingFileHandler('CHMLFRP_UI.log', maxBytes=maxBytes, backupCount=backupCount)
     file_handler.setLevel(logging.DEBUG)
     file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     file_handler.setFormatter(file_formatter)
@@ -1478,32 +1493,52 @@ class OutputDialog(QDialog):
         self.output_text_edit.setReadOnly(True)
         self.layout.addWidget(self.output_text_edit)
 
+        # 存储每个隧道的输出历史记录
         self.tunnel_outputs = {}
 
     def add_output(self, tunnel_name, output, run_number):
+        """
+        添加或更新隧道输出
+
+        Args:
+            tunnel_name: 隧道名称
+            output: 输出内容
+            run_number: 运行次数
+        """
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         separator = f'<hr><b>隧道: {tunnel_name}</b> (启动次数: {run_number}) - <i>{timestamp}</i><br>'
 
         if tunnel_name in self.tunnel_outputs:
+            current_text = self.output_text_edit.toHtml()
             if self.tunnel_outputs[tunnel_name]['run_number'] == run_number:
-                # 覆盖相同次数的输出
-                start_idx = self.output_text_edit.toHtml().find(f'<b>隧道: {tunnel_name}</b>')
-                end_idx = self.output_text_edit.toHtml().find('<hr>', start_idx + 1)
-                if end_idx == -1:
-                    end_idx = len(self.output_text_edit.toHtml())
-                current_text = self.output_text_edit.toHtml()[
-                               :start_idx] + separator + output + self.output_text_edit.toHtml()[end_idx:]
-                self.output_text_edit.setHtml(current_text)
+                # 如果是相同的运行次数，替换对应的输出部分
+                start_idx = current_text.find(f'<b>隧道: {tunnel_name}</b> (启动次数: {run_number})')
+                if start_idx != -1:
+                    # 查找下一个分隔符或文档末尾
+                    end_idx = current_text.find('<hr>', start_idx + 1)
+                    if end_idx == -1:
+                        end_idx = len(current_text)
+                    # 替换这部分内容
+                    new_text = current_text[:start_idx] + separator + output + current_text[end_idx:]
+                    self.output_text_edit.setHtml(new_text)
+                else:
+                    # 如果找不到对应的输出块（不应该发生），添加到末尾
+                    self.output_text_edit.append(separator + output)
             else:
-                # 追加不同次数的输出
-                self.output_text_edit.append(separator + output)
+                # 如果是新的运行次数，在开头添加新的输出
+                self.output_text_edit.setHtml(separator + output + current_text)
         else:
+            # 第一次添加该隧道的输出
             self.output_text_edit.append(separator + output)
 
+        # 更新存储的输出信息
         self.tunnel_outputs[tunnel_name] = {
             'output': output,
             'run_number': run_number
         }
+
+        # 滚动到顶部以显示最新的输出
+        self.output_text_edit.verticalScrollBar().setValue(0)
 
 
 class SettingsDialog(QDialog):
@@ -1522,13 +1557,16 @@ class SettingsDialog(QDialog):
         tab_widget = QTabWidget()
         layout.addWidget(tab_widget)
 
+        # === 常规标签页 ===
         general_tab = QWidget()
         general_layout = QVBoxLayout(general_tab)
 
+        # 自启动选项
         self.autostart_checkbox = QCheckBox("开机自启动")
         self.autostart_checkbox.stateChanged.connect(self.toggle_autostart)
         general_layout.addWidget(self.autostart_checkbox)
 
+        # 主题设置
         theme_group = QGroupBox("主题设置")
         theme_layout = QVBoxLayout()
         self.theme_light = QRadioButton("浅色")
@@ -1540,9 +1578,37 @@ class SettingsDialog(QDialog):
         theme_group.setLayout(theme_layout)
         general_layout.addWidget(theme_group)
 
+        # 日志设置组
+        log_group = QGroupBox("日志设置")
+        log_layout = QFormLayout()
+
+        # 日志文件大小设置
+        self.log_size_input = QLineEdit()
+        self.log_size_input.setValidator(QIntValidator(1, 1000))  # 限制输入为1-1000
+        self.log_size_input.setPlaceholderText("1-1000")
+        size_layout = QHBoxLayout()
+        size_layout.addWidget(self.log_size_input)
+        size_layout.addWidget(QLabel("MB"))
+        log_layout.addRow("日志文件大小:", size_layout)
+
+        # 日志文件备份数量设置
+        self.backup_count_input = QLineEdit()
+        self.backup_count_input.setValidator(QIntValidator(1, 100))  # 限制输入为1-100
+        self.backup_count_input.setPlaceholderText("1-100")
+        log_layout.addRow("日志文件备份数量:", self.backup_count_input)
+
+        # 添加日志设置说明
+        log_note = QLabel("注: 更改将在重启程序后生效")
+        log_note.setStyleSheet("color: gray; font-size: 10px;")
+        log_layout.addRow("", log_note)
+
+        log_group.setLayout(log_layout)
+        general_layout.addWidget(log_group)
+
         general_layout.addStretch()
         tab_widget.addTab(general_tab, "常规")
 
+        # === 隧道标签页 ===
         tunnel_tab = QWidget()
         tunnel_layout = QVBoxLayout(tunnel_tab)
 
@@ -1550,9 +1616,14 @@ class SettingsDialog(QDialog):
         self.tunnel_list = QListWidget()
         tunnel_layout.addWidget(self.tunnel_list)
 
+        # 添加隧道设置说明
+        tunnel_note = QLabel("注: 勾选的隧道将在程序启动时自动启动")
+        tunnel_note.setStyleSheet("color: gray; font-size: 10px;")
+        tunnel_layout.addWidget(tunnel_note)
+
         tab_widget.addTab(tunnel_tab, "隧道")
 
-        # 关于开发者选项卡
+        # === 关于标签页 ===
         about_tab = QWidget()
         about_layout = QVBoxLayout(about_tab)
         about_layout.setSpacing(15)
@@ -1634,6 +1705,7 @@ class SettingsDialog(QDialog):
         about_layout.addStretch()
         tab_widget.addTab(about_tab, "关于")
 
+        # === 底部按钮 ===
         button_layout = QHBoxLayout()
         save_button = QPushButton("保存")
         save_button.clicked.connect(self.save_settings)
@@ -1750,54 +1822,97 @@ class SettingsDialog(QDialog):
         """
 
     def load_settings(self):
+        # 读取配置文件
         settings_path = get_absolute_path("settings.json")
         try:
             with open(settings_path, 'r') as f:
                 settings = json.load(f)
-        except:
+        except (FileNotFoundError, json.JSONDecodeError):
             settings = {}
+            self.parent.logger.info("未找到配置文件或配置文件无效，将使用默认设置")
 
         # 读取自启动状态
         if sys.platform == "win32":
-            key = winreg.OpenKey(
-                winreg.HKEY_CURRENT_USER,
-                r"Software\Microsoft\Windows\CurrentVersion\Run",
-                0,
-                winreg.KEY_READ
-            )
             try:
-                winreg.QueryValueEx(key, "ChmlFrpUI")
-                self.autostart_checkbox.setChecked(True)
-            except:
+                key = winreg.OpenKey(
+                    winreg.HKEY_CURRENT_USER,
+                    r"Software\Microsoft\Windows\CurrentVersion\Run",
+                    0,
+                    winreg.KEY_READ
+                )
+                try:
+                    winreg.QueryValueEx(key, "ChmlFrpUI")
+                    self.autostart_checkbox.setChecked(True)
+                except WindowsError:
+                    self.autostart_checkbox.setChecked(False)
+                winreg.CloseKey(key)
+            except WindowsError as e:
+                self.parent.logger.error(f"读取自启动设置失败: {str(e)}")
                 self.autostart_checkbox.setChecked(False)
-            winreg.CloseKey(key)
+
+        # 加载日志设置
+        try:
+            log_size = settings.get('log_size_mb')
+            if log_size is not None:
+                self.log_size_input.setText(str(log_size))
+            else:
+                self.log_size_input.setText("10")
+
+            backup_count = settings.get('backup_count')
+            if backup_count is not None:
+                self.backup_count_input.setText(str(backup_count))
+            else:
+                self.backup_count_input.setText("30")
+        except Exception as e:
+            self.parent.logger.error(f"加载日志设置失败: {str(e)}")
+            self.log_size_input.setText("10")
+            self.backup_count_input.setText("30")
 
         # 加载主题设置
-        theme_setting = settings.get('theme', 'system')
-        if theme_setting == 'light':
-            self.theme_light.setChecked(True)
-        elif theme_setting == 'dark':
-            self.theme_dark.setChecked(True)
-        else:
+        try:
+            theme_setting = settings.get('theme', 'system')
+            if theme_setting == 'light':
+                self.theme_light.setChecked(True)
+            elif theme_setting == 'dark':
+                self.theme_dark.setChecked(True)
+            else:
+                self.theme_system.setChecked(True)
+        except Exception as e:
+            self.parent.logger.error(f"加载主题设置失败: {str(e)}")
             self.theme_system.setChecked(True)
 
-        # 读取自动启动的隧道配置
-        auto_start_tunnels = settings.get('auto_start_tunnels', [])
+        # 加载隧道设置
+        try:
+            # 清除现有项目
+            self.tunnel_list.clear()
 
-        self.tunnel_list.clear()
-        if self.parent.token:
-            tunnels = get_user_tunnels(self.parent.token)
-            if tunnels:
-                for tunnel in tunnels:
-                    item = QListWidgetItem(tunnel['name'])
-                    item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
-                    item.setCheckState(
-                        Qt.CheckState.Checked if tunnel['name'] in auto_start_tunnels else Qt.CheckState.Unchecked)
-                    self.tunnel_list.addItem(item)
+            # 获取自动启动的隧道列表
+            auto_start_tunnels = settings.get('auto_start_tunnels', [])
+
+            if self.parent.token:
+                # 获取用户的隧道列表
+                tunnels = get_user_tunnels(self.parent.token)
+                if tunnels:
+                    for tunnel in tunnels:
+                        item = QListWidgetItem(tunnel['name'])
+                        item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+                        # 设置选中状态
+                        item.setCheckState(
+                            Qt.CheckState.Checked if tunnel['name'] in auto_start_tunnels
+                            else Qt.CheckState.Unchecked
+                        )
+                        self.tunnel_list.addItem(item)
+                else:
+                    no_tunnels_item = QListWidgetItem("无可用隧道")
+                    self.tunnel_list.addItem(no_tunnels_item)
             else:
-                self.tunnel_list.addItem("无可用隧道")
-        else:
-            self.tunnel_list.addItem("请先登录")
+                not_logged_in_item = QListWidgetItem("请先登录")
+                self.tunnel_list.addItem(not_logged_in_item)
+        except Exception as e:
+            self.parent.logger.error(f"加载隧道设置失败: {str(e)}")
+            error_item = QListWidgetItem("加载隧道列表失败")
+            self.tunnel_list.addItem(error_item)
+
 
     def toggle_autostart(self, state):
         if sys.platform == "win32":
@@ -1839,22 +1954,34 @@ class SettingsDialog(QDialog):
             return 'system'
 
     def save_settings(self):
-        # 保存自动启动的隧道列表
-        auto_start_tunnels = []
-        for i in range(self.tunnel_list.count()):
-            item = self.tunnel_list.item(i)
-            if item.flags() & Qt.ItemFlag.ItemIsUserCheckable:  # 只处理可选中的项目
-                if item.checkState() == Qt.CheckState.Checked:
-                    auto_start_tunnels.append(item.text())
-
-        settings_path = get_absolute_path("settings.json")
         try:
+            # 获取设置值
+            log_size = int(self.log_size_input.text() or 10)
+            backup_count = int(self.backup_count_input.text() or 30)
+
+            # 保存自动启动的隧道列表
+            auto_start_tunnels = []
+            for i in range(self.tunnel_list.count()):
+                item = self.tunnel_list.item(i)
+                if item.flags() & Qt.ItemFlag.ItemIsUserCheckable:
+                    if item.checkState() == Qt.CheckState.Checked:
+                        auto_start_tunnels.append(item.text())
+
+            settings_path = get_absolute_path("settings.json")
             settings = {
                 'auto_start_tunnels': auto_start_tunnels,
-                'theme': self.get_selected_theme()
+                'theme': self.get_selected_theme(),
+                'log_size_mb': log_size,
+                'backup_count': backup_count
             }
+
             with open(settings_path, 'w') as f:
                 json.dump(settings, f)
+
+            # 更新全局变量
+            global maxBytes, backupCount
+            maxBytes = log_size * 1024 * 1024
+            backupCount = backup_count
 
             # 应用主题设置
             if self.get_selected_theme() == 'system':
@@ -1865,8 +1992,10 @@ class SettingsDialog(QDialog):
 
             QMessageBox.information(self, "成功", "设置已保存")
             self.accept()
+
         except Exception as e:
             QMessageBox.warning(self, "错误", f"保存设置失败: {str(e)}")
+
 
 class MainWindow(QMainWindow):
     """主窗口"""
@@ -1876,6 +2005,9 @@ class MainWindow(QMainWindow):
         self.tab_buttons = []
         self.selected_tunnels = []
         self.token = None
+
+        # 初始化输出互斥锁
+        self.output_mutex = QMutex()
 
         # 初始化日志系统
         self.logger = logging.getLogger('CHMLFRP_UI')
@@ -2376,20 +2508,35 @@ class MainWindow(QMainWindow):
                     self.logger.info(f"没有找到frpc进程")
 
     def view_output(self):
-        selected_tunnels = self.selected_tunnels
-        if not selected_tunnels:
+        if not self.selected_tunnels:
             QMessageBox.warning(self, "警告", "请先选择一个隧道")
             return
 
-        for tunnel_info in selected_tunnels:
+        for tunnel_info in self.selected_tunnels:
             tunnel_name = tunnel_info['name']
-            if tunnel_name in self.tunnel_outputs:
-                if not self.tunnel_outputs[tunnel_name]['dialog']:
-                    self.tunnel_outputs[tunnel_name]['dialog'] = OutputDialog(self)
-                self.tunnel_outputs[tunnel_name]['dialog'].show()
-                output_text = self.tunnel_outputs[tunnel_name]['output'].replace('\n', '<br>')
-                self.tunnel_outputs[tunnel_name]['dialog'].add_output(tunnel_name, output_text,
-                                                                      self.tunnel_outputs[tunnel_name]['run_number'])
+
+            try:
+                with QMutexLocker(self.output_mutex):
+                    if tunnel_name not in self.tunnel_outputs:
+                        QMessageBox.information(self, "提示", "这个隧道还没启动过哦！")
+                        continue
+
+                    # 创建新的对话框或显示现有对话框
+                    if not self.tunnel_outputs[tunnel_name]['dialog']:
+                        self.tunnel_outputs[tunnel_name]['dialog'] = OutputDialog(self)
+
+                    # 更新并显示对话框
+                    dialog = self.tunnel_outputs[tunnel_name]['dialog']
+                    output_text = self.tunnel_outputs[tunnel_name]['output'].replace('\n', '<br>')
+                    dialog.add_output(tunnel_name, output_text,
+                                      self.tunnel_outputs[tunnel_name]['run_number'])
+                    dialog.show()
+                    dialog.raise_()
+                    dialog.activateWindow()
+
+            except Exception as e:
+                self.logger.error(f"显示输出对话框时发生错误: {str(e)}")
+                QMessageBox.warning(self, "错误", f"显示输出时发生错误: {str(e)}")
 
     def setup_domain_page(self):
         domain_widget = QWidget()
@@ -2997,30 +3144,126 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
 
     def capture_output(self, tunnel_name, process):
         def read_output(pipe, callback):
-            for line in iter(pipe.readline, b''):
-                callback(line.decode())
-            pipe.close()
+            try:
+                for line in iter(pipe.readline, b''):
+                    if not process.poll() is None:  # 检查进程是否已结束
+                        break
+                    try:
+                        callback(line.decode())
+                    except Exception as e:
+                        self.logger.error(f"处理输出时发生错误: {str(e)}")
+            except Exception as e:
+                self.logger.error(f"读取输出时发生错误: {str(e)}")
+            finally:
+                try:
+                    pipe.close()
+                except Exception as e:
+                    self.logger.error(f"关闭管道时发生错误: {str(e)}")
+
 
         def update_output(line):
-            obfuscated_line = self.obfuscate_sensitive_data(line)
-            self.tunnel_outputs[tunnel_name]['output'] += self.render_html(obfuscated_line)
+            try:
+                with QMutexLocker(self.output_mutex):
+                    if tunnel_name in self.tunnel_outputs:
+                        obfuscated_line = self.obfuscate_sensitive_data(line)
+                        self.tunnel_outputs[tunnel_name]['output'] += self.render_html(obfuscated_line)
 
-            if self.tunnel_outputs[tunnel_name]['dialog']:
-                self.tunnel_outputs[tunnel_name]['dialog'].add_output(tunnel_name,
-                                                                      self.tunnel_outputs[tunnel_name]['output'],
-                                                                      self.tunnel_outputs[tunnel_name]['run_number'])
+                        if (self.tunnel_outputs[tunnel_name]['dialog'] and
+                            not self.tunnel_outputs[tunnel_name]['dialog'].isHidden()):
+                            try:
+                                self.tunnel_outputs[tunnel_name]['dialog'].add_output(
+                                    tunnel_name,
+                                    self.tunnel_outputs[tunnel_name]['output'],
+                                    self.tunnel_outputs[tunnel_name]['run_number']
+                                )
+                            except Exception as e:
+                                self.logger.error(f"更新对话框时发生错误: {str(e)}")
+            except Exception as e:
+                self.logger.error(f"更新输出时发生错误: {str(e)}")
 
-        self.tunnel_outputs[tunnel_name] = {
-            'output': '',
-            'run_number': self.tunnel_outputs.get(tunnel_name, {}).get('run_number', 0) + 1,
-            'dialog': None
-        }
+        # 初始化输出互斥锁
+        if not hasattr(self, 'output_mutex'):
+            self.output_mutex = QMutex()
 
-        stdout_thread = threading.Thread(target=read_output, args=(process.stdout, update_output))
-        stderr_thread = threading.Thread(target=read_output, args=(process.stderr, update_output))
+        with QMutexLocker(self.output_mutex):
+            self.tunnel_outputs[tunnel_name] = {
+                'output': '',
+                'run_number': self.tunnel_outputs.get(tunnel_name, {}).get('run_number', 0) + 1,
+                'dialog': None,
+                'process': process
+            }
+
+        # 创建并启动输出读取线程
+        stdout_thread = threading.Thread(target=read_output, args=(process.stdout, update_output), daemon=True)
+        stderr_thread = threading.Thread(target=read_output, args=(process.stderr, update_output), daemon=True)
 
         stdout_thread.start()
         stderr_thread.start()
+
+        # 启动进程监控
+        monitor_thread = threading.Thread(target=self.monitor_process,
+                                       args=(tunnel_name, process, stdout_thread, stderr_thread),
+                                       daemon=True)
+        monitor_thread.start()
+
+    def monitor_process(self, tunnel_name, process, stdout_thread, stderr_thread):
+        """监控进程状态"""
+        try:
+            process.wait()
+            exit_code = process.poll()
+
+            # 等待输出线程完成，设置较短的超时时间
+            stdout_thread.join(timeout=1)
+            stderr_thread.join(timeout=1)
+
+            with QMutexLocker(self.output_mutex):
+                if tunnel_name in self.tunnel_outputs:
+                    try:
+                        if exit_code != 0:
+                            error_message = f"\n[E] 进程异常退出，退出代码: {exit_code}\n"
+                            if exit_code == -1073741819:  # 0xC0000005
+                                error_message += "[E] 进程访问违规 (可能是由于节点离线或网络问题)\n"
+                            self.tunnel_outputs[tunnel_name]['output'] += self.render_html(error_message)
+
+                            # 如果对话框正在显示，使用事件循环安全更新
+                            if (self.tunnel_outputs[tunnel_name]['dialog'] and
+                                    not self.tunnel_outputs[tunnel_name]['dialog'].isHidden()):
+                                dialog = self.tunnel_outputs[tunnel_name]['dialog']
+                                output = self.tunnel_outputs[tunnel_name]['output']
+                                run_number = self.tunnel_outputs[tunnel_name]['run_number']
+
+                                # 使用QMetaObject.invokeMethod安全地更新UI
+                                QMetaObject.invokeMethod(dialog, "add_output",
+                                                         Qt.ConnectionType.QueuedConnection,
+                                                         Q_ARG(str, tunnel_name),
+                                                         Q_ARG(str, output),
+                                                         Q_ARG(int, run_number))
+                    except Exception as e:
+                        self.logger.error(f"处理进程输出时发生错误: {str(e)}")
+                    finally:
+                        # 清理进程引用
+                        self.tunnel_outputs[tunnel_name]['process'] = None
+
+            # 从运行中的隧道列表中移除
+            if tunnel_name in self.tunnel_processes:
+                del self.tunnel_processes[tunnel_name]
+
+            # 安全地更新UI状态
+            QMetaObject.invokeMethod(self, "update_tunnel_card_status",
+                                     Qt.ConnectionType.QueuedConnection,
+                                     Q_ARG(str, tunnel_name),
+                                     Q_ARG(bool, False))
+
+        except Exception as e:
+            self.logger.error(f"监控进程时发生错误(frpc进程可能已退出)")
+            print(e)
+            # 确保进程被清理
+            try:
+                if process.poll() is None:
+                    process.terminate()
+                    process.wait(timeout=1)
+            except:
+                pass
 
     def update_output(self, tunnel_name, line):
         obfuscated_line = self.obfuscate_sensitive_data(line)
