@@ -43,7 +43,6 @@ jobs:
           python -m nuitka --standalone --python-flag=-O `
           --include-data-files=./favicon.ico=./favicon.ico `
           --include-data-files=./frpc.exe=./frpc.exe `
-          --include-data-files=./frpc_full.ini=./frpc_full.ini `
           --include-package=PyQt6 `
           --upx-binary=$UPX_PATH `
           --include-package-data=PyQt6 `
