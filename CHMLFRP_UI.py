@@ -50,7 +50,6 @@ def get_headers(json=False):
         headers['Content-Type'] = 'application/json'
     return headers
 
-
 # 设置全局日志
 logger = logging.getLogger('CHMLFRP_UI')
 logger.setLevel(logging.DEBUG)
