@@ -63,13 +63,6 @@ console_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 logger.addHandler(console_handler)
 
-def get_pos(event):
-    """获取事件的全局位置"""
-    if hasattr(event, 'globalPos'):
-        return event.globalPos()
-    else:
-        return event.globalPosition().toPoint()
-
 
 def is_valid_domain(domain):
     """IPV4格式检测"""
@@ -148,7 +141,10 @@ def login(username, password):
     """用户登录返回token"""
     logger.info(f"尝试登录用户: {username}")
     url = f"http://cf-v2.uapis.cn/login"
-    params = {"username": username, "password": password}
+    params = {
+        "username": username,
+        "password": password
+    }
     headers = get_headers()
     try:
         response = requests.get(url, headers=headers, params=params)
@@ -170,18 +166,6 @@ def resolve_to_ipv4(hostname):
         return socket.gethostbyname(hostname)
     except socket.gaierror:
         return None
-
-
-def validate_and_resolve_ip(ip_or_hostname):
-    if is_valid_ipv4(ip_or_hostname):
-        return ip_or_hostname
-    else:
-        resolved_ip = resolve_to_ipv4(ip_or_hostname)
-        if resolved_ip:
-            return resolved_ip
-        else:
-            return None
-
 
 def get_user_tunnels(token):
     """获取用户隧道列表"""
@@ -252,18 +236,6 @@ def update_subdomain(token, domain, record, target, record_type):
         logger.exception("更新子域名时发生错误")
         logger.exception(e)
 
-
-def get_tunnel_info(tunnels, tunnel_name):
-    """获取特定隧道信息"""
-    logger.info(f"获取隧道 {tunnel_name} 的信息")
-    for tunnel in tunnels:
-        if tunnel.get("name") == tunnel_name:
-            logger.debug(f"找到隧道 {tunnel_name} 的信息")
-            return tunnel
-    logger.warning(f"未找到隧道 {tunnel_name} 的信息")
-    return None
-
-
 def update_tunnel(token, tunnel_info, node):
     """更新隧道信息"""
     logger.info(f"更新隧道 {tunnel_info['name']} 到节点 {node}")
@@ -312,31 +284,8 @@ def is_node_online(node_name):
         return False
 
 
-def read_config():
-    file_path = get_absolute_path("Dynamic_tunneling.json")
-    try:
-        with open(file_path, 'r') as file:
-            content = file.read()
-            if content.strip():
-                return json.loads(content)
-            else:
-                return []
-    except FileNotFoundError:
-        return []
-    except json.JSONDecodeError as e:
-        print(f"JSON解析错误: {e}")
-        return []
-
-
 def get_absolute_path(relative_path):
     return os.path.abspath(os.path.join(os.path.split(sys.argv[0])[0], relative_path))
-
-
-def write_config(configs):
-    file_path = get_absolute_path("Dynamic_tunneling.json")
-    with open(file_path, 'w') as file:
-        json.dump(configs, file, indent=2)
-
 
 def parse_domain(domain):
     """解析域名"""
@@ -382,35 +331,6 @@ def setup_logging(parent):
     logger.addHandler(qt_handler)
 
     return logger, qt_handler
-
-
-class CustomListItem(QListWidgetItem):
-    def __init__(self, widget):
-        super().__init__()
-        self.widget = widget
-        self.setSizeHint(widget.sizeHint())
-
-
-class CustomItemDelegate(QStyledItemDelegate):
-    def paint(self, painter: QPainter, option, index):
-        try:
-            if option.state & QStyle.StateFlag.State_Selected:
-                painter.fillRect(option.rect, option.palette.highlight())
-            widget = index.data(Qt.ItemDataRole.UserRole)
-            if widget:
-                painter.save()
-                painter.translate(option.rect.topLeft())
-                widget.render(painter, QPoint(), QRegion(), QWidget.RenderFlag.DrawChildren)
-                painter.restore()
-        except Exception as e:
-            print(f"Error in CustomItemDelegate.paint: {str(e)}")
-
-    def sizeHint(self, option, index):
-        widget = index.data(Qt.ItemDataRole.UserRole)
-        if widget:
-            return widget.sizeHint()
-        return super().sizeHint(option, index)
-
 
 class PortScannerThread(QThread):
     update_signal = pyqtSignal(str)
@@ -1055,28 +975,6 @@ class WorkerThread(QThread):
                 break
             self.msleep(100)
 
-
-class BaseCard(QFrame):
-    clicked = pyqtSignal()
-
-    def __init__(self):
-        super().__init__()
-        self.setFrameShape(QFrame.Shape.StyledPanel)
-        self.setFrameShadow(QFrame.Shadow.Raised)
-        self.setAttribute(Qt.WidgetAttribute.WA_Hover)
-        self.setStyleSheet("""
-			BaseCard {
-				background-color: #f0f0f0;
-				border: 1px solid #d0d0d0;
-				border-radius: 5px;
-			}
-			BaseCard:hover {
-				background-color: #e0e0e0;
-				border: 1px solid #c0c0c0;
-			}
-		""")
-
-
 class TunnelCard(QFrame):
     clicked = pyqtSignal(object, bool)
     start_stop_signal = pyqtSignal(object, bool)
@@ -1495,22 +1393,6 @@ class ConfigEditorDialog(QDialog):
                 ])
             return str(config)
 
-
-class ConfigListItem(QListWidgetItem):
-    def __init__(self, config):
-        super().__init__()
-        self.config = config
-        self.update_display()
-
-    def update_display(self):
-        if isinstance(self.config, dict):
-            display_text = (f"隧道: {self.config.get('tunnel_name', 'N/A')}\n"
-                            f"域名: {self.config.get('subdomain', 'N/A')}.{self.config.get('domain', 'N/A')}")
-        else:
-            display_text = str(self.config)
-        self.setText(display_text)
-
-
 class StopWorker(QObject):
     finished = pyqtSignal()
     progress = pyqtSignal(str)
@@ -1523,10 +1405,6 @@ class StopWorker(QObject):
 
     def run(self):
         self.progress.emit("开始停止所有隧道...")
-
-        # 停止动态隧道
-        for tunnel_name in list(self.running_tunnels.keys()):
-            self.stop_single_tunnel(tunnel_name, is_dynamic=True)
 
         # 停止普通隧道
         for tunnel_name in list(self.tunnel_processes.keys()):
@@ -2008,6 +1886,7 @@ class MainWindow(QMainWindow):
         # 初始化日志显示
         self.log_display = QTextEdit(self)
         self.log_display.setReadOnly(True)
+        self.log_display.setFixedHeight(100)
 
         # 加载程序设置
         self.load_app_settings()
@@ -2103,7 +1982,6 @@ class MainWindow(QMainWindow):
         self.node_button = QPushButton("节点状态")
         self.ddns_button = QPushButton("DDNS管理")
         self.ping_button = QPushButton("Ping工具")
-        self.dynamic_tunnel_button = QPushButton("动态节点隧道")
         self.ip_tools_button = QPushButton("IP工具")
 
         self.user_info_button.clicked.connect(lambda: self.switch_tab("user_info"))
@@ -2112,7 +1990,6 @@ class MainWindow(QMainWindow):
         self.node_button.clicked.connect(lambda: self.switch_tab("node"))
         self.ddns_button.clicked.connect(lambda: self.switch_tab("ddns"))
         self.ping_button.clicked.connect(lambda: self.switch_tab("ping"))
-        self.dynamic_tunnel_button.clicked.connect(lambda: self.switch_tab("dynamic_tunnel"))
         self.ip_tools_button.clicked.connect(lambda: self.switch_tab("ip_tools"))
 
         menu_layout.addWidget(self.user_info_button)
@@ -2121,7 +1998,6 @@ class MainWindow(QMainWindow):
         menu_layout.addWidget(self.node_button)
         menu_layout.addWidget(self.ddns_button)
         menu_layout.addWidget(self.ping_button)
-        menu_layout.addWidget(self.dynamic_tunnel_button)
         menu_layout.addWidget(self.ip_tools_button)
         menu_layout.addStretch(1)
 
@@ -2152,7 +2028,6 @@ class MainWindow(QMainWindow):
         self.setup_node_page()
         self.setup_ddns_page()
         self.setup_ping_page()
-        self.setup_dynamic_tunnel_page()
         self.setup_ip_tools_page()
 
         self.switch_tab("user_info")
@@ -2164,7 +2039,6 @@ class MainWindow(QMainWindow):
             self.node_button,
             self.ddns_button,
             self.ping_button,
-            self.dynamic_tunnel_button,
             self.ip_tools_button
         ]
 
@@ -2240,12 +2114,6 @@ class MainWindow(QMainWindow):
     def quit_application(self):
         self.cleanup()
         QApplication.quit()
-
-    def closeEvent(self, event):
-        event.ignore()
-        self.hide()
-        self.tray_icon.showMessage("ChmlFrp UI程序", "程序已最小化到系统托盘", QSystemTrayIcon.MessageIcon.Information,
-                                   2000)
 
     def set_taskbar_icon(self):
         icon_path = get_absolute_path("favicon.ico")
@@ -2376,12 +2244,12 @@ class MainWindow(QMainWindow):
         layout.addWidget(title_label)
 
         self.username_input = QLineEdit(self)
-        self.username_input.setPlaceholderText('用户名')
+        self.username_input.setPlaceholderText('用户名/邮箱')
         self.password_input = QLineEdit(self)
         self.password_input.setPlaceholderText('密码')
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.token_input = QLineEdit(self)
-        self.token_input.setPlaceholderText('Token (可选)')
+        self.token_input.setPlaceholderText('Token (可选 仅填时为token登录)')
         self.token_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.login_button = QPushButton('登录', self)
         self.login_button.clicked.connect(self.login)
@@ -2780,8 +2648,6 @@ class MainWindow(QMainWindow):
             self.token_input.setEnabled(False)
             self.load_user_data()
             self.load_user_domains()
-            self.dt_load_tunnel_names()
-            self.dt_load_domains()
             self.auto_start_tunnels()
         except Exception as e:
             self.logger.error(f"登录成功后操作失败: {str(e)}")
@@ -2823,8 +2689,6 @@ class MainWindow(QMainWindow):
             for tunnel_name in list(self.tunnel_processes.keys()):
                 self.stop_tunnel({"name": tunnel_name})
 
-            self.dt_stop_program()
-
             QApplication.processEvents()
         except Exception as e:
             self.logger.error(f"停止API操作时发生错误: {str(e)}")
@@ -2863,17 +2727,24 @@ class MainWindow(QMainWindow):
             return None
 
     def display_user_info(self):
+        if self.user_info['term'] == "9999-09-09":
+            self.user_info['term'] = "永久有效"
         """显示用户信息"""
         if self.user_info:
             info_text = f"""
+		ID: {self.user_info['id']}
 		用户名: {self.user_info['username']}
+		注册时间: {self.user_info['regtime']}
 		邮箱: {self.user_info['email']}
+		实名状态: {self.user_info['realname']}
 		用户组: {self.user_info['usergroup']}
 		国内带宽: {self.user_info['bandwidth']} Mbps
 		国外带宽: {int(self.user_info['bandwidth']) * 4} Mbps
-		隧道数量: {self.user_info['tunnel']}
+		隧道数量: {self.user_info['tunnelCount']} / {self.user_info['tunnel']}
 		积分: {self.user_info['integral']}
 		到期时间: {self.user_info['term']}
+		上传数据: {self.user_info['total_upload']/1024/1024:.2f}MB
+		下载数据: {self.user_info['total_download']/1024/1024:.2f}MB
 			"""
             self.user_info_display.setPlainText(info_text)
         else:
@@ -3228,11 +3099,6 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
             # 清除用户信息显示
             self.user_info_display.clear()
 
-            # 清除动态隧道相关数据
-            self.dt_config_list.clear()
-            self.dt_running_list.clear()
-            self.dt_log_display.clear()
-
             # 重置其他相关状态
             self.selected_tunnels = []
             self.selected_domain = None
@@ -3257,17 +3123,18 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
         """添加隧道"""
         dialog = QDialog(self)
         dialog.setWindowTitle("添加隧道")
-        dialog.setFixedWidth(750)  # 将宽度设置为原来的2.5倍 (300 * 2.5 = 750)
+        dialog.setFixedWidth(750)
         layout = QHBoxLayout(dialog)
 
         form_layout = QFormLayout()
         detail_layout = QVBoxLayout()
 
         name_input = QLineEdit()
-        name_input.setPlaceholderText("如果留空则随机")
+        name_input.setPlaceholderText("若留空则随机")
         local_ip_input = QLineEdit("127.0.0.1")  # 默认值设置为127.0.0.1
         local_port_input = QLineEdit()
         remote_port_input = QLineEdit()
+        remote_port_input.setPlaceholderText("若留空则随机(10000-65535)")  # 添加占位符提示
         banddomain_input = QLineEdit()
         node_combo = QComboBox()
         type_combo = QComboBox()
@@ -3305,19 +3172,17 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
             porttype = type_combo.currentText()
 
             if porttype in ["tcp", "udp"]:
-                # 显示远程端口，隐藏绑定域名
                 remote_port_label.show()
                 remote_port_input.show()
                 banddomain_label.hide()
                 banddomain_input.hide()
             else:
-                # 显示绑定域名，隐藏远程端口
                 remote_port_label.hide()
                 remote_port_input.hide()
                 banddomain_label.show()
                 banddomain_input.show()
 
-            dialog.adjustSize()  # 调整窗口大小
+            dialog.adjustSize()
 
         type_combo.currentTextChanged.connect(on_type_changed)
         on_type_changed()  # 初始化时调用一次
@@ -3342,15 +3207,15 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
             for node in nodes:
                 if node['name'] == node_name:
                     detail_text.setPlainText(f"""
-					节点名称: {node['name']}
-					节点地址: {node['area']}
-					权限组: {node['nodegroup']}
-					是否属于大陆带宽节点: {node['china']}
-					是否支持web: {node['web']}
-					是否支持udp: {node['udp']}
-					是否有防御: {node['fangyu']}
-					介绍: {node['notes']}
-					""")
+                        节点名称: {node['name']}
+                        节点地址: {node['area']}
+                        权限组: {node['nodegroup']}
+                        是否属于大陆带宽节点: {node['china']}
+                        是否支持web: {node['web']}
+                        是否支持udp: {node['udp']}
+                        是否有防御: {node['fangyu']}
+                        介绍: {node['notes']}
+                        """)
                     break
 
         node_combo.currentIndexChanged.connect(on_node_changed)
@@ -3360,6 +3225,7 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
             try:
                 url = "http://cf-v2.uapis.cn/create_tunnel"
 
+                # 生成随机隧道名称（如果未指定）
                 tunnel_name = name_input.text()
                 if not tunnel_name:
                     tunnel_name = ''.join(
@@ -3370,7 +3236,7 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                     "token": self.token,
                     "tunnelname": tunnel_name,
                     "node": node_combo.currentText(),
-                    "localip": local_ip_input.text(),  # 直接使用输入的本地IP
+                    "localip": local_ip_input.text(),
                     "porttype": porttype,
                     "localport": int(local_port_input.text()),
                     "encryption": encryption_checkbox.isChecked(),
@@ -3379,9 +3245,12 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                 }
 
                 if porttype in ["tcp", "udp"]:
-                    if not validate_port(remote_port_input.text()):
-                        raise ValueError("远程端口必须是1-65535之间的整数")
-                    payload["remoteport"] = int(remote_port_input.text())
+                    remote_port = remote_port_input.text()
+                    if not remote_port:  # 如果远程端口为空，则随机生成
+                        remote_port = str(random.randint(10000, 65535))
+                    if not validate_port(remote_port):
+                        raise ValueError("远程端口必须是10000-65535之间的整数")
+                    payload["remoteport"] = int(remote_port)
                 elif porttype in ["http", "https"]:
                     if not banddomain_input.text():
                         raise ValueError("绑定域名是必须的")
@@ -3391,8 +3260,8 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                 response = requests.post(url, headers=headers, json=payload)
                 response_data = response.json()
                 if response.status_code == 200:
-                    self.logger.info(f"隧道添加成功: {response_data.get('msg', '无额外信息')}")
-                    QMessageBox.information(self, "成功", f"隧道添加成功: {response_data.get('msg')}")
+                    self.logger.info(f"信息: {response_data.get('msg', '无额外信息')}")
+                    QMessageBox.information(self, "成功", f"信息: {response_data.get('msg')}")
                     self.load_tunnels()  # 刷新隧道列表
                 else:
                     self.logger.error(f"添加隧道失败: {response_data.get('msg')}")
@@ -3780,12 +3649,13 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
 
                 headers = get_headers(json=True)
                 response = requests.post(url, headers=headers, json=payload)
+                response = response.json()
                 if response.status_code == 200:
-                    self.logger.info("域名添加成功")
+                    self.logger.info(response["msg"])
                     self.load_domains()  # 刷新域名列表
                 else:
-                    self.logger.error(f"添加域名失败: {response.text}")
-                    QMessageBox.warning(self, "错误", f"添加域名失败: {response.text}")
+                    self.logger.error(f"添加域名失败: {response["msg"]}")
+                    QMessageBox.warning(self, "错误", f"添加域名失败: {response["msg"]}")
             except Exception as e:
                 self.logger.exception("添加域名时发生错误")
                 QMessageBox.warning(self, "错误", f"添加域名失败: {str(e)}")
@@ -3860,7 +3730,6 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
             ttl_note.setWordWrap(True)
             layout.addRow(ttl_note)
 
-            # SRV记录特殊处理
             srv_widget = QWidget()
             srv_layout = QFormLayout(srv_widget)
             priority_input = QLineEdit()
@@ -4366,7 +4235,6 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
             self.logger.error(f"终止 frpc.exe 进程时发生错误: {str(e)}")
 
         # 调用原有的清理逻辑
-        self.cleanup()
         time.sleep(1)
 
         super().closeEvent(event)
@@ -4396,7 +4264,7 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                 self.logger.error(f"终止进程 {proc.info['pid']} 时发生错误: {str(e)}")
 
         try:
-            # 使用 psutil 获取所有进程
+            # psutil 获取所有进程
             for proc in psutil.process_iter(['pid', 'exe']):
                 # 检查进程路径是否与指定路径匹配
                 if proc.info['exe'] and os.path.normpath(proc.info['exe']) == os.path.normpath(frpc_path):
@@ -4418,9 +4286,6 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
         # 停止所有普通隧道
         for tunnel_name, process in list(self.tunnel_processes.items()):
             self.stop_tunnel({"name": tunnel_name})
-
-        # 停止所有动态隧道
-        self.dt_stop_program()
 
         # 强制终止所有 frpc 进程
         self.forcefully_terminate_frpc()
@@ -4458,11 +4323,6 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
         if current_index < len(self.tab_buttons):
             self.update_button_styles(self.tab_buttons[current_index])
 
-        # 直接更新IP工具页面的样式
-        self.ip_tools_widget.update_style(self.dark_theme)
-
-        # 更新IP工具按钮样式
-        self.update_button_styles(self.ip_tools_button)
 
     def apply_theme(self):
         if self.dark_theme:
@@ -4553,7 +4413,6 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
 					background-color: #F0F0F0;
 				}
 			""")
-        self.ip_tools_widget.update_style(self.dark_theme)
         if self.dark_theme:
             refresh_button_style = """
 					QPushButton#refreshButton {
@@ -4647,297 +4506,15 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
             self.content_stack.setCurrentIndex(4)
         elif tab_name == "ping":
             self.content_stack.setCurrentIndex(5)
-        elif tab_name == "dynamic_tunnel":
-            self.content_stack.setCurrentIndex(6)
         elif tab_name == "ip_tools":
-            self.content_stack.setCurrentIndex(7)
+            self.content_stack.setCurrentIndex(6)
 
         for button in self.tab_buttons:
             if button.text().lower().replace(" ", "_") == tab_name:
                 self.update_button_styles(button)
 
-    def setup_dynamic_tunnel_page(self):
-        dynamic_tunnel_widget = QWidget()
-        layout = QVBoxLayout(dynamic_tunnel_widget)
 
-        # 配置列表
-        self.dt_config_list = QListWidget()
-        self.dt_config_list.setStyleSheet("""
-			QListWidget {
-				border: 1px solid #dcdcdc;
-				border-radius: 5px;
-			}
-			QListWidget::item {
-				border-bottom: 1px solid #dcdcdc;
-				padding: 5px;
-			}
-			QListWidget::item:selected {
-				background-color: #e6f3ff;
-				color: black;
-			}
-			QListWidget::item:hover {
-				background-color: #f0f0f0;
-			}
-		""")
-        self.dt_config_list.setSpacing(2)
-        layout.addWidget(QLabel("配置列表:"))
-        layout.addWidget(self.dt_config_list)
 
-        # 隧道和域名选择
-        self.dt_tunnel_name_input = QComboBox()
-        self.dt_tunnel_name_input.setEditable(True)
-        self.dt_tunnel_name_input.setPlaceholderText('隧道名称')
-        self.dt_domain_input = QComboBox()
-        self.dt_domain_input.setEditable(True)
-        self.dt_domain_input.setPlaceholderText('域名')
-        layout.addWidget(QLabel("选择隧道:"))
-        layout.addWidget(self.dt_tunnel_name_input)
-        layout.addWidget(QLabel("选择域名:"))
-        layout.addWidget(self.dt_domain_input)
-
-        # 操作按钮
-        button_layout = QHBoxLayout()
-        self.dt_start_button = QPushButton('启动')
-        self.dt_start_button.clicked.connect(self.dt_start_selected_config)
-        self.dt_stop_button = QPushButton('停止')
-        self.dt_stop_button.clicked.connect(self.dt_stop_program)
-        self.dt_stop_button.setEnabled(False)
-        self.dt_add_button = QPushButton('添加')
-        self.dt_add_button.clicked.connect(self.dt_add_config)
-        self.dt_delete_button = QPushButton('删除')
-        self.dt_delete_button.clicked.connect(self.dt_delete_config)
-        button_layout.addWidget(self.dt_start_button)
-        button_layout.addWidget(self.dt_stop_button)
-        button_layout.addWidget(self.dt_add_button)
-        button_layout.addWidget(self.dt_delete_button)
-        layout.addLayout(button_layout)
-
-        # 已启动的隧道列表
-        self.dt_running_list = QListWidget()
-        self.dt_running_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
-        layout.addWidget(QLabel("已启动的隧道:"))
-        layout.addWidget(self.dt_running_list)
-
-        # 日志显示
-        self.dt_log_display = QTextEdit()
-        self.dt_log_display.setReadOnly(True)
-        layout.addWidget(self.dt_log_display)
-
-        self.content_stack.addWidget(dynamic_tunnel_widget)
-
-        self.load_dt_configs()
-
-    def dt_login(self):
-        token = self.dt_token_input.text()
-        if token:
-            self.dt_token = token
-        else:
-            username = self.dt_username_input.text()
-            password = self.dt_password_input.text()
-            self.dt_token = login(username, password)
-
-        if self.dt_token:
-            self.logger.info("登录成功")
-            self.dt_login_button.setEnabled(False)
-            self.dt_username_input.setEnabled(False)
-            self.dt_password_input.setEnabled(False)
-            self.dt_token_input.setEnabled(False)
-            self.dt_tunnel_domain_widget.show()
-            self.dt_load_tunnel_names()
-            self.dt_load_domains()
-        else:
-            self.logger.error("登录失败，请检查用户名、密码或Token")
-
-    def dt_load_tunnel_names(self):
-        if self.token:
-            tunnels = get_user_tunnels(self.token)
-            self.dt_tunnel_name_input.clear()
-            for tunnel in tunnels:
-                self.dt_tunnel_name_input.addItem(tunnel['name'])
-
-    def dt_load_domains(self):
-        if self.token:
-            url = f"http://cf-v2.uapis.cn/get_user_free_subdomains"
-            params = {
-                "token": self.token
-            }
-            headers = get_headers()
-            try:
-                response = requests.get(url, headers=headers, params=params)
-                data = response.json()
-                if data['code'] == 200:
-                    domains = data['data']
-                    self.dt_domain_input.clear()
-                    for domain in domains:
-                        self.dt_domain_input.addItem(f"{domain['record']}.{domain['domain']}")
-            except Exception:
-                self.logger.exception("获取域名列表时发生错误")
-
-    def load_dt_configs(self):
-        configs = read_config()
-        self.dt_config_list.clear()
-        if isinstance(configs, list):
-            for config in configs:
-                item = ConfigListItem(config)
-                self.dt_config_list.addItem(item)
-        elif isinstance(configs, dict):
-            item = ConfigListItem(configs)
-            self.dt_config_list.addItem(item)
-        else:
-            self.logger.error(f"未知的配置格式: {type(configs)}")
-
-        # 如果没有配置，显示一个提示
-        if self.dt_config_list.count() == 0:
-            empty_item = QListWidgetItem("没有配置，请点击'添加'按钮创建新配置")
-            empty_item.setFlags(Qt.ItemFlag.NoItemFlags)
-            self.dt_config_list.addItem(empty_item)
-
-    def dt_add_config(self):
-        if not self.token:
-            QMessageBox.warning(self, "警告", "请先登录")
-            return
-
-        tunnel_name = self.dt_tunnel_name_input.currentText()
-        full_domain = self.dt_domain_input.currentText()
-
-        nodes = get_nodes()
-        if nodes:
-            dialog = NodeSelectionDialog(nodes, self)
-            if dialog.exec():
-                selected_nodes = dialog.selected_nodes
-                subdomain, main_domain = parse_domain(full_domain)
-                new_config = {
-                    "token": self.token,
-                    "nodes": selected_nodes,
-                    "tunnel_name": tunnel_name,
-                    "domain": main_domain,
-                    "subdomain": subdomain,
-                    "record_type": "A"
-                }
-                configs = read_config()
-                if not isinstance(configs, list):
-                    configs = []
-                configs.append(new_config)
-                write_config(configs)
-                self.load_dt_configs()
-                self.logger.info("配置已添加")
-            else:
-                self.logger.info("取消了节点选择")
-        else:
-            self.logger.error("获取节点失败，请检查网络连接")
-            QMessageBox.warning(self, "错误", "获取节点失败，请检查网络连接")
-
-    def dt_delete_config(self):
-        current_item = self.dt_config_list.currentItem()
-        if current_item and isinstance(current_item, ConfigListItem):
-            configs = read_config()
-            if isinstance(configs, list):
-                configs = [c for c in configs if c != current_item.config]
-            elif isinstance(configs, dict):
-                configs = []
-            write_config(configs)
-            self.load_dt_configs()
-            self.logger.info("配置已删除")
-        else:
-            QMessageBox.warning(self, "警告", "请先选择一个配置")
-
-    def dt_start_selected_config(self):
-        current_item = self.dt_config_list.currentItem()
-        if current_item and isinstance(current_item, ConfigListItem):
-            if isinstance(current_item.config, dict):
-                self.dt_start_program(current_item.config)
-            else:
-                QMessageBox.warning(self, "警告", "选中的配置格式不正确")
-        else:
-            QMessageBox.warning(self, "警告", "请先选择一个配置")
-
-    def edit_config(self):
-        """编辑配置"""
-        if not self.token:
-            QMessageBox.warning(self, "警告", "请先登录")
-            return
-
-        tunnel_name = self.dt_tunnel_name_input.currentText()
-        full_domain = self.dt_domain_input.currentText()
-
-        # 获取节点并显示选择对话框
-        nodes = get_nodes()
-        if nodes:
-            dialog = NodeSelectionDialog(nodes, self)
-            if dialog.exec():
-                selected_nodes = dialog.selected_nodes
-                self.worker = WorkerThread(self.edit_config_logic, self.token, tunnel_name, full_domain, selected_nodes)
-                self.worker.update_signal.connect(self.dt_update_log)
-                self.worker.start()
-            else:
-                self.logger.info("取消了节点选择")
-        else:
-            self.logger.error("获取节点失败，请检查网络连接")
-            QMessageBox.warning(self, "错误", "获取节点失败，请检查网络连接")
-
-    def dt_edit_config(self):
-        """编辑配置"""
-        if not self.token:
-            QMessageBox.warning(self, "警告", "请先登录")
-            return
-
-        tunnel_name = self.dt_tunnel_name_input.currentText()
-        full_domain = self.dt_domain_input.currentText()
-
-        # 获取节点并显示选择对话框
-        nodes = get_nodes()
-        if nodes:
-            dialog = NodeSelectionDialog(nodes, self)
-            if dialog.exec():
-                selected_nodes = dialog.selected_nodes
-                self.worker = WorkerThread(self.dt_edit_config_logic, self.token, tunnel_name, full_domain,
-                                           selected_nodes)
-                self.worker.update_signal.connect(self.dt_update_log)
-                self.worker.start()
-            else:
-                self.logger.info("取消了节点选择")
-        else:
-            self.logger.error("获取节点失败，请检查网络连接")
-            QMessageBox.warning(self, "错误", "获取节点失败，请检查网络连接")
-
-    def dt_edit_config_logic(self, token, tunnel_name, full_domain, selected_nodes):
-        """编辑配置逻辑"""
-        subdomain, main_domain = parse_domain(full_domain)
-        config = [token, len(selected_nodes)] + selected_nodes + [tunnel_name, main_domain, subdomain, "A"]
-        write_config(config)
-        self.logger.info("配置已更新，可以启动程序")
-        return "配置已更新，可以启动程序"
-
-    def dt_update_log(self, message):
-        """更新动态隧道日志"""
-        self.dt_log_display.append(message)
-        self.dt_log_display.verticalScrollBar().setValue(self.dt_log_display.verticalScrollBar().maximum())
-
-    def edit_config_logic(self, token, tunnel_name, full_domain, selected_nodes):
-        """编辑配置逻辑"""
-        subdomain, main_domain = parse_domain(full_domain)
-        config = [token, len(selected_nodes)] + selected_nodes + [tunnel_name, main_domain, subdomain, "A"]
-        write_config(config)
-        self.logger.info("配置已更新，可以启动程序")
-        return "配置已更新，可以启动程序"
-
-    def dt_start_program_with_config(self):
-        config = read_config()
-        if config:
-            self.dt_start_program()
-        else:
-            if not self.token:
-                self.logger.error("请先登录或配置文件")
-            else:
-                self.dt_start_program()
-
-    def dt_add_config_logic(self, token, tunnel_name, full_domain, selected_nodes):
-        """添加配置逻辑"""
-        subdomain, main_domain = parse_domain(full_domain)
-        config = [token, len(selected_nodes)] + selected_nodes + [tunnel_name, main_domain, subdomain, "A"]
-        write_config(config)
-        self.logger.info("配置已添加，可以启动程序")
-        return "配置已添加，可以启动程序"
 
     def stop_single_tunnel(self, tunnel_name):
         with QMutexLocker(self.running_tunnels_mutex):
@@ -4952,52 +4529,7 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
             else:
                 self.logger.warning(f"尝试停止不存在的隧道: {tunnel_name}")
 
-        self.update_running_tunnels_ui()
-
-    def forcefully_terminate_frpc(self):
-        try:
-            current_directory = os.path.dirname(os.path.abspath(__file__))  # 获取当前脚本目录
-            frpc_path = os.path.join(current_directory, 'frpc.exe')  # 当前目录下的 frpc.exe 完整路径
-
-            # 使用 PowerShell 命令终止指定路径下的 frpc.exe 进程
-            powershell_command = f'Get-Process | Where-Object {{ $_.Path -eq "{frpc_path}" }} | Stop-Process -Force'
-
-            # 创建 STARTUPINFO 对象，确保不会弹出命令行窗口
-            startupinfo = subprocess.STARTUPINFO()
-            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-            startupinfo.wShowWindow = subprocess.SW_HIDE  # 隐藏窗口
-
-            # 使用 subprocess.Popen 执行 PowerShell 命令
-            subprocess.Popen(['powershell', '-Command', powershell_command],
-                             stdout=subprocess.DEVNULL,
-                             stderr=subprocess.DEVNULL,
-                             startupinfo=startupinfo)
-
-            self.logger.info(f"已强制终止指定路径上的 frpc.exe 进程: {frpc_path}")
-        except Exception as e:
-            self.logger.error(f"强制终止 frpc.exe 进程时发生错误: {str(e)}")
-
-    def dt_start_program(self, config):
-        with QMutexLocker(self.running_tunnels_mutex):
-            tunnel_name = config['tunnel_name']
-            if tunnel_name in self.running_tunnels:
-                QMessageBox.warning(self, "警告", f"隧道 '{tunnel_name}' 已经在运行中")
-                return
-
-            worker = WorkerThread(self.dt_run_program, config)
-            worker.update_signal.connect(self.dt_update_log)
-            worker.finished.connect(lambda: self.handle_tunnel_finished(tunnel_name))
-            worker.start()
-
-            self.running_tunnels[tunnel_name] = worker
-            self.dt_running_list.addItem(f"{tunnel_name} - {config['subdomain']}.{config['domain']}")
-            self.dt_stop_button.setEnabled(True)
-
-    def dt_stop_program(self):
-        self.stop_all_tunnels()
-
     def stop_all_tunnels(self):
-        self.dt_stop_button.setEnabled(False)
         self.stop_worker = StopWorker(self.running_tunnels, self.tunnel_processes, self.logger)
         self.stop_thread = QThread()
         self.stop_worker.moveToThread(self.stop_thread)
@@ -5005,140 +4537,18 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
         self.stop_worker.finished.connect(self.stop_thread.quit)
         self.stop_worker.finished.connect(self.stop_worker.deleteLater)
         self.stop_thread.finished.connect(self.stop_thread.deleteLater)
-        self.stop_worker.progress.connect(self.dt_update_log)
-        self.stop_worker.finished.connect(self.on_stop_finished)
         self.stop_thread.start()
 
-    def on_stop_finished(self):
-        self.dt_stop_button.setEnabled(True)
-        self.update_running_tunnels_ui()
-        self.update_tunnel_ui()
-        self.dt_update_log("停止操作完成")
-
-    def check_tunnels_stopped(self):
-        if not self.running_tunnels:
-            self.stop_timer.stop()
-            self.dt_log_display.append("所有动态隧道已停止")
-            self.dt_stop_button.setEnabled(True)
-            self.update_running_tunnels_ui()
-        else:
-            self.dt_log_display.append(f"还有 {len(self.running_tunnels)} 个隧道正在停止...")
-
-    def update_running_tunnels_ui(self):
-        self.dt_running_list.clear()
-        for tunnel_name in self.running_tunnels.keys():
-            self.dt_running_list.addItem(tunnel_name)
-        self.dt_stop_button.setEnabled(bool(self.running_tunnels))
-
     def update_tunnel_ui(self):
-        # 更新普通隧道的 UI
         for i in range(self.tunnel_container.layout().count()):
             widget = self.tunnel_container.layout().itemAt(i).widget()
             if isinstance(widget, TunnelCard):
                 widget.is_running = widget.tunnel_info['name'] in self.tunnel_processes
                 widget.update_status()
 
-    def dt_run_program(self, config):
-        token = config['token']
-        nodes = config['nodes']
-        tunnel_name = config['tunnel_name']
-        domain_name = config['domain']
-        subdomain = config['subdomain']
-        record_type = config['record_type']
-
-        frpc_path = get_absolute_path("frpc.exe")
-
-        while True:
-            current_node = nodes[0]
-            self.logger.info(f"当前使用节点: {current_node}")
-            try:
-                node_ip = get_node_ip(token, current_node)
-                if node_ip:
-                    if record_type == "SRV":
-                        priority = config.get('priority', '10')
-                        weight = config.get('weight', '10')
-                        port = config.get('port', '80')
-                        target = f"{priority} {weight} {port} {node_ip}"
-                    else:
-                        target = node_ip
-                    update_subdomain(token, domain_name, subdomain, target, record_type)
-                    self.logger.info(f"已更新子域名 {subdomain}.{domain_name} 到 {target}")
-                else:
-                    self.logger.warning(f"无法获取节点 {current_node} 的IP，跳过子域名更新")
-
-                tunnels = get_user_tunnels(token)
-                tunnel_info = get_tunnel_info(tunnels, tunnel_name)
-                if tunnel_info:
-                    update_tunnel(token, tunnel_info, current_node)
-                    self.logger.info(f"已更新隧道 {tunnel_name} 到节点 {current_node}")
-
-                    # 添加延迟，等待配置更新
-                    time.sleep(5)
-                else:
-                    self.logger.warning(f"未找到隧道 {tunnel_name} 的信息，跳过隧道更新")
-
-                if is_node_online(current_node):
-                    if tunnel_info:
-                        cmd = [
-                            frpc_path,
-                            "-u", token,
-                            "-p", str(tunnel_info['id'])  # 确保转换为字符串
-                        ]
-
-                        self.process = subprocess.Popen(
-                            cmd,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            creationflags=subprocess.CREATE_NO_WINDOW
-                        )
-                        self.logger.info(f"frpc已启动，使用节点: {current_node}")
-
-                        while True:
-                            if not is_node_online(current_node):
-                                self.logger.info(f"节点 {current_node} 离线，准备切换到下一个节点")
-                                break
-                            time.sleep(30)
-                    else:
-                        self.logger.warning(f"未找到隧道 {tunnel_name} 的信息，跳过启动frpc")
-                else:
-                    self.logger.info(f"节点 {current_node} 离线，跳过启动frpc")
-
-            except Exception as e:
-                self.logger.exception(f"在处理节点 {current_node} 时发生错误: {str(e)}")
-
-            finally:
-                if hasattr(self, 'process') and self.process:
-                    self.logger.info("正在停止frpc进程...")
-                    try:
-                        self.process.terminate()
-                        self.process.wait(timeout=5)
-                    except subprocess.TimeoutExpired:
-                        self.process.kill()
-                    self.logger.info("frpc进程已停止")
-
-            nodes.append(nodes.pop(0))
-            config['nodes'] = nodes
-            write_config([config])
-            self.logger.info("正在切换到下一个节点...")
-
-            # 在切换到下一个节点之前稍作等待
-            time.sleep(5)
-
-    def handle_tunnel_finished(self, tunnel_name):
-        with QMutexLocker(self.running_tunnels_mutex):
-            if tunnel_name in self.running_tunnels:
-                del self.running_tunnels[tunnel_name]
-                items = self.dt_running_list.findItems(tunnel_name, Qt.MatchStartsWith)
-                for item in items:
-                    self.dt_running_list.takeItem(self.dt_running_list.row(item))
-
-            if not self.running_tunnels:
-                self.dt_stop_button.setEnabled(False)
-
 
 class NodeCard(QFrame):
     clicked = pyqtSignal(object)
-
     def __init__(self, node_info):
         super().__init__()
         self.node_info = node_info
@@ -5185,7 +4595,6 @@ class NodeCard(QFrame):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        # 绘制状态指示器
         if self.node_info.get('state') == 'online':
             color = QColor(0, 255, 0)  # 绿色
         else:
@@ -5213,9 +4622,7 @@ if __name__ == '__main__':
         while traceback:
             traceback = traceback.tb_next
         sys.__excepthook__(exctype, value, traceback)
-
     sys.excepthook = exception_hook
-
     try:
         app = QApplication(sys.argv)
         main_window = MainWindow()
