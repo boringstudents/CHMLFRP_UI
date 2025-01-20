@@ -795,7 +795,8 @@ class PingThread(QThread):
         except Exception as e:
             return f"Ping 错误: {str(e)}"
 
-    def calculate_packet_loss(self, output):
+    @staticmethod
+    def calculate_packet_loss(output):
         match = re.search(r"(\d+)% 丢失", output)
         if match:
             return int(match.group(1))
@@ -817,7 +818,7 @@ class PingThread(QThread):
         for _ in range(attempts):
             try:
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.settimeout(1)  # 设置 1 秒超时
+                sock.settimeout(2)  # 设置 1 秒超时
                 start_time = time.time()
                 result = sock.connect_ex((host, port))
                 end_time = time.time()
@@ -2652,7 +2653,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.logger.error(f"登录成功后操作失败: {str(e)}")
             self.logger.error(traceback.format_exc())
-            self.show_error_message(f"登录成功，但加载数据失败: {str(e)}")
+            self.show_error_message(self.user_info_display, f"登录成功，但加载数据失败: {str(e)}")
 
     def logout(self):
         """退出登录"""
@@ -2705,7 +2706,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.logger.error(f"加载用户数据时发生错误: {str(e)}")
             self.logger.error(traceback.format_exc())
-            self.show_error_message(f"加载用户数据时发生错误: {str(e)}")
+            self.show_error_message(self.user_info_display, f"加载用户数据时发生错误: {str(e)}")
 
     def get_user_info(self):
         """获取用户信息"""
@@ -2804,9 +2805,10 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.logger.error(f"加载隧道列表时发生错误: {str(e)}")
             self.logger.error(traceback.format_exc())
-            self.show_error_message(f"加载隧道列表时发生错误: {str(e)}")
+            self.show_error_message(self.tunnel_container, f"加载隧道列表时发生错误: {str(e)}")
 
-    def clear_error_message(self, widget):
+    @staticmethod
+    def clear_error_message(widget):
         """清除错误消息"""
         if isinstance(widget, QListWidget):
             for i in range(widget.count()):
@@ -2989,7 +2991,8 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                                  obfuscated_text)
         return obfuscated_text
 
-    def render_html(self, text):
+    @staticmethod
+    def render_html(text):
         text = re.sub(r'\[I\]', '<span style="color: green;">[I]</span>', text, flags=re.IGNORECASE)
         text = re.sub(r'\[E\]', '<span style="color: red;">[E]</span>', text, flags=re.IGNORECASE)
         text = re.sub(r'\[W\]', '<span style="color: orange;">[W]</span>', text, flags=re.IGNORECASE)
