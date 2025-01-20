@@ -32,6 +32,7 @@ APP_NAME = "CHMLFRP_UI" # 程序名称
 APP_VERSION = "1.5.1" # 程序版本
 PY_VERSION = "3.13.1" # Python 版本
 WINDOWS_VERSION = "Windows NT 10.0" # 系统版本
+Number_of_tunnels = 0 # 隧道数量
 
 def get_absolute_path(relative_path):
     return os.path.abspath(os.path.join(os.path.split(sys.argv[0])[0], relative_path))
@@ -201,14 +202,15 @@ def get_user_tunnels(token):
             tunnels = data.get("data", [])
             return tunnels
         else:
-            logger.error(f"获取隧道列表失败: {data.get('msg')}")
-            return None
+            logger.error(f" {data.get('msg')}")
+            return []
+
     except requests.RequestException:
         logger.exception("获取隧道列表时发生网络错误")
-        return None
+        return []
     except Exception:
         logger.exception("获取隧道列表时发生未知错误")
-        return None
+        return []
 
 
 def get_node_ip(token, node):
@@ -1537,7 +1539,7 @@ class OutputDialog(QDialog):
             'run_number': run_number
         }
 
-        # 滚动到顶部以显示最新的输出
+        # 滚动到顶部 以显示最新的输出
         self.output_text_edit.verticalScrollBar().setValue(0)
 
 
@@ -2263,7 +2265,6 @@ class MainWindow(QMainWindow):
 
         tunnels = get_user_tunnels(self.token)
         if tunnels is None:
-            self.logger.error("获取隧道列表失败")
             return
 
         for tunnel_name, process in list(self.tunnel_processes.items()):
@@ -2865,6 +2866,7 @@ class MainWindow(QMainWindow):
             response = requests.get(url, headers=headers, params=params)
             data = response.json()
             if data['code'] == 200:
+                Number_of_tunnels = data['data']['tunnelCount']
                 return data['data']
             else:
                 self.logger.error(f"获取用户信息失败: {data['msg']}")
@@ -2907,20 +2909,27 @@ class MainWindow(QMainWindow):
                     item.widget().setSelected(False)
 
     def load_tunnels(self):
+        """加载隧道列表"""
         try:
             if not self.token:
-                raise ValueError("未登录，无法加载隧道列表")
+                self.show_error_message("未登录，无法加载隧道列表")
+                return
 
             tunnels = get_user_tunnels(self.token)
             if tunnels is None:
-                raise ValueError("获取隧道列表失败")
+                return
 
-            selected_ids = [t['id'] for t in self.selected_tunnels]
-
+            # 清除现有的隧道卡片
             while self.tunnel_container.layout().count():
                 item = self.tunnel_container.layout().takeAt(0)
                 if item.widget():
                     item.widget().deleteLater()
+
+            if not tunnels:  # 如果隧道列表为空
+                self.logger.info("当前没有隧道哦！快点去创建吧！")
+                return  # 直接返回，不显示错误
+
+            selected_ids = [t['id'] for t in self.selected_tunnels]
 
             row, col = 0, 0
             for tunnel in tunnels:
@@ -2962,9 +2971,9 @@ class MainWindow(QMainWindow):
                     widget.takeItem(i)
                     break
 
-    def show_error_message(self, widget, message):
+    def show_error_message(self, message, widget=None):
         QMessageBox.warning(self, "错误", message)
-        if isinstance(widget, QListWidget):
+        if widget and isinstance(widget, QListWidget):
             self.clear_error_message(widget)
             error_item = QListWidgetItem(message)
             error_item.setData(Qt.ItemDataRole.UserRole, "error_message")
