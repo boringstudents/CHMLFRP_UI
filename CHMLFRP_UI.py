@@ -26,6 +26,24 @@ from mcstatus import *
 from requests import *
 import psutil
 import pyperclip
+import ctypes
+import win32security
+import win32api
+import win32con
+import win32process
+
+
+
+"""提权"""
+try:
+    current_process = win32api.GetCurrentProcess()
+    token = win32security.OpenProcessToken(current_process, win32con.TOKEN_ADJUST_PRIVILEGES | win32con.TOKEN_QUERY)
+    privilege_id = win32security.LookupPrivilegeValue(None, win32con.SE_DEBUG_NAME)
+    new_privileges = [(privilege_id, win32con.SE_PRIVILEGE_ENABLED)]
+    win32security.AdjustTokenPrivileges(token, False, new_privileges)
+except Exception as e:
+    print(f"提升权限时出错: {e}")
+
 
 # 程序信息
 APP_NAME = "CHMLFRP_UI" # 程序名称
@@ -2789,6 +2807,22 @@ class MainWindow(QMainWindow):
     def login_success(self):
         """登录成功后的操作"""
         try:
+            # 首先验证token是否有效
+            url = f"http://cf-v2.uapis.cn/userinfo"
+            headers = get_headers()
+            params = {"token": self.token}
+            response = requests.get(url, params=params, headers=headers)
+            data = response.json()
+
+            if data['code'] != 200:
+                # token无效,执行登出操作
+                self.logger.error(f"Token无效: {data.get('msg', '未知错误')}")
+                self.logout()
+                QMessageBox.warning(self, "登录失败", f"Token无效: {data.get('msg', '未知错误')}")
+                return
+
+            time.sleep(1)  # 等待1秒
+            # Token有效,继续后续操作
             self.login_button.setEnabled(False)
             self.logout_button.setEnabled(True)
             self.username_input.setEnabled(False)
@@ -2800,7 +2834,8 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.logger.error(f"登录成功后操作失败: {str(e)}")
             self.logger.error(traceback.format_exc())
-            self.show_error_message(f"登录成功，但加载数据失败: {str(e)}")
+            QMessageBox.warning(self, "错误", f"登录成功，但加载数据失败: {str(e)}")
+            self.logout()
 
     def logout(self):
         """退出登录"""
