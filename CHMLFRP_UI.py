@@ -27,7 +27,6 @@ from requests import *
 import psutil
 import pyperclip
 
-
 # 程序信息
 APP_NAME = "CHMLFRP_UI" # 程序名称
 APP_VERSION = "1.5.2" # 程序版本

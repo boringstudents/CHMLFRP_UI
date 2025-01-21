@@ -1,5 +1,5 @@
 # **CHMLFRP_UI**
-### 基于v2 api开发的chmlfrp ui版本的客户端
+### 基于v2 api开发的chmlfrp ui版本的第三方客户端
 
 
 下载地址: 蓝奏云：[https://wwvn.lanzoul.com/b00pzv3oyj](https://wwvn.lanzoul.com/b00pzv3oyj) 密码:ff50
@@ -10,6 +10,8 @@
 | 目标 | 预计实现时间 |
 | ------- | ------- |
 | 找一个合适的程序名称，总不能一直叫CHMLFRP_UI吧 | 不道a |
+
+已经是非常完美了
 
 ## 相关链接
 [https://github.com/Qianyiaz/ChmlFrp_Professional_Launcher](https://github.com/Qianyiaz/ChmlFrp_Professional_Launcher)  #千依🅥的cpl
