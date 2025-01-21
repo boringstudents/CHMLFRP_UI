@@ -2837,6 +2837,7 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "错误", f"登录成功，但加载数据失败: {str(e)}")
             self.logout()
 
+
     def logout(self):
         """退出登录"""
         # 停止所有使用token的操作
