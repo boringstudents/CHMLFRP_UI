@@ -71,16 +71,16 @@ except Exception as e:
 USER_AGENT = f"{APP_NAME}/{APP_VERSION} (Python/{PY_VERSION}; {WINDOWS_VERSION})"
 
 # 生成统一的请求头
-def get_headers(json=False):
+def get_headers(request_json=False):
     """
     获取统一的请求头
     Args:
-        json: 是否添加 Content-Type: application/json
+        request_json: 是否添加 Content-Type: application/json
     Returns:
         dict: 请求头字典
     """
     headers = {'User-Agent': USER_AGENT}
-    if json:
+    if request_json:
         headers['Content-Type'] = 'application/json'
     return headers
 
@@ -154,8 +154,8 @@ def get_nodes(max_retries=3, retry_delay=1):
             else:
                 logger.error(f"获取节点数据失败: {data['msg']}")
                 return []
-        except RequestException as e:
-            logger.warning(f"获取节点数据时发生网络错误 (尝试 {attempt + 1}/{max_retries}): {str(e)}")
+        except RequestException as content:
+            logger.warning(f"获取节点数据时发生网络错误 (尝试 {attempt + 1}/{max_retries}): {str(content)}")
             if attempt < max_retries - 1:
                 time.sleep(retry_delay)
             else:
@@ -178,15 +178,15 @@ def login(username, password):
     try:
         response = requests.get(url, headers=headers, params=params)
         response_data = response.json()
-        token = response_data.get("data", {}).get("usertoken")
-        if token:
+        user_token = response_data.get("data", {}).get("usertoken")
+        if user_token:
             logger.info("登录成功")
         else:
             logger.warning("登录失败")
-        return token
-    except Exception as e:
+        return user_token
+    except Exception as content:
         logger.exception("登录时发生错误")
-        logger.exception(e)
+        logger.exception(content)
         return None
 
 
@@ -196,11 +196,11 @@ def resolve_to_ipv4(hostname):
     except socket.gaierror:
         return None
 
-def get_user_tunnels(token):
+def get_user_tunnels(user_token):
     """获取用户隧道列表"""
     url = f"http://cf-v2.uapis.cn/tunnel"
     params = {
-        "token": token
+        "token": user_token
     }
     headers = get_headers()
     try:
@@ -220,82 +220,6 @@ def get_user_tunnels(token):
     except Exception:
         logger.exception("获取隧道列表时发生未知错误")
         return []
-
-
-def get_node_ip(token, node):
-    """获取节点IP"""
-    logger.info(f"获取节点 {node} 的IP")
-    url = f"http://cf-v2.uapis.cn/nodeinfo"
-    params = {
-        "token": token,
-        "node": node
-    }
-    headers = get_headers()
-    try:
-        response = requests.get(url, headers=headers, params=params)
-        ip = response.json()["data"]["realIp"]
-        logger.info(f"节点 {node} 的IP为 {ip}")
-        return ip
-    except Exception as e:
-        logger.exception(f"获取节点 {node} 的IP时发生错误")
-        logger.exception(e)
-        return None
-
-
-def update_subdomain(token, domain, record, target, record_type):
-    """更新子域名"""
-    logger.info(f"更新子域名 {record}.{domain} 到 {target}")
-    url = "http://cf-v2.uapis.cn/update_free_subdomain"
-    payload = {
-        "token": token,
-        "domain": domain,
-        "record": record,
-        "type": record_type,
-        "target": target,
-        "ttl": "1分钟",
-        "remarks": ""
-    }
-    headers = get_headers(json=True)
-    try:
-        response = requests.post(url, headers=headers, json=payload)
-        if response.status_code == 200:
-            logger.info("子域名更新成功")
-        else:
-            logger.warning(f"子域名更新失败: {response.text}")
-    except Exception as e:
-        logger.exception("更新子域名时发生错误")
-        logger.exception(e)
-
-def update_tunnel(token, tunnel_info, node):
-    """更新隧道信息"""
-    logger.info(f"更新隧道 {tunnel_info['name']} 到节点 {node}")
-    url = "http://cf-v2.uapis.cn/update_tunnel"
-    payload = {
-        "tunnelid": int(tunnel_info["id"]),
-        "token": token,
-        "tunnelname": tunnel_info["name"],
-        "node": str(node),
-        "localip": tunnel_info["localip"],
-        "porttype": tunnel_info["type"],
-        "localport": tunnel_info["nport"],
-        "remoteport": tunnel_info["dorp"],
-        "banddomain": "",
-        "encryption": tunnel_info["encryption"],
-        "compression": tunnel_info["compression"],
-        "extraparams": ""
-    }
-
-    headers = get_headers(json=True)
-    try:
-        response = requests.post(url, headers=headers, json=payload)
-        if response.status_code == 200:
-            logger.info("隧道更新成功")
-        else:
-            logger.warning(f"隧道更新失败: {response.text}")
-    except Exception as e:
-        logger.exception("更新隧道时发生错误")
-        logger.exception(e)
-
 
 def is_node_online(node_name):
     url = "http://cf-v2.uapis.cn/node_stats"
@@ -319,30 +243,12 @@ class QtHandler(QObject, logging.Handler):
 
     def __init__(self, parent):
         super(QtHandler, self).__init__(parent)  # 只调用一次 super()
-        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-        self.setFormatter(formatter)
+        qt_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        self.setFormatter(qt_formatter)
 
     def emit(self, record):
         msg = self.format(record)
         self.new_record.emit(msg)
-
-
-def setup_logging(parent):
-    """设置日志系统"""
-    logger = logging.getLogger('CHMLFRP_UI')
-    logger.setLevel(logging.DEBUG)
-
-    file_handler = RotatingFileHandler('CHMLFRP_UI.log', maxBytes=maxBytes, backupCount=backupCount)
-    file_handler.setLevel(logging.DEBUG)
-    file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    file_handler.setFormatter(file_formatter)
-    logger.addHandler(file_handler)
-
-    qt_handler = QtHandler(parent)
-    qt_handler.setLevel(logging.INFO)
-    logger.addHandler(qt_handler)
-
-    return logger, qt_handler
 
 class PortScannerThread(QThread):
     update_signal = pyqtSignal(str)
@@ -350,6 +256,8 @@ class PortScannerThread(QThread):
 
     def __init__(self, ip, start_port, end_port, thread_multiplier, timeout):
         super().__init__()
+        self.total_ports = None
+        self.scanned_ports = None
         self.ip = ip
         self.start_port = start_port
         self.end_port = end_port
@@ -414,6 +322,25 @@ class PortScannerThread(QThread):
 class IPToolsWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.scanner_thread = None
+        self.scan_result = None
+        self.scan_progress = None
+        self.stop_button = None
+        self.scan_button = None
+        self.timeout_input = None
+        self.thread_multiplier_combo = None
+        self.end_port_input = None
+        self.start_port_input = None
+        self.scanner_ip_input = None
+        self.url_result = None
+        self.url_input = None
+        self.port_result = None
+        self.protocol_combo = None
+        self.port_input = None
+        self.host_input = None
+        self.ip_result = None
+        self.ip_input = None
+        self.tab_widget = None
         self.initUI()
 
     def initUI(self):
@@ -619,7 +546,8 @@ class IPToolsWidget(QWidget):
     def update_scan_result(self, message):
         self.scan_result.append(message)
 
-    def make_request(self, url, result_widget):
+    @staticmethod
+    def make_request(url, result_widget):
         try:
             response = requests.get(url)
             data = response.json()
@@ -628,8 +556,8 @@ class IPToolsWidget(QWidget):
                 result_widget.setPlainText(result)
             else:
                 result_widget.setPlainText(f"查询失败: {data.get('msg', '未知错误')}")
-        except Exception as e:
-            result_widget.setPlainText(f"查询错误: {str(e)}")
+        except Exception as content:
+            result_widget.setPlainText(f"查询错误: {str(content)}")
 
     def update_style(self, is_dark):
         style = """
@@ -766,7 +694,6 @@ class PingThread(QThread):
             # 提取延迟时间，包括 <1ms 的情况
             times = re.findall(r"时间[=<](\d+|<1)ms", output)
 
-            # 处理延迟时间
             processed_times = []
             for t in times:
                 if t == '<1':
@@ -783,8 +710,8 @@ class PingThread(QThread):
                 }
             else:
                 return "Ping 成功，但无法提取延迟信息"
-        except subprocess.CalledProcessError as e:
-            error_output = e.output.strip()
+        except subprocess.CalledProcessError as content:
+            error_output = content.output.strip()
             if "无法访问目标主机" in error_output:
                 return "无法访问目标主机"
             elif "请求超时" in error_output:
@@ -793,10 +720,11 @@ class PingThread(QThread):
                 return "一般故障"
             else:
                 return f"Ping 失败: {error_output}"
-        except Exception as e:
-            return f"Ping 错误: {str(e)}"
+        except Exception as content:
+            return f"Ping 错误: {str(content)}"
 
-    def calculate_packet_loss(self, output):
+    @staticmethod
+    def calculate_packet_loss(output):
         match = re.search(r"(\d+)% 丢失", output)
         if match:
             return int(match.group(1))
@@ -836,8 +764,8 @@ class PingThread(QThread):
                 return "名称解析失败"
             except socket.timeout:
                 self.update_signal.emit(self.target, "连接超时")
-            except Exception as e:
-                self.update_signal.emit(self.target, f"错误: {str(e)}")
+            except Exception as content:
+                self.update_signal.emit(self.target, f"错误: {str(content)}")
             finally:
                 sock.close()
 
@@ -883,8 +811,8 @@ class PingThread(QThread):
                 '最大玩家': status.players.max,
                 '描述': status.description
             }
-        except Exception as e:
-            return f"错误: {str(e)}"
+        except Exception as content:
+            return f"错误: {str(content)}"
 
     def bedrock_mc_ping(self):
         try:
@@ -899,91 +827,22 @@ class PingThread(QThread):
                 '游戏模式': status.gamemode,
                 '地图': status.map_name
             }
-        except Exception as e:
-            return f"错误: {str(e)}"
+        except Exception as content:
+            return f"错误: {str(content)}"
 
 
-class NodeSelectionDialog(QDialog):
-    """节点选择对话框"""
-
-    def __init__(self, nodes, parent=None):
-        super().__init__(parent)
-        self.nodes = nodes
-        self.selected_nodes = []
-        self.initUI()
-
-    def initUI(self):
-        self.setWindowTitle("选择节点")
-        layout = QVBoxLayout()
-
-        splitter = QSplitter(Qt.Orientation.Horizontal)
-
-        self.available_list = QListWidget()
-        self.selected_list = QListWidget()
-
-        for node in self.nodes:
-            self.available_list.addItem(node['name'])
-
-        splitter.addWidget(self.available_list)
-        splitter.addWidget(self.selected_list)
-
-        layout.addWidget(splitter)
-
-        button_layout = QHBoxLayout()
-        ok_button = QPushButton("确定")
-        ok_button.clicked.connect(self.accept)
-        cancel_button = QPushButton("取消")
-        cancel_button.clicked.connect(self.reject)
-        button_layout.addWidget(ok_button)
-        button_layout.addWidget(cancel_button)
-
-        layout.addLayout(button_layout)
-        self.setLayout(layout)
-
-        self.available_list.itemClicked.connect(self.add_node)
-        self.selected_list.itemDoubleClicked.connect(self.remove_node)
-
-    def add_node(self, item):
-        self.available_list.takeItem(self.available_list.row(item))
-        self.selected_list.addItem(item.text())
-
-    def remove_node(self, item):
-        self.selected_list.takeItem(self.selected_list.row(item))
-        self.available_list.addItem(item.text())
-
-    def accept(self):
-        self.selected_nodes = [self.selected_list.item(i).text() for i in range(self.selected_list.count())]
-        if not self.selected_nodes:
-            QMessageBox.warning(self, "警告", "请至少选择一个节点")
-        else:
-            super().accept()
-
-
-class WorkerThread(QThread):
-    update_signal = pyqtSignal(str)
-
-    def __init__(self, function, *args, **kwargs):
-        super().__init__()
-        self.function = function
-        self.args = args
-        self.kwargs = kwargs
-
-    def run(self):
-        while not self.isInterruptionRequested():
-            result = self.function(*self.args, **self.kwargs)
-            self.update_signal.emit(str(result))
-            if self.isInterruptionRequested():
-                break
-            self.msleep(100)
 
 class TunnelCard(QFrame):
     clicked = pyqtSignal(object, bool)
     start_stop_signal = pyqtSignal(object, bool)
 
-    def __init__(self, tunnel_info, token):
+    def __init__(self, tunnel_info, user_token):
         super().__init__()
+        self.start_stop_button = None
+        self.link_label = None
+        self.status_label = None
         self.tunnel_info = tunnel_info
-        self.token = token
+        self.token = user_token
         self.node_domain = None
         self.is_running = False
         self.is_selected = False
@@ -1039,8 +898,8 @@ class TunnelCard(QFrame):
             if data['code'] == 200:
                 self.node_domain = data['data']['ip']
                 self.update_link_label()
-        except Exception as e:
-            print(f"Error fetching node info: {e}")
+        except Exception as content:
+            print(f"Error fetching node info: {content}")
 
     def get_link(self):
         domain = self.node_domain or self.tunnel_info.get('node', '')
@@ -1181,6 +1040,7 @@ class DomainCard(QFrame):
 
     def __init__(self, domain_info):
         super().__init__()
+        self.link_label = None
         self.domain_info = domain_info
         self.initUI()
         self.updateStyle()
@@ -1249,160 +1109,15 @@ class DomainCard(QFrame):
             self.clicked.emit(self.domain_info)
         super().mousePressEvent(event)
 
-
-class ConfigEditorDialog(QDialog):
-    def __init__(self, config_file_path, dark_theme, parent=None):
-        super().__init__(parent)
-        self.config_file_path = config_file_path
-        self.dark_theme = dark_theme
-        self.initUI()
-        self.apply_theme()
-
-    def initUI(self):
-        self.setWindowTitle("编辑配置文件")
-        self.setGeometry(100, 100, 600, 400)
-
-        layout = QVBoxLayout(self)
-
-        self.tab_widget = QTabWidget()
-        layout.addWidget(self.tab_widget)
-
-        self.text_edit = QTextEdit()
-        self.tab_widget.addTab(self.text_edit, "文本编辑")
-
-        visual_edit_widget = QWidget()
-        visual_edit_layout = QFormLayout(visual_edit_widget)
-        self.tab_widget.addTab(visual_edit_widget, "可视化编辑")
-
-        self.token_input = QLineEdit()
-        self.nodes_input = QLineEdit()
-        self.tunnel_name_input = QLineEdit()
-        self.domain_input = QLineEdit()
-        self.subdomain_input = QLineEdit()
-        self.record_type_combo = QComboBox()
-        self.record_type_combo.addItems(["A", "SRV"])
-
-        visual_edit_layout.addRow("Token:", self.token_input)
-        visual_edit_layout.addRow("节点 (逗号分隔):", self.nodes_input)
-        visual_edit_layout.addRow("隧道名称:", self.tunnel_name_input)
-        visual_edit_layout.addRow("域名:", self.domain_input)
-        visual_edit_layout.addRow("子域名:", self.subdomain_input)
-        visual_edit_layout.addRow("记录类型:", self.record_type_combo)
-
-        self.srv_widget = QWidget()
-        srv_layout = QFormLayout(self.srv_widget)
-        self.priority_input = QLineEdit("10")
-        self.weight_input = QLineEdit("10")
-        self.port_input = QLineEdit()
-        srv_layout.addRow("优先级:", self.priority_input)
-        srv_layout.addRow("权重:", self.weight_input)
-        srv_layout.addRow("端口:", self.port_input)
-        visual_edit_layout.addRow(self.srv_widget)
-
-        self.record_type_combo.currentTextChanged.connect(self.on_record_type_changed)
-
-        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
-        button_box.accepted.connect(self.accept)
-        button_box.rejected.connect(self.reject)
-        layout.addWidget(button_box)
-
-        self.load_config()
-
-    def apply_theme(self):
-        if self.dark_theme:
-            self.setStyleSheet("""
-				QDialog, QTabWidget, QTextEdit, QLineEdit, QComboBox {
-					background-color: #2D2D2D;
-					color: #FFFFFF;
-				}
-				QTabWidget::pane {
-					border: 1px solid #555555;
-				}
-				QTabBar::tab {
-					background-color: #3D3D3D;
-					color: #FFFFFF;
-					padding: 5px;
-				}
-				QTabBar::tab:selected {
-					background-color: #4D4D4D;
-				}
-				QPushButton {
-					background-color: #0D47A1;
-					color: white;
-					border: none;
-					padding: 5px 10px;
-					text-align: center;
-					text-decoration: none;
-					font-size: 14px;
-					margin: 4px 2px;
-					border-radius: 4px;
-				}
-				QPushButton:hover {
-					background-color: #1565C0;
-				}
-				QLabel {
-					color: #FFFFFF;
-				}
-			""")
-        else:
-            self.setStyleSheet("")  # 使用默认浅色主题
-
-    def on_record_type_changed(self):
-        self.srv_widget.setVisible(self.record_type_combo.currentText() == "SRV")
-
-    def load_config(self):
-        with open(self.config_file_path, 'r') as f:
-            config_content = f.read()
-        self.text_edit.setPlainText(config_content)
-
-        try:
-            config = ast.literal_eval(config_content)
-            if isinstance(config, list) and len(config) >= 6:
-                self.token_input.setText(config[0])
-                self.nodes_input.setText(", ".join(config[2:2 + int(config[1])]))
-                self.tunnel_name_input.setText(config[2 + int(config[1])])
-                self.domain_input.setText(config[3 + int(config[1])])
-                self.subdomain_input.setText(config[4 + int(config[1])])
-                self.record_type_combo.setCurrentText(config[5 + int(config[1])])
-                if len(config) > 6 + int(config[1]) and config[5 + int(config[1])] == "SRV":
-                    self.priority_input.setText(config[6 + int(config[1])])
-                    self.weight_input.setText(config[7 + int(config[1])])
-                    self.port_input.setText(config[8 + int(config[1])])
-        except:
-            pass
-
-    def get_config(self):
-        if self.tab_widget.currentIndex() == 0:
-            return self.text_edit.toPlainText()
-        else:
-            # 可视化编辑模式
-            nodes = [node.strip() for node in self.nodes_input.text().split(',')]
-            config = [
-                self.token_input.text(),
-                len(nodes),
-                *nodes,
-                self.tunnel_name_input.text(),
-                self.domain_input.text(),
-                self.subdomain_input.text(),
-                self.record_type_combo.currentText()
-            ]
-            if self.record_type_combo.currentText() == "SRV":
-                config.extend([
-                    self.priority_input.text(),
-                    self.weight_input.text(),
-                    self.port_input.text()
-                ])
-            return str(config)
-
 class StopWorker(QObject):
     finished = pyqtSignal()
     progress = pyqtSignal(str)
 
-    def __init__(self, running_tunnels, tunnel_processes, logger):
+    def __init__(self, running_tunnels, tunnel_processes, stop_logger):
         super().__init__()
         self.running_tunnels = running_tunnels
         self.tunnel_processes = tunnel_processes
-        self.logger = logger
+        self.logger = stop_logger
 
     def run(self):
         self.progress.emit("开始停止所有隧道...")
@@ -1459,8 +1174,8 @@ class StopWorker(QObject):
                              startupinfo=startupinfo)
             killed_count += 1
             self.logger.info("已通过 PowerShell 强制终止 frpc.exe 进程")
-        except Exception as e:
-            self.logger.error(f"使用 PowerShell 终止 frpc.exe 时发生错误: {str(e)}")
+        except Exception as content:
+            self.logger.error(f"使用 PowerShell 终止 frpc.exe 时发生错误: {str(content)}")
 
         if killed_count > 0:
             self.progress.emit(f"已终止 {killed_count} 个残留的 frpc.exe 进程")
@@ -1530,6 +1245,13 @@ class OutputDialog(QDialog):
 class SettingsDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.tunnel_list = None
+        self.backup_count_input = None
+        self.log_size_input = None
+        self.theme_system = None
+        self.theme_dark = None
+        self.theme_light = None
+        self.autostart_checkbox = None
         self.parent = parent
         self.setWindowTitle("设置")
         self.setFixedWidth(400)
@@ -1755,7 +1477,8 @@ class SettingsDialog(QDialog):
 
         self.setStyleSheet(style)
 
-    def get_base_dark_style(self):
+    @staticmethod
+    def get_base_dark_style():
         return """
             QGroupBox {
                 border: 1px solid #555555;
@@ -1781,7 +1504,8 @@ class SettingsDialog(QDialog):
             }
         """
 
-    def get_base_light_style(self):
+    @staticmethod
+    def get_base_light_style():
         return """
             QGroupBox {
                 border: 1px solid #CCCCCC;
@@ -1809,12 +1533,12 @@ class SettingsDialog(QDialog):
 
     def load_settings(self):
         # 读取配置文件
-        settings_path = get_absolute_path("settings.json")
+        settings_path_json = get_absolute_path("settings.json")
         try:
-            with open(settings_path, 'r') as f:
-                settings = json.load(f)
+            with open(settings_path_json, 'r') as file_contents:
+                settings_content = json.load(file_contents)
         except (FileNotFoundError, json.JSONDecodeError):
-            settings = {}
+            settings_content = {}
             self.parent.logger.info("未找到配置文件或配置文件无效，将使用默认设置")
 
         # 读取自启动状态
@@ -1832,39 +1556,39 @@ class SettingsDialog(QDialog):
                 except WindowsError:
                     self.autostart_checkbox.setChecked(False)
                 winreg.CloseKey(key)
-            except WindowsError as e:
-                self.parent.logger.error(f"读取自启动设置失败: {str(e)}")
+            except WindowsError as content:
+                self.parent.logger.error(f"读取自启动设置失败: {str(content)}")
                 self.autostart_checkbox.setChecked(False)
 
         # 加载日志设置
         try:
-            log_size = settings.get('log_size_mb')
+            log_size = settings_content.get('log_size_mb')
             if log_size is not None:
                 self.log_size_input.setText(str(log_size))
             else:
                 self.log_size_input.setText("10")
 
-            backup_count = settings.get('backup_count')
+            backup_count = settings_content.get('backup_count')
             if backup_count is not None:
                 self.backup_count_input.setText(str(backup_count))
             else:
                 self.backup_count_input.setText("30")
-        except Exception as e:
-            self.parent.logger.error(f"加载日志设置失败: {str(e)}")
+        except Exception as content:
+            self.parent.logger.error(f"加载日志设置失败: {str(content)}")
             self.log_size_input.setText("10")
             self.backup_count_input.setText("30")
 
         # 加载主题设置
         try:
-            theme_setting = settings.get('theme', 'system')
+            theme_setting = settings_content.get('theme', 'system')
             if theme_setting == 'light':
                 self.theme_light.setChecked(True)
             elif theme_setting == 'dark':
                 self.theme_dark.setChecked(True)
             else:
                 self.theme_system.setChecked(True)
-        except Exception as e:
-            self.parent.logger.error(f"加载主题设置失败: {str(e)}")
+        except Exception as content:
+            self.parent.logger.error(f"加载主题设置失败: {str(content)}")
             self.theme_system.setChecked(True)
 
         # 加载隧道设置
@@ -1873,7 +1597,7 @@ class SettingsDialog(QDialog):
             self.tunnel_list.clear()
 
             # 获取自动启动的隧道列表
-            auto_start_tunnels = settings.get('auto_start_tunnels', [])
+            auto_start_tunnels = settings_content.get('auto_start_tunnels', [])
 
             if self.parent.token:
                 # 获取用户的隧道列表
@@ -1894,8 +1618,8 @@ class SettingsDialog(QDialog):
             else:
                 not_logged_in_item = QListWidgetItem("请先登录")
                 self.tunnel_list.addItem(not_logged_in_item)
-        except Exception as e:
-            self.parent.logger.error(f"加载隧道设置失败: {str(e)}")
+        except Exception as content:
+            self.parent.logger.error(f"加载隧道设置失败: {str(content)}")
             error_item = QListWidgetItem("加载隧道列表失败")
             self.tunnel_list.addItem(error_item)
 
@@ -1927,9 +1651,9 @@ class SettingsDialog(QDialog):
                     except WindowsError:
                         pass
                 winreg.CloseKey(key)
-            except Exception as e:
-                self.parent.logger.error(f"设置自启动失败: {str(e)}")
-                QMessageBox.warning(self, "错误", f"设置自启动失败: {str(e)}")
+            except Exception as content:
+                self.parent.logger.error(f"设置自启动失败: {str(content)}")
+                QMessageBox.warning(self, "错误", f"设置自启动失败: {str(content)}")
 
     def get_selected_theme(self):
         if self.theme_light.isChecked():
@@ -1953,16 +1677,16 @@ class SettingsDialog(QDialog):
                     if item.checkState() == Qt.CheckState.Checked:
                         auto_start_tunnels.append(item.text())
 
-            settings_path = get_absolute_path("settings.json")
-            settings = {
+            settings_pathway = get_absolute_path("settings.json")
+            settings_content = {
                 'auto_start_tunnels': auto_start_tunnels,
                 'theme': self.get_selected_theme(),
                 'log_size_mb': log_size,
                 'backup_count': backup_count
             }
 
-            with open(settings_path, 'w') as f:
-                json.dump(settings, f)
+            with open(settings_pathway, 'w') as file_contents:
+                json.dump(settings_content, file_contents)
 
             # 更新全局变量
             global maxBytes, backupCount
@@ -1979,8 +1703,8 @@ class SettingsDialog(QDialog):
             QMessageBox.information(self, "成功", "设置已保存")
             self.accept()
 
-        except Exception as e:
-            QMessageBox.warning(self, "错误", f"保存设置失败: {str(e)}")
+        except Exception as content:
+            QMessageBox.warning(self, "错误", f"保存设置失败: {str(content)}")
 
 
 class MainWindow(QMainWindow):
@@ -1988,6 +1712,52 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
+        self.stop_worker = None
+        self.stop_thread = None
+        self.button_hover_color = None
+        self.button_color = None
+        self.ping_thread = None
+        self.ddns_domain = None
+        self.selected_node = None
+        self.ping_result = None
+        self.ping_type_combo = None
+        self.target_input = None
+        self.ddns_start_button = None
+        self.ip_display_label = None
+        self.ddns_status_label = None
+        self.ddns_api_combo = None
+        self.ddns_domain_combo = None
+        self.details_button = None
+        self.refresh_button = None
+        self.node_container = None
+        self.delete_domain_button = None
+        self.edit_domain_button = None
+        self.domain_container = None
+        self.batch_edit_button = None
+        self.view_output_button = None
+        self.delete_tunnel_button = None
+        self.edit_tunnel_button = None
+        self.selected_domain = None
+        self.tunnel_container = None
+        self.user_info_display = None
+        self.logout_button = None
+        self.login_button = None
+        self.token_input = None
+        self.password_input = None
+        self.username_input = None
+        self.ip_tools_widget = None
+        self.tray_icon = None
+        self.dark_theme = None
+        self.content_stack = None
+        self.ip_tools_button = None
+        self.ping_button = None
+        self.ddns_button = None
+        self.node_button = None
+        self.domain_button = None
+        self.tunnel_button = None
+        self.user_info_button = None
+        self.settings_button = None
+        self.background_frame = None
         self.tab_buttons = []
         self.selected_tunnels = []
         self.token = None
@@ -2162,12 +1932,12 @@ class MainWindow(QMainWindow):
 
     def load_app_settings(self):
         """加载应用程序设置"""
-        settings_path = get_absolute_path("settings.json")
+        settings_path_json = get_absolute_path("settings.json")
         try:
-            if os.path.exists(settings_path):
-                with open(settings_path, 'r') as f:
-                    settings = json.load(f)
-                    theme_setting = settings.get('theme', 'system')
+            if os.path.exists(settings_path_json):
+                with open(settings_path_json, 'r') as file_contents:
+                    settings_content = json.load(file_contents)
+                    theme_setting = settings_content.get('theme', 'system')
 
                     if theme_setting == 'system':
                         self.dark_theme = self.is_system_dark_theme()
@@ -2179,8 +1949,8 @@ class MainWindow(QMainWindow):
             else:
                 self.dark_theme = self.is_system_dark_theme()
                 self.logger.info("使用系统默认主题设置")
-        except Exception as e:
-            self.logger.error(f"加载设置失败: {str(e)}")
+        except Exception as content:
+            self.logger.error(f"加载设置失败: {str(content)}")
             self.dark_theme = self.is_system_dark_theme()
 
     def setup_system_tray(self):
@@ -2203,11 +1973,11 @@ class MainWindow(QMainWindow):
         if not self.token:
             return
 
-        settings_path = get_absolute_path("settings.json")
+        settings_path_json = get_absolute_path("settings.json")
         try:
-            with open(settings_path, 'r') as f:
-                settings = json.load(f)
-                auto_start_tunnels = settings.get('auto_start_tunnels', [])
+            with open(settings_path_json, 'r') as file_contents:
+                settings_content = json.load(file_contents)
+                auto_start_tunnels = settings_content.get('auto_start_tunnels', [])
 
             tunnels = get_user_tunnels(self.token)
             if tunnels:
@@ -2215,8 +1985,8 @@ class MainWindow(QMainWindow):
                     if tunnel['name'] in auto_start_tunnels:
                         self.start_tunnel(tunnel)
                         self.logger.info(f"自动启动隧道: {tunnel['name']}")
-        except Exception as e:
-            self.logger.error(f"自动启动隧道失败: {str(e)}")
+        except Exception as content:
+            self.logger.error(f"自动启动隧道失败: {str(content)}")
 
     def show_settings(self):
         dialog = SettingsDialog(self)
@@ -2335,7 +2105,7 @@ class MainWindow(QMainWindow):
                             raise ValueError(f"隧道 '{tunnel_info['name']}': 远程端口必须是10000-65535之间的整数")
                         payload["remoteport"] = int(changes["dorp"])
 
-                    headers = get_headers(json=True)
+                    headers = get_headers(request_json=True)
                     response = requests.post(url, headers=headers, json=payload)
                     if response.status_code == 200:
                         self.logger.info(f"隧道 {tunnel_info['name']} 更新成功")
@@ -2344,9 +2114,9 @@ class MainWindow(QMainWindow):
                 except ValueError as ve:
                     self.logger.error(str(ve))
                     QMessageBox.warning(self, "错误", str(ve))
-                except Exception as e:
+                except Exception as content:
                     self.logger.exception(f"更新隧道 {tunnel_info['name']} 时发生错误")
-                    QMessageBox.warning(self, "错误", f"更新隧道 {tunnel_info['name']} 失败: {str(e)}")
+                    QMessageBox.warning(self, "错误", f"更新隧道 {tunnel_info['name']} 失败: {str(content)}")
 
             self.load_tunnels()  # 刷新隧道列表
             QMessageBox.information(self, "成功", "批量编辑完成")
@@ -2518,9 +2288,9 @@ class MainWindow(QMainWindow):
                     dialog.raise_()
                     dialog.activateWindow()
 
-            except Exception as e:
-                self.logger.error(f"显示输出对话框时发生错误: {str(e)}")
-                QMessageBox.warning(self, "错误", f"显示输出时发生错误: {str(e)}")
+            except Exception as content:
+                self.logger.error(f"显示输出对话框时发生错误: {str(content)}")
+                QMessageBox.warning(self, "错误", f"显示输出时发生错误: {str(content)}")
 
     def setup_domain_page(self):
         domain_widget = QWidget()
@@ -2640,14 +2410,6 @@ class MainWindow(QMainWindow):
 
         self.content_stack.addWidget(ddns_widget)
 
-    def update_subdomain_combo(self, selected_main_domain):
-        self.ddns_domain_combo.clear()
-        self.ddns_domain_combo.addItem("选择子域名")
-        if selected_main_domain != "选择主域名":
-            for domain in self.user_domains:
-                if domain['domain'] == selected_main_domain:
-                    self.ddns_domain_combo.addItem(domain['record'])
-
     def setup_ping_page(self):
         ping_widget = QWidget()
         layout = QVBoxLayout(ping_widget)
@@ -2685,13 +2447,13 @@ class MainWindow(QMainWindow):
         credentials_path = get_absolute_path('credentials.json')
         if os.path.exists(credentials_path):
             try:
-                with open(credentials_path, 'r') as f:
-                    credentials = json.load(f)
+                with open(credentials_path, 'r') as file_contents:
+                    credentials = json.load(file_contents)
                     self.username_input.setText(credentials.get('username', ''))
                     self.password_input.setText(credentials.get('password', ''))
                     self.token_input.setText(credentials.get('token', ''))
-            except Exception as e:
-                self.logger.error(f"加载凭证时发生错误: {str(e)}")
+            except Exception as content:
+                self.logger.error(f"加载凭证时发生错误: {str(content)}")
 
     def save_credentials(self):
         """保存凭证"""
@@ -2702,10 +2464,10 @@ class MainWindow(QMainWindow):
         }
         credentials_path = get_absolute_path('credentials.json')
         try:
-            with open(credentials_path, 'w') as f:
-                json.dump(credentials, f)
-        except Exception as e:
-            self.logger.error(f"保存凭证时发生错误: {str(e)}")
+            with open(credentials_path, 'w') as file_contents:
+                json.dump(credentials, file_contents)
+        except Exception as content:
+            self.logger.error(f"保存凭证时发生错误: {str(content)}")
 
     def auto_login(self):
         """自动登录"""
@@ -2723,25 +2485,25 @@ class MainWindow(QMainWindow):
 
     def login(self):
         """登录功能"""
-        token = self.token_input.text()
-        if token:
+        user_token = self.token_input.text()
+        if user_token:
             try:
                 url = f"http://cf-v2.uapis.cn/userinfo"
                 headers = get_headers()
                 params = {
-                    "token": token
+                    "token": user_token
                 }
                 response = requests.get(url, params=params, headers=headers)
                 data = response.json()
                 if data['code'] == 200:
-                    self.token = token
+                    self.token = user_token
                 else:
                     self.logger.error(f"Token登录失败: {data.get('msg', '未知错误')}")
                     QMessageBox.warning(self, "登录失败", f"Token登录失败: {data.get('msg', '未知错误')}")
                     return
-            except Exception as e:
-                self.logger.error(f"Token验证失败: {str(e)}")
-                QMessageBox.warning(self, "登录失败", f"Token验证失败: {str(e)}")
+            except Exception as content:
+                self.logger.error(f"Token验证失败: {str(content)}")
+                QMessageBox.warning(self, "登录失败", f"Token验证失败: {str(content)}")
                 return
         else:
             try:
@@ -2759,9 +2521,9 @@ class MainWindow(QMainWindow):
                     self.logger.error(f"登录失败: {data.get('msg', '未知错误')}")
                     QMessageBox.warning(self, "登录失败", f"登录失败: {data.get('msg', '未知错误')}")
                     return
-            except Exception as e:
-                self.logger.error(f"登录请求失败: {str(e)}")
-                QMessageBox.warning(self, "登录失败", f"登录请求失败: {str(e)}")
+            except Exception as content:
+                self.logger.error(f"登录请求失败: {str(content)}")
+                QMessageBox.warning(self, "登录失败", f"登录请求失败: {str(content)}")
                 return
 
         if self.token:
@@ -2796,10 +2558,10 @@ class MainWindow(QMainWindow):
             self.load_user_data()
             self.load_user_domains()
             self.auto_start_tunnels()
-        except Exception as e:
-            self.logger.error(f"登录成功后操作失败: {str(e)}")
+        except Exception as content:
+            self.logger.error(f"登录成功后操作失败: {str(content)}")
             self.logger.error(traceback.format_exc())
-            QMessageBox.warning(self, "错误", f"登录成功，但加载数据失败: {str(e)}")
+            QMessageBox.warning(self, "错误", f"登录成功，但加载数据失败: {str(content)}")
             self.logout()
 
 
@@ -2820,11 +2582,11 @@ class MainWindow(QMainWindow):
 
         credentials_path = get_absolute_path('credentials.json')
         try:
-            with open(credentials_path, 'w') as f:
-                json.dump({}, f)
+            with open(credentials_path, 'w') as file_contents:
+                json.dump({}, file_contents)
             self.logger.info("凭证文件已清空")
-        except Exception as e:
-            self.logger.error(f"清空凭证文件时发生错误: {str(e)}")
+        except Exception as content:
+            self.logger.error(f"清空凭证文件时发生错误: {str(content)}")
 
         self.clear_user_data()
         self.logger.info("已退出登录")
@@ -2839,8 +2601,8 @@ class MainWindow(QMainWindow):
                 self.stop_tunnel({"name": tunnel_name})
 
             QApplication.processEvents()
-        except Exception as e:
-            self.logger.error(f"停止API操作时发生错误: {str(e)}")
+        except Exception as content:
+            self.logger.error(f"停止API操作时发生错误: {str(content)}")
 
     def load_user_data(self):
         """加载用户数据"""
@@ -2851,10 +2613,10 @@ class MainWindow(QMainWindow):
             self.load_nodes()
             self.load_user_domains()  # 为DDNS功能加载域名
             self.display_user_info()
-        except Exception as e:
-            self.logger.error(f"加载用户数据时发生错误: {str(e)}")
+        except Exception as content:
+            self.logger.error(f"加载用户数据时发生错误: {str(content)}")
             self.logger.error(traceback.format_exc())
-            self.show_error_message(f"加载用户数据时发生错误: {str(e)}")
+            self.show_error_message(f"加载用户数据时发生错误: {str(content)}")
 
     def get_user_info(self):
         """获取用户信息"""
@@ -2867,7 +2629,6 @@ class MainWindow(QMainWindow):
             response = requests.get(url, headers=headers, params=params)
             data = response.json()
             if data['code'] == 200:
-                Number_of_tunnels = data['data']['tunnelCount']
                 return data['data']
             else:
                 self.logger.error(f"获取用户信息失败: {data['msg']}")
@@ -2950,20 +2711,21 @@ class MainWindow(QMainWindow):
                         col = 0
                         row += 1
 
-                except Exception as e:
-                    self.logger.error(f"创建隧道卡片时发生错误: {str(e)}")
+                except Exception as content:
+                    self.logger.error(f"创建隧道卡片时发生错误: {str(content)}")
                     self.logger.error(traceback.format_exc())
                     continue
 
             self.selected_tunnels = [t for t in tunnels if t['id'] in selected_ids]
             self.update_tunnel_buttons()
 
-        except Exception as e:
-            self.logger.error(f"加载隧道列表时发生错误: {str(e)}")
+        except Exception as content:
+            self.logger.error(f"加载隧道列表时发生错误: {str(content)}")
             self.logger.error(traceback.format_exc())
-            self.show_error_message(f"加载隧道列表时发生错误: {str(e)}")
+            self.show_error_message(f"加载隧道列表时发生错误: {str(content)}")
 
-    def clear_error_message(self, widget):
+    @staticmethod
+    def clear_error_message(widget):
         """清除错误消息"""
         if isinstance(widget, QListWidget):
             for i in range(widget.count()):
@@ -3018,14 +2780,14 @@ class MainWindow(QMainWindow):
                         col = 0
                         row += 1
 
-                except Exception as e:
-                    self.logger.error(f"创建域名卡片时发生错误: {str(e)}")
+                except Exception as content:
+                    self.logger.error(f"创建域名卡片时发生错误: {str(content)}")
                     self.logger.error(traceback.format_exc())
                     continue
-        except Exception as e:
-            self.logger.error(f"获取域名列表时发生错误: {str(e)}")
+        except Exception as content:
+            self.logger.error(f"获取域名列表时发生错误: {str(content)}")
             self.logger.error(traceback.format_exc())
-            self.show_error_message(self.domain_container, f"获取域名列表时发生错误: {str(e)}")
+            self.show_error_message(self.domain_container, f"获取域名列表时发生错误: {str(content)}")
 
     def load_nodes(self):
         """加载节点列表"""
@@ -3058,13 +2820,13 @@ class MainWindow(QMainWindow):
                         col = 0
                         row += 1
 
-                except Exception as e:
-                    self.logger.error(f"创建节点卡片时发生错误: {str(e)}")
+                except Exception as content:
+                    self.logger.error(f"创建节点卡片时发生错误: {str(content)}")
                     continue
 
-        except Exception as e:
-            self.logger.error(f"获取节点列表时发生错误: {str(e)}")
-            self.show_error_message(self.node_container, f"获取节点列表时发生错误: {str(e)}")
+        except Exception as content:
+            self.logger.error(f"获取节点列表时发生错误: {str(content)}")
+            self.show_error_message(self.node_container, f"获取节点列表时发生错误: {str(content)}")
 
     def on_node_clicked(self, node_info):
         for i in range(self.node_container.layout().count()):
@@ -3135,9 +2897,9 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
 
             # 启动状态检查
             QTimer.singleShot(3000, lambda: self.check_tunnel_status(tunnel_info['name']))
-        except Exception as e:
-            self.logger.exception(f"启动隧道时发生错误: {str(e)}")
-            QMessageBox.warning(self, "错误", f"启动隧道失败: {str(e)}")
+        except Exception as content:
+            self.logger.exception(f"启动隧道时发生错误: {str(content)}")
+            QMessageBox.warning(self, "错误", f"启动隧道失败: {str(content)}")
 
     def obfuscate_sensitive_data(self, text):
         obfuscated_text = re.sub(re.escape(self.token), '*******你的token********', text, flags=re.IGNORECASE)
@@ -3146,7 +2908,8 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                                  obfuscated_text)
         return obfuscated_text
 
-    def render_html(self, text):
+    @staticmethod
+    def render_html(text):
         text = re.sub(r'\[I\]', '<span style="color: green;">[I]</span>', text, flags=re.IGNORECASE)
         text = re.sub(r'\[E\]', '<span style="color: red;">[E]</span>', text, flags=re.IGNORECASE)
         text = re.sub(r'\[W\]', '<span style="color: orange;">[W]</span>', text, flags=re.IGNORECASE)
@@ -3160,15 +2923,15 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                         break
                     try:
                         callback(line.decode())
-                    except Exception as e:
-                        self.logger.error(f"处理输出时发生错误: {str(e)}")
-            except Exception as e:
-                self.logger.error(f"读取输出时发生错误: {str(e)}")
+                    except Exception as content:
+                        self.logger.error(f"处理输出时发生错误: {str(content)}")
+            except Exception as content:
+                self.logger.error(f"读取输出时发生错误: {str(content)}")
             finally:
                 try:
                     pipe.close()
-                except Exception as e:
-                    self.logger.error(f"关闭管道时发生错误: {str(e)}")
+                except Exception as content:
+                    self.logger.error(f"关闭管道时发生错误: {str(content)}")
 
 
         def update_output(line):
@@ -3186,10 +2949,10 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                                     self.tunnel_outputs[tunnel_name]['output'],
                                     self.tunnel_outputs[tunnel_name]['run_number']
                                 )
-                            except Exception as e:
-                                self.logger.error(f"更新对话框时发生错误: {str(e)}")
-            except Exception as e:
-                self.logger.error(f"更新输出时发生错误: {str(e)}")
+                            except Exception as content:
+                                self.logger.error(f"更新对话框时发生错误: {str(content)}")
+            except Exception as content:
+                self.logger.error(f"更新输出时发生错误: {str(content)}")
 
         # 初始化输出互斥锁
         if not hasattr(self, 'output_mutex'):
@@ -3223,8 +2986,8 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
             exit_code = process.poll()
 
             # 等待输出线程完成，设置较短的超时时间
-            stdout_thread.join(timeout=1)
-            stderr_thread.join(timeout=1)
+            stdout_thread.join(timeout=3)
+            stderr_thread.join(timeout=3)
 
             with QMutexLocker(self.output_mutex):
                 if tunnel_name in self.tunnel_outputs:
@@ -3248,8 +3011,8 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                                                          Q_ARG(str, tunnel_name),
                                                          Q_ARG(str, output),
                                                          Q_ARG(int, run_number))
-                    except Exception as e:
-                        self.logger.error(f"处理进程输出时发生错误: {str(e)}")
+                    except Exception as content:
+                        self.logger.error(f"处理进程输出时发生错误: {str(content)}")
                     finally:
                         # 清理进程引用
                         self.tunnel_outputs[tunnel_name]['process'] = None
@@ -3264,10 +3027,10 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                                      Q_ARG(str, tunnel_name),
                                      Q_ARG(bool, False))
 
-        except Exception as e:
+        except Exception as content:
             if process.poll() is None:  # 只在进程仍在运行时输出错误
                 self.logger.error(f"监控进程时发生错误(frpc进程可能已退出)")
-                print(e)
+                print(content)
             # 确保进程被清理
             try:
                 if process.poll() is None:
@@ -3308,8 +3071,8 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
 
             # 更新UI状态
             self.update_tunnel_card_status(tunnel_info['name'], False)
-        except Exception as e:
-            self.logger.exception(f"停止隧道时发生错误: {str(e)}")
+        except Exception as content:
+            self.logger.exception(f"停止隧道时发生错误: {str(content)}")
 
     def check_tunnel_status(self, tunnel_name):
         process = self.tunnel_processes.get(tunnel_name)
@@ -3324,7 +3087,8 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
             if tunnel_name in self.tunnel_processes:
                 del self.tunnel_processes[tunnel_name]
 
-    def format_traffic(self, traffic_bytes):
+    @staticmethod
+    def format_traffic(traffic_bytes):
         try:
             traffic_bytes = float(traffic_bytes)
             if traffic_bytes < 1024:
@@ -3359,8 +3123,8 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
             self.selected_node = None
 
             self.logger.info("用户数据已清除")
-        except Exception as e:
-            self.logger.error(f"清除用户数据时发生错误: {str(e)}")
+        except Exception as content:
+            self.logger.error(f"清除用户数据时发生错误: {str(content)}")
 
     def clear_layout(self, layout):
         """清除布局中的所有项目"""
@@ -3423,9 +3187,9 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
         banddomain_input.hide()
 
         def on_type_changed():
-            porttype = type_combo.currentText()
+            porttypes = type_combo.currentText()
 
-            if porttype in ["tcp", "udp"]:
+            if porttypes in ["tcp", "udp"]:
                 remote_port_label.show()
                 remote_port_input.show()
                 banddomain_label.hide()
@@ -3458,17 +3222,17 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
 
         def on_node_changed(index):
             node_name = node_combo.itemText(index)
-            for node in nodes:
-                if node['name'] == node_name:
+            for node_content in nodes:
+                if node_content['name'] == node_name:
                     detail_text.setPlainText(f"""
-                        节点名称: {node['name']}
-                        节点地址: {node['area']}
-                        权限组: {node['nodegroup']}
-                        是否属于大陆带宽节点: {node['china']}
-                        是否支持web: {node['web']}
-                        是否支持udp: {node['udp']}
-                        是否有防御: {node['fangyu']}
-                        介绍: {node['notes']}
+                        节点名称: {node_content['name']}
+                        节点地址: {node_content['area']}
+                        权限组: {node_content['nodegroup']}
+                        是否属于大陆带宽节点: {node_content['china']}
+                        是否支持web: {node_content['web']}
+                        是否支持udp: {node_content['udp']}
+                        是否有防御: {node_content['fangyu']}
+                        介绍: {node_content['notes']}
                         """)
                     break
 
@@ -3510,7 +3274,7 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                         raise ValueError("绑定域名是必须的")
                     payload["banddomain"] = banddomain_input.text()
 
-                headers = get_headers(json=True)
+                headers = get_headers(request_json=True)
                 response = requests.post(url, headers=headers, json=payload)
                 response_data = response.json()
                 if response.status_code == 200:
@@ -3523,9 +3287,9 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
             except ValueError as ve:
                 self.logger.error(f"添加隧道失败: {str(ve)}")
                 QMessageBox.warning(self, "错误", str(ve))
-            except Exception as e:
+            except Exception as content:
                 self.logger.exception("添加隧道时发生错误")
-                QMessageBox.warning(self, "错误", f"添加隧道失败: {str(e)}")
+                QMessageBox.warning(self, "错误", f"添加隧道失败: {str(content)}")
 
     def edit_tunnel(self):
         if not self.selected_tunnels:
@@ -3603,7 +3367,7 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                     QMessageBox.warning(self, "错误", "端口必须是1-65535之间的整数")
                     return
 
-                headers = get_headers(json=True)
+                headers = get_headers(request_json=True)
                 response = requests.post(url, headers=headers, json=payload)
                 if response.status_code == 200:
                     self.logger.info("隧道更新成功")
@@ -3613,9 +3377,9 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
             except ValueError as ve:
                 self.logger.error(f"更新隧道失败: {str(ve)}")
                 QMessageBox.warning(self, "错误", str(ve))
-            except Exception as e:
+            except Exception as content:
                 self.logger.exception("更新隧道时发生错误")
-                QMessageBox.warning(self, "错误", f"更新隧道失败: {str(e)}")
+                QMessageBox.warning(self, "错误", f"更新隧道失败: {str(content)}")
 
     def delete_tunnel(self):
         """删除隧道"""
@@ -3637,9 +3401,9 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                     raise Exception(f"Failed to get user info from v2: {user_info['msg']}")
             else:
                 raise Exception(f"Failed to fetch user info, status code {response.status_code}")
-        except Exception as e:
-            self.logger.error(f"Error fetching user info: {str(e)}")
-            QMessageBox.warning(self, "错误", f"无法获取用户信息: {str(e)}")
+        except Exception as content:
+            self.logger.error(f"Error fetching user info: {str(content)}")
+            QMessageBox.warning(self, "错误", f"无法获取用户信息: {str(content)}")
             return
 
         for tunnel_info in tunnels_to_delete:
@@ -3725,11 +3489,11 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
         layout.addRow(ttl_note)
 
         def on_type_changed():
-            record_type = type_combo.currentText()
-            srv_widget.setVisible(record_type == "SRV")
-            if record_type == "SRV":
+            records_type = type_combo.currentText()
+            srv_widget.setVisible(records_type == "SRV")
+            if records_type == "SRV":
                 target_input.setPlaceholderText("域名或IP")
-            elif record_type == "CNAME":
+            elif records_type == "CNAME":
                 target_input.setPlaceholderText("目标域名")
             else:
                 target_input.setPlaceholderText("IP地址")
@@ -3826,7 +3590,7 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                                     return
                             else:
                                 raise Exception("解析失败")
-                        except Exception as e:
+                        except Exception:
                             cname_reply = QMessageBox.question(self, "解析失败",
                                                                "无法将域名解析为 IP 地址。是否要切换到 CNAME 记录？",
                                                                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
@@ -3901,7 +3665,7 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                     "remarks": ""
                 }
 
-                headers = get_headers(json=True)
+                headers = get_headers(request_json=True)
                 response = requests.post(url, headers=headers, json=payload)
                 response = response.json()
                 if response.status_code == 200:
@@ -3910,9 +3674,9 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                 else:
                     self.logger.error(f"添加域名失败: {response["msg"]}")
                     QMessageBox.warning(self, "错误", f"添加域名失败: {response["msg"]}")
-            except Exception as e:
+            except Exception as content:
                 self.logger.exception("添加域名时发生错误")
-                QMessageBox.warning(self, "错误", f"添加域名失败: {str(e)}")
+                QMessageBox.warning(self, "错误", f"添加域名失败: {str(content)}")
 
     def load_main_domains(self, combo_box):
         """加载主域名到下拉框"""
@@ -4039,7 +3803,7 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                         "remarks": domain_info.get('remarks', '')
                     }
 
-                    headers = get_headers(json=True)
+                    headers = get_headers(request_json=True)
                     response = requests.post(url, headers=headers, json=payload)
                     if response.status_code == 200:
                         self.logger.info("域名更新成功")
@@ -4047,9 +3811,9 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                     else:
                         self.logger.error(f"更新域名失败: {response.text}")
                         QMessageBox.warning(self, "错误", f"更新域名失败: {response.text}")
-                except Exception as e:
+                except Exception as content:
                     self.logger.exception("更新域名时发生错误")
-                    QMessageBox.warning(self, "错误", f"更新域名失败: {str(e)}")
+                    QMessageBox.warning(self, "错误", f"更新域名失败: {str(content)}")
         else:
             QMessageBox.warning(self, "警告", "请先选择一个域名")
 
@@ -4070,16 +3834,16 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                         "record": domain_info['record']
                     }
 
-                    headers = get_headers(json=True)
+                    headers = get_headers(request_json=True)
                     response = requests.post(url, headers=headers, json=payload)
                     if response.status_code == 200:
                         self.logger.info(f"域名 '{domain_info['record']}.{domain_info['domain']}' 删除成功")
                         self.load_domains()  # 刷新域名列表
                     else:
                         self.logger.error(f"删除域名失败: {response.text}")
-                except Exception as e:
+                except Exception as content:
                     self.logger.exception("删除域名时发生错误")
-                    QMessageBox.warning(self, "错误", f"删除域名失败: {str(e)}")
+                    QMessageBox.warning(self, "错误", f"删除域名失败: {str(content)}")
         else:
             QMessageBox.warning(self, "警告", "请先选择一个域名")
 
@@ -4114,13 +3878,14 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                     ip_type = "IPv4" if is_valid_ipv4(ip) else "IPv6" if is_valid_ipv6(ip) else "Invalid"
                     self.ip_display_label.setText(f"当前IP: {ip} (来自 {api})")
                     return ip, ip_type
-            except Exception as e:
-                self.logger.error(f"从 {api} 获取IP地址时发生错误: {str(e)}")
+            except Exception as content:
+                self.logger.error(f"从 {api} 获取IP地址时发生错误: {str(content)}")
 
         self.ip_display_label.setText("当前IP: 获取失败")
         return None, None
 
-    def fetch_ip_from_api(self, api):
+    @staticmethod
+    def fetch_ip_from_api(api):
         if api == "ipplus360.com":
             response = requests.get("https://ipplus360.com/getIP")
             data = response.json()
@@ -4148,8 +3913,8 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                         last_ip = current_ip
                     else:
                         self.logger.info("DDNS更新失败，将在下一次循环重试")
-            except Exception as e:
-                self.logger.error(f"DDNS更新错误: {str(e)}")
+            except Exception as content:
+                self.logger.error(f"DDNS更新错误: {str(content)}")
 
             # 每秒检查一次是否应该停止
             for _ in range(6):  # 60 秒的总循环
@@ -4200,15 +3965,15 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                     "target": target
                 }
 
-                headers = get_headers(json=True)
+                headers = get_headers(request_json=True)
                 response = requests.post(url, headers=headers, json=payload)
                 response.raise_for_status()
 
                 self.logger.info(f"DDNS更新成功: {self.ddns_domain} -> {ip}")
                 self.ddns_status_label.setText(f"DDNS状态: 已更新 ({ip})")
                 return True
-            except requests.exceptions.RequestException as e:
-                self.logger.error(f"DDNS更新失败 (尝试 {attempt + 1}/{max_retries}): {str(e)}")
+            except requests.exceptions.RequestException as content:
+                self.logger.error(f"DDNS更新失败 (尝试 {attempt + 1}/{max_retries}): {str(content)}")
                 if attempt < max_retries - 1:
                     wait_time = (2 ** attempt) + random.random()
                     self.logger.info(f"等待 {wait_time:.2f} 秒后重试...")
@@ -4233,8 +3998,8 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                 for subdomain in data['data']:
                     if subdomain['domain'] == domain and subdomain['record'] == record:
                         return subdomain['type']
-        except Exception as e:
-            self.logger.error(f"获取域名记录类型时发生错误: {str(e)}")
+        except Exception as content:
+            self.logger.error(f"获取域名记录类型时发生错误: {str(content)}")
         return None
 
     def get_existing_srv_record(self, domain, record):
@@ -4248,8 +4013,8 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                 for subdomain in data['data']:
                     if subdomain['domain'] == domain and subdomain['record'] == record and subdomain['type'] == 'SRV':
                         return subdomain['target']
-        except Exception as e:
-            self.logger.error(f"获取SRV记录时发生错误: {str(e)}")
+        except Exception as content:
+            self.logger.error(f"获取SRV记录时发生错误: {str(content)}")
         return None
 
     def start_ping(self):
@@ -4311,10 +4076,11 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                 self.ping_result.append(f"最小延迟: {data['min']} ms")
             else:
                 self.ping_result.append(f"API Ping 失败: {data.get('msg', '未知错误')}")
-        except Exception as e:
-            self.ping_result.append(f"API Ping 错误: {str(e)}")
+        except Exception as content:
+            self.ping_result.append(f"API Ping 错误: {str(content)}")
 
-    def clean_minecraft_text(self, text):
+    @staticmethod
+    def clean_minecraft_text(text):
         if not isinstance(text, str):
             return str(text)
 
@@ -4362,9 +4128,9 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
             else:
                 self.ping_result.append(f"Ping {target}: {str(result)}")
 
-        except Exception as e:
-            self.ping_result.append(f"处理 Ping {target} 结果时出错: {str(e)}")
-            self.logger.error(f"处理 ping 结果时出错: {str(e)}")
+        except Exception as content:
+            self.ping_result.append(f"处理 Ping {target} 结果时出错: {str(content)}")
+            self.logger.error(f"处理 ping 结果时出错: {str(content)}")
 
     def auto_update(self):
         """自动更新函数"""
@@ -4394,9 +4160,9 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                 response = requests.get(url, stream=True)
                 response.raise_for_status()  # 检查是否成功获取
                 zip_path = get_absolute_path("ChmlFrp.zip")
-                with open(zip_path, "wb") as f:
+                with open(zip_path, "wb") as file_contents:
                     for chunk in response.iter_content(chunk_size=8192):
-                        f.write(chunk)
+                        file_contents.write(chunk)
 
                 extracted_folder = None
                 with zipfile.ZipFile(zip_path, 'r') as zip_ref:
@@ -4422,8 +4188,8 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                 os.remove(zip_path)
 
                 self.logger.info("文件下载、提取和清理完成")
-            except Exception as e:
-                self.logger.error(f"下载或处理文件时发生错误: {str(e)}")
+            except Exception as content:
+                self.logger.error(f"下载或处理文件时发生错误: {str(content)}")
 
 
     def mousePressEvent(self, event):
@@ -4438,8 +4204,8 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
             if self.dragging:
                 global_pos = event.globalPosition().toPoint()
                 self.move(global_pos - self.offset)
-        except Exception as e:
-            self.logger.error(f"移动窗口时发生错误: {str(e)}")
+        except Exception as content:
+            self.logger.error(f"移动窗口时发生错误: {str(content)}")
             self.dragging = False
 
     def mouseReleaseEvent(self, event):
@@ -4463,14 +4229,14 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                 process.wait(timeout=5)
                 if process.poll() is None:
                     process.kill()
-            except Exception as e:
-                self.logger.error(f"停止隧道 '{tunnel_name}' 时发生错误: {str(e)}")
+            except Exception as content:
+                self.logger.error(f"停止隧道 '{tunnel_name}' 时发生错误: {str(content)}")
 
         # 强制杀死当前目录下的 frpc.exe 进程
         try:
             self.forcefully_terminate_frpc()
-        except Exception as e:
-            self.logger.error(f"终止 frpc.exe 进程时发生错误: {str(e)}")
+        except Exception as content:
+            self.logger.error(f"终止 frpc.exe 进程时发生错误: {str(content)}")
 
         # 调用原有的清理逻辑
         time.sleep(1)
@@ -4488,18 +4254,18 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
             return False
 
         # 封装进程终止逻辑
-        def terminate_process(proc):
+        def terminate_process(proc_id):
             try:
-                self.logger.info(f"正在终止进程: {proc.info['pid']} - {frpc_path}")
-                proc.terminate()  # 终止进程
-                proc.wait()  # 等待进程完全结束
-                self.logger.info(f"进程 {proc.info['pid']} 已终止")
+                self.logger.info(f"正在终止进程: {proc_id.info['pid']} - {frpc_path}")
+                proc_id.terminate()  # 终止进程
+                proc_id.wait()  # 等待进程完全结束
+                self.logger.info(f"进程 {proc_id.info['pid']} 已终止")
             except psutil.NoSuchProcess:
-                self.logger.error(f"进程 {proc.info['pid']} 已不存在")
+                self.logger.error(f"进程 {proc_id.info['pid']} 已不存在")
             except psutil.AccessDenied:
-                self.logger.error(f"访问被拒绝，无法终止进程 {proc.info['pid']}")
-            except Exception as e:
-                self.logger.error(f"终止进程 {proc.info['pid']} 时发生错误: {str(e)}")
+                self.logger.error(f"访问被拒绝，无法终止进程 {proc_id.info['pid']}")
+            except Exception as _content:
+                self.logger.error(f"终止进程 {proc_id.info['pid']} 时发生错误: {str(_content)}")
 
         try:
             # psutil 获取所有进程
@@ -4516,8 +4282,8 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
         except psutil.AccessDenied:
             self.logger.error("访问被拒绝。您可能需要以管理员身份运行")
             return False
-        except Exception as e:
-            self.logger.error(f"终止 frpc.exe 进程时发生错误: {str(e)}")
+        except Exception as content:
+            self.logger.error(f"终止 frpc.exe 进程时发生错误: {str(content)}")
             return False
 
     def cleanup(self):
@@ -4533,7 +4299,8 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
         # 等待所有线程结束
         QThreadPool.globalInstance().waitForDone()
 
-    def is_system_dark_theme(self):
+    @staticmethod
+    def is_system_dark_theme():
         if sys.platform == "win32":
             try:
                 registry = winreg.ConnectRegistry(None, winreg.HKEY_CURRENT_USER)
@@ -4730,8 +4497,8 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                         self.ddns_domain_combo.addItem(full_domain)
                 else:
                     self.logger.error("获取用户域名失败")
-            except Exception as e:
-                self.logger.error(f"加载用户域名时发生错误: {str(e)}")
+            except Exception as content:
+                self.logger.error(f"加载用户域名时发生错误: {str(content)}")
 
     def switch_tab(self, tab_name):
         if tab_name == "user_info":
@@ -4889,10 +4656,10 @@ class NodeCard(QFrame):
 
 
 if __name__ == '__main__':
-    def exception_hook(exctype, value, traceback):
-        while traceback:
-            traceback = traceback.tb_next
-        sys.__excepthook__(exctype, value, traceback)
+    def exception_hook(exctype, value, main_thread):
+        while main_thread:
+            main_thread = main_thread.tb_next
+        sys.__excepthook__(exctype, value, main_thread)
     sys.excepthook = exception_hook
     try:
         app = QApplication(sys.argv)
