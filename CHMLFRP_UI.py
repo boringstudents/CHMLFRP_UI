@@ -1,38 +1,34 @@
 import ast
+import ipaddress
+import json
 import logging
 import os
+import random
+import re
 import shutil
+import socket
 import subprocess
 import sys
-import time
-import zipfile
-from logging.handlers import *
-import random
-import socket
-import winreg
-from datetime import datetime
 import threading
-import json
-from concurrent.futures import *
-import ipaddress
-import re
+import time
 import traceback
+import winreg
+import zipfile
+from concurrent.futures import *
+from datetime import datetime
+from logging.handlers import *
 
-import requests
-from PyQt6.QtCore import *
-from PyQt6.QtWidgets import *
-from PyQt6.QtGui import *
-from mcstatus import *
-from requests import *
 import psutil
 import pyperclip
-import ctypes
-import win32security
+import requests
 import win32api
 import win32con
-import win32process
-
-
+import win32security
+from PyQt6.QtCore import *
+from PyQt6.QtGui import *
+from PyQt6.QtWidgets import *
+from mcstatus import *
+from requests import *
 
 """提权"""
 try:
@@ -47,7 +43,7 @@ except Exception as e:
 
 # 程序信息
 APP_NAME = "CHMLFRP_UI" # 程序名称
-APP_VERSION = "1.5.2" # 程序版本
+APP_VERSION = "1.5.3" # 程序版本
 PY_VERSION = "3.13.1" # Python 版本
 WINDOWS_VERSION = "Windows NT 10.0" # 系统版本
 Number_of_tunnels = 0 # 隧道数量
@@ -102,20 +98,15 @@ logger.addHandler(file_handler)
 logger.addHandler(console_handler)
 
 
+def is_valid_ipv4(ip):
+    pattern = re.compile(
+        r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$")
+    return bool(pattern.match(ip))
+
 def is_valid_domain(domain):
-    """IPV4格式检测"""
+    """域名检测"""
     pattern = re.compile(r'^(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z]{2,})+$')
     return bool(pattern.match(domain))
-
-
-def is_valid_ipv4(ip):
-    """IPV4数字检测"""
-    try:
-        parts = ip.split('.')
-        return len(parts) == 4 and all(0 <= int(part) < 256 for part in parts)
-    except ValueError:
-        return False
-
 
 def is_valid_ipv6(ip):
     """IPV6检测"""
@@ -321,20 +312,6 @@ def is_node_online(node_name):
     except Exception:
         logger.exception("检查节点在线状态时发生错误")
         return False
-
-def parse_domain(domain):
-    """解析域名"""
-    logger.info(f"解析域名: {domain}")
-    parts = domain.split('.')
-    if len(parts) >= 3:
-        subdomain = '.'.join(parts[:-2])
-        main_domain = '.'.join(parts[-2:])
-    else:
-        subdomain = parts[0]
-        main_domain = '.'.join(parts[-2:])
-    logger.debug(f"解析结果 - 子域名: {subdomain}, 主域名: {main_domain}")
-    return subdomain, main_domain
-
 
 class QtHandler(QObject, logging.Handler):
     """Qt日志处理器"""
@@ -569,8 +546,8 @@ class IPToolsWidget(QWidget):
 
     def check_ip_info(self):
         ip = self.ip_input.text().strip()
-        if not self.is_valid_ipv4(ip):
-            resolved_ip = self.resolve_to_ipv4(ip)
+        if not is_valid_ipv4(ip):
+            resolved_ip = resolve_to_ipv4(ip)
             if not resolved_ip:
                 self.ip_result.setPlainText("无效的IP地址或无法解析的主机名")
                 return
@@ -610,8 +587,8 @@ class IPToolsWidget(QWidget):
         thread_multiplier = int(self.thread_multiplier_combo.currentText()[:-1])
         timeout = float(self.timeout_input.text() or 0.1)
 
-        if not self.is_valid_ipv4(ip):
-            resolved_ip = self.resolve_to_ipv4(ip)
+        if not is_valid_ipv4(ip):
+            resolved_ip = resolve_to_ipv4(ip)
             if not resolved_ip:
                 self.scan_result.setPlainText("无效的IP地址或无法解析的主机名")
                 return
@@ -641,17 +618,6 @@ class IPToolsWidget(QWidget):
 
     def update_scan_result(self, message):
         self.scan_result.append(message)
-
-    def is_valid_ipv4(self, ip):
-        pattern = re.compile(
-            r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$")
-        return bool(pattern.match(ip))
-
-    def resolve_to_ipv4(self, hostname):
-        try:
-            return socket.gethostbyname(hostname)
-        except socket.gaierror:
-            return None
 
     def make_request(self, url, result_widget):
         try:
@@ -2278,7 +2244,6 @@ class MainWindow(QMainWindow):
 
     def check_node_status(self):
         if not self.token:
-            self.logger.warning("未登录，无法检查节点状态")
             return
 
         tunnels = get_user_tunnels(self.token)
@@ -3967,22 +3932,6 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
         except Exception:
             self.logger.exception("加载主域名时发生错误")
 
-    def get_available_main_domains(self):
-        """获取可用的主域名列表"""
-        try:
-            url = "http://cf-v2.uapis.cn/list_available_domains"
-            headers = get_headers()
-            response = requests.get(url, headers=headers)
-            if response.status_code == 200:
-                data = response.json()
-                if data['code'] == 200:
-                    return [domain_info['domain'] for domain_info in data['data']]
-            self.logger.error("获取可用主域名失败")
-            return []
-        except Exception as e:
-            self.logger.exception("获取可用主域名时发生错误")
-            return []
-
     def edit_domain(self):
         """编辑域名 - 仅允许修改 TTL 和目标"""
         TTL_OPTIONS = [
@@ -4731,6 +4680,8 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
 				"""
 
         self.setStyleSheet(self.styleSheet() + refresh_button_style)
+        if hasattr(self, 'ip_tools_widget'):
+            self.ip_tools_widget.update_style(self.dark_theme)
 
     def refresh_nodes(self):
         """刷新节点状态"""
@@ -4797,9 +4748,40 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
         elif tab_name == "ip_tools":
             self.content_stack.setCurrentIndex(6)
 
+        # 更新所有按钮的样式
         for button in self.tab_buttons:
-            if button.text().lower().replace(" ", "_") == tab_name:
-                self.update_button_styles(button)
+            button_name = button.text().lower().replace(" ", "_")
+            if button_name == tab_name:
+                button.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: {self.button_hover_color};
+                        color: white;
+                        border: none;
+                        padding: 5px 10px;
+                        text-align: center;
+                        text-decoration: none;
+                        font-size: 14px;
+                        margin: 4px 2px;
+                        border-radius: 4px;
+                    }}
+                """)
+            else:
+                button.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: {self.button_color};
+                        color: white;
+                        border: none;
+                        padding: 5px 10px;
+                        text-align: center;
+                        text-decoration: none;
+                        font-size: 14px;
+                        margin: 4px 2px;
+                        border-radius: 4px;
+                    }}
+                    QPushButton:hover {{
+                        background-color: {self.button_hover_color};
+                    }}
+                """)
 
 
 

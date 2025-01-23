@@ -2,13 +2,13 @@
 # python.exe -m pip install --upgrade pip
 
 # 安装包
-# pip install win32process
+# pip install "PyQt6-Fluent-Widgets[full]"
 
 # 查看包
-# pip show Nuitka
+# pip show PyQt6-Frameless-Window
 
 # 卸载包
-# pip uninstall logging
+# pip uninstall "PyQt6-Fluent-Widgets[full]"
 
 # 镜像源
 # 清华大学 https://pypi.tuna.tsinghua.edu.cn/simple/
