@@ -1472,7 +1472,7 @@ class OutputDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("隧道输出")
-        self.setGeometry(100, 100, 800, 600)
+        self.setGeometry(100, 100, 700, 500)
         self.layout = QVBoxLayout(self)
 
         self.output_text_edit = QTextEdit()
@@ -3229,7 +3229,7 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
             with QMutexLocker(self.output_mutex):
                 if tunnel_name in self.tunnel_outputs:
                     try:
-                        if exit_code != 0:
+                        if exit_code not in [0, 1]:  # 排除正常退出(0)和用户终止(1)的情况
                             error_message = f"\n[E] 进程异常退出，退出代码: {exit_code}\n"
                             if exit_code == -1073741819:  # 0xC0000005
                                 error_message += "[E] 进程访问违规 (可能是由于节点离线或网络问题)\n"
@@ -3265,8 +3265,9 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                                      Q_ARG(bool, False))
 
         except Exception as e:
-            self.logger.error(f"监控进程时发生错误(frpc进程可能已退出)")
-            print(e)
+            if process.poll() is None:  # 只在进程仍在运行时输出错误
+                self.logger.error(f"监控进程时发生错误(frpc进程可能已退出)")
+                print(e)
             # 确保进程被清理
             try:
                 if process.poll() is None:
