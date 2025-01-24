@@ -40,7 +40,48 @@ try:
 except Exception as e:
     print(f"提升权限时出错: {e}")
 
+def get_absolute_path(relative_path):
+    """获取相对于程序目录的绝对路径"""
+    return os.path.abspath(os.path.join(os.path.split(sys.argv[0])[0], relative_path))
 
+
+def check_file_empty(filename):
+    """检查文件是否为空"""
+    file_path = get_absolute_path(filename)
+
+    if not os.path.exists(file_path):
+        return True, "文件不存在"
+
+    try:
+        return os.path.getsize(file_path) == 0, "文件为空" if os.path.getsize(file_path) == 0 else "文件不为空"
+    except OSError as e:
+        return True, f"读取文件出错: {str(e)}"
+
+
+# ------------------------------以下为配置文件检查--------------------
+# 默认设置
+default_settings = {
+    "auto_start_tunnels": [],
+    "theme": "system",
+    "log_size_mb": 10,
+    "backup_count": 30
+}
+
+# 检查并创建settings.json
+is_empty, _ = check_file_empty("settings.json")
+if is_empty:
+    settings_path = get_absolute_path("settings.json")
+    with open(settings_path, 'w', encoding='utf-8') as f:
+        json.dump(default_settings, f, indent=4, ensure_ascii=False)
+
+# 检查并创建credentials.json
+is_empty, _ = check_file_empty("credentials.json")
+if is_empty:
+    credentials_path = get_absolute_path("credentials.json")
+    with open(credentials_path, 'w', encoding='utf-8') as f:
+        json.dump({}, f, indent=4, ensure_ascii=False)
+
+# ------------------------------以下为程序信息--------------------
 # 程序信息
 APP_NAME = "CHMLFRP_UI" # 程序名称
 APP_VERSION = "1.5.3" # 程序版本
@@ -48,8 +89,6 @@ PY_VERSION = "3.13.1" # Python 版本
 WINDOWS_VERSION = "Windows NT 10.0" # 系统版本
 Number_of_tunnels = 0 # 隧道数量
 
-def get_absolute_path(relative_path):
-    return os.path.abspath(os.path.join(os.path.split(sys.argv[0])[0], relative_path))
 
 # 从配置文件加载日志设置
 try:
@@ -1717,7 +1756,6 @@ class MainWindow(QMainWindow):
         self.button_hover_color = None
         self.button_color = None
         self.ping_thread = None
-        self.ddns_domain = None
         self.selected_node = None
         self.ping_result = None
         self.ping_type_combo = None
@@ -1796,8 +1834,6 @@ class MainWindow(QMainWindow):
         self.update_timer.start(30000)  # 30秒更新一次
 
         self.user_info = None
-        self.ddns_active = False
-        self.ddns_thread = None
         self.node_list = QWidget()
 
         self.running_tunnels = {}
@@ -1816,10 +1852,6 @@ class MainWindow(QMainWindow):
         # 加载凭证和自动登录
         self.load_credentials()
         self.auto_login()
-
-        # 加载用户域名
-        self.load_user_domains()
-
 
     def initUI(self):
         self.setWindowTitle(APP_NAME+" 程序")
@@ -1868,7 +1900,6 @@ class MainWindow(QMainWindow):
         self.tunnel_button = QPushButton("隧道管理")
         self.domain_button = QPushButton("域名管理")
         self.node_button = QPushButton("节点状态")
-        self.ddns_button = QPushButton("DDNS管理")
         self.ping_button = QPushButton("Ping工具")
         self.ip_tools_button = QPushButton("IP工具")
 
@@ -1876,7 +1907,6 @@ class MainWindow(QMainWindow):
         self.tunnel_button.clicked.connect(lambda: self.switch_tab("tunnel"))
         self.domain_button.clicked.connect(lambda: self.switch_tab("domain"))
         self.node_button.clicked.connect(lambda: self.switch_tab("node"))
-        self.ddns_button.clicked.connect(lambda: self.switch_tab("ddns"))
         self.ping_button.clicked.connect(lambda: self.switch_tab("ping"))
         self.ip_tools_button.clicked.connect(lambda: self.switch_tab("ip_tools"))
 
@@ -1884,7 +1914,6 @@ class MainWindow(QMainWindow):
         menu_layout.addWidget(self.tunnel_button)
         menu_layout.addWidget(self.domain_button)
         menu_layout.addWidget(self.node_button)
-        menu_layout.addWidget(self.ddns_button)
         menu_layout.addWidget(self.ping_button)
         menu_layout.addWidget(self.ip_tools_button)
         menu_layout.addStretch(1)
@@ -1914,7 +1943,6 @@ class MainWindow(QMainWindow):
         self.setup_tunnel_page()
         self.setup_domain_page()
         self.setup_node_page()
-        self.setup_ddns_page()
         self.setup_ping_page()
         self.setup_ip_tools_page()
 
@@ -1925,7 +1953,6 @@ class MainWindow(QMainWindow):
             self.tunnel_button,
             self.domain_button,
             self.node_button,
-            self.ddns_button,
             self.ping_button,
             self.ip_tools_button
         ]
@@ -2358,57 +2385,6 @@ class MainWindow(QMainWindow):
 
         self.content_stack.addWidget(node_widget)
 
-    def setup_ddns_page(self):
-        ddns_widget = QWidget()
-        layout = QVBoxLayout(ddns_widget)
-
-        # 创建水平布局来容纳下拉框和刷新按钮
-        ddns_domain_layout = QHBoxLayout()
-
-        # 添加下拉框
-        self.ddns_domain_combo = QComboBox()
-        self.ddns_domain_combo.addItem("选择域名")
-        self.ddns_domain_combo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-
-        # 创建刷新按钮
-        refresh_domain_button = QPushButton()
-        refresh_domain_button.setFixedSize(30, 30)
-        refresh_domain_button.setIcon(QIcon.fromTheme("view-refresh"))
-        refresh_domain_button.setToolTip("刷新域名列表")
-        refresh_domain_button.clicked.connect(self.load_user_domains)
-
-        # 将下拉框和按钮添加到水平布局
-        layout.addWidget(QLabel("选择DDNS域名:"))
-        ddns_domain_layout.addWidget(self.ddns_domain_combo)
-        ddns_domain_layout.addWidget(refresh_domain_button)
-        layout.addLayout(ddns_domain_layout)
-
-        self.ddns_api_combo = QComboBox()
-        self.ddns_api_combo.addItems([
-            "ipplus360.com",
-            "uapis.cn",
-            "v4.ident.me",
-            "v6.ident.me"
-        ])
-        layout.addWidget(QLabel("选择IP获取API:"))
-        layout.addWidget(self.ddns_api_combo)
-
-        ipv6_note = QLabel("提示：如果使用IPv6地址，请确保已手动创建AAAA类型的DNS记录。")
-        ipv6_note.setWordWrap(True)
-        ipv6_note.setStyleSheet("color: #666; font-style: italic;")
-        layout.addWidget(ipv6_note)
-
-        self.ddns_status_label = QLabel("DDNS状态: 未启动")
-        layout.addWidget(self.ddns_status_label)
-
-        self.ip_display_label = QLabel("当前IP: 未获取")
-        layout.addWidget(self.ip_display_label)
-
-        self.ddns_start_button = QPushButton("启动DDNS")
-        self.ddns_start_button.clicked.connect(self.toggle_ddns)
-        layout.addWidget(self.ddns_start_button)
-
-        self.content_stack.addWidget(ddns_widget)
 
     def setup_ping_page(self):
         ping_widget = QWidget()
@@ -2556,7 +2532,6 @@ class MainWindow(QMainWindow):
             self.password_input.setEnabled(False)
             self.token_input.setEnabled(False)
             self.load_user_data()
-            self.load_user_domains()
             self.auto_start_tunnels()
         except Exception as content:
             self.logger.error(f"登录成功后操作失败: {str(content)}")
@@ -2594,9 +2569,6 @@ class MainWindow(QMainWindow):
     def stop_all_api_operations(self):
         """停止所有使用token的API操作"""
         try:
-            if self.ddns_active:
-                self.stop_ddns()
-
             for tunnel_name in list(self.tunnel_processes.keys()):
                 self.stop_tunnel({"name": tunnel_name})
 
@@ -2611,7 +2583,6 @@ class MainWindow(QMainWindow):
             self.load_tunnels()
             self.load_domains()
             self.load_nodes()
-            self.load_user_domains()  # 为DDNS功能加载域名
             self.display_user_info()
         except Exception as content:
             self.logger.error(f"加载用户数据时发生错误: {str(content)}")
@@ -3847,176 +3818,6 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
         else:
             QMessageBox.warning(self, "警告", "请先选择一个域名")
 
-    def start_ddns(self, selected_domain):
-        if not selected_domain or selected_domain == "选择域名":
-            QMessageBox.warning(self, "警告", "请选择一个有效的域名")
-            return
-        self.ddns_domain = selected_domain
-        self.ddns_active = True
-        self.ddns_status_label.setText("DDNS状态: 已启动")
-        self.ddns_start_button.setText("停止DDNS")
-        self.ddns_thread = threading.Thread(target=self.ddns_check_loop, daemon=True)
-        self.ddns_thread.start()
-
-    def get_current_ip(self):
-        selected_api = self.ddns_api_combo.currentText()
-        api_list = [selected_api]  # 首先尝试用户选择的API
-
-        # 如果选择的API失败，再尝试其他API
-        all_apis = [
-            "ipplus360.com",
-            "uapis.cn",
-            "v4.ident.me",
-            "v6.ident.me"
-        ]
-        api_list.extend([api for api in all_apis if api != selected_api])
-
-        for api in api_list:
-            try:
-                ip = self.fetch_ip_from_api(api)
-                if ip:
-                    ip_type = "IPv4" if is_valid_ipv4(ip) else "IPv6" if is_valid_ipv6(ip) else "Invalid"
-                    self.ip_display_label.setText(f"当前IP: {ip} (来自 {api})")
-                    return ip, ip_type
-            except Exception as content:
-                self.logger.error(f"从 {api} 获取IP地址时发生错误: {str(content)}")
-
-        self.ip_display_label.setText("当前IP: 获取失败")
-        return None, None
-
-    @staticmethod
-    def fetch_ip_from_api(api):
-        if api == "ipplus360.com":
-            response = requests.get("https://ipplus360.com/getIP")
-            data = response.json()
-            return data['data']
-        elif api == "uapis.cn":
-            response = requests.get("https://uapis.cn/api/myip.php")
-            data = response.json()
-            return data['ip']
-        elif api == "v4.ident.me":
-            response = requests.get("https://v4.ident.me")
-            return response.text.strip()
-        elif api == "v6.ident.me":
-            response = requests.get("https://v6.ident.me")
-            return response.text.strip()
-        else:
-            raise ValueError(f"未知的API选择: {api}")
-
-    def ddns_check_loop(self):
-        last_ip = ""
-        while self.ddns_active:
-            try:
-                current_ip, ip_type = self.get_current_ip()
-                if current_ip and current_ip != last_ip:
-                    if self.update_ddns(current_ip, ip_type):
-                        last_ip = current_ip
-                    else:
-                        self.logger.info("DDNS更新失败，将在下一次循环重试")
-            except Exception as content:
-                self.logger.error(f"DDNS更新错误: {str(content)}")
-
-            # 每秒检查一次是否应该停止
-            for _ in range(6):  # 60 秒的总循环
-                if not self.ddns_active:
-                    return  # 如果 ddns_active 为 False，立即退出循环
-                time.sleep(1)  # 睡眠 1 秒
-
-    def update_ddns(self, ip, ip_type):
-        max_retries = 3
-        for attempt in range(max_retries):
-            try:
-                url = "http://cf-v2.uapis.cn/update_free_subdomain"
-                domain_parts = self.ddns_domain.split(".")
-                subdomain = ".".join(domain_parts[:-2])
-                main_domain = ".".join(domain_parts[-2:])
-
-                # 获取当前域名的解析类型
-                current_record_type = self.get_current_record_type(main_domain, subdomain)
-
-                if current_record_type == "A" and ip_type != "IPv4":
-                    self.logger.warning("当前IP不是IPv4地址，尝试获取新的IP")
-                    return False
-                elif current_record_type == "AAAA" and ip_type != "IPv6":
-                    self.logger.warning("当前IP不是IPv6地址，尝试获取新的IP")
-                    return False
-                elif current_record_type == "CNAME":
-                    self.logger.error("CNAME记录不支持DDNS更新")
-                    QMessageBox.warning(self, "错误", "CNAME记录不支持DDNS更新")
-                    return False
-                elif current_record_type == "SRV":
-                    # 获取现有的SRV记录
-                    existing_srv = self.get_existing_srv_record(main_domain, subdomain)
-                    if existing_srv:
-                        priority, weight, port, _ = existing_srv.split()
-                        target = f"{priority} {weight} {port} {ip}"
-                    else:
-                        self.logger.error("无法获取现有的SRV记录")
-                        return False
-                else:
-                    target = ip
-
-                payload = {
-                    "token": self.token,
-                    "domain": main_domain,
-                    "record": subdomain,
-                    "ttl": "1分钟",
-                    "type": current_record_type,
-                    "target": target
-                }
-
-                headers = get_headers(request_json=True)
-                response = requests.post(url, headers=headers, json=payload)
-                response.raise_for_status()
-
-                self.logger.info(f"DDNS更新成功: {self.ddns_domain} -> {ip}")
-                self.ddns_status_label.setText(f"DDNS状态: 已更新 ({ip})")
-                return True
-            except requests.exceptions.RequestException as content:
-                self.logger.error(f"DDNS更新失败 (尝试 {attempt + 1}/{max_retries}): {str(content)}")
-                if attempt < max_retries - 1:
-                    wait_time = (2 ** attempt) + random.random()
-                    self.logger.info(f"等待 {wait_time:.2f} 秒后重试...")
-                    time.sleep(wait_time)
-                else:
-                    self.ddns_status_label.setText("DDNS状态: 更新失败")
-                    self.logger.error(f"DDNS更新失败，达到最大重试次数")
-
-        self.ddns_status_label.setText("DDNS状态: 更新失败")
-        return False
-
-    def get_current_record_type(self, domain, record):
-        url = f"http://cf-v2.uapis.cn/get_user_free_subdomains"
-        params = {
-            "token": self.token
-        }
-        headers = get_headers()
-        try:
-            response = requests.get(url, headers=headers, params=params)
-            data = response.json()
-            if data['code'] == 200:
-                for subdomain in data['data']:
-                    if subdomain['domain'] == domain and subdomain['record'] == record:
-                        return subdomain['type']
-        except Exception as content:
-            self.logger.error(f"获取域名记录类型时发生错误: {str(content)}")
-        return None
-
-    def get_existing_srv_record(self, domain, record):
-        url = f"http://cf-v2.uapis.cn/get_user_free_subdomains"
-        params = { "token": self.token }
-        headers = get_headers()
-        try:
-            response = requests.get(url, headers=headers, params=params)
-            data = response.json()
-            if data['code'] == 200:
-                for subdomain in data['data']:
-                    if subdomain['domain'] == domain and subdomain['record'] == record and subdomain['type'] == 'SRV':
-                        return subdomain['target']
-        except Exception as content:
-            self.logger.error(f"获取SRV记录时发生错误: {str(content)}")
-        return None
-
     def start_ping(self):
         target = self.target_input.text().strip()
         ping_type = self.ping_type_combo.currentText()
@@ -4456,50 +4257,6 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
         self.load_nodes()
         self.logger.info("节点状态已刷新")
 
-    def toggle_ddns(self):
-        if not self.ddns_active:
-            selected_domain = self.ddns_domain_combo.currentText()
-            if selected_domain == "选择域名":
-                QMessageBox.warning(self, "警告", "请选择一个域名")
-                return
-            self.start_ddns(selected_domain)
-        else:
-            self.stop_ddns()
-
-    def stop_ddns(self):
-        self.ddns_active = False
-        self.ddns_status_label.setText("DDNS状态: 正在停止...")
-        self.ddns_start_button.setEnabled(False)
-
-        # 使用 QTimer 来延迟更新 UI，给线程一些时间来结束
-        QTimer.singleShot(1000, self.finalize_ddns_stop)
-
-    def finalize_ddns_stop(self):
-        if self.ddns_thread and self.ddns_thread.is_alive():
-            self.ddns_thread.join(timeout=0.1)
-
-        self.ddns_status_label.setText("DDNS状态: 已停止")
-        self.ddns_start_button.setText("启动DDNS")
-        self.ddns_start_button.setEnabled(True)
-        self.logger.info("DDNS 服务已停止")
-
-    def load_user_domains(self):
-        if self.token:
-            try:
-                url = f"http://cf-v2.uapis.cn/get_user_free_subdomains?token={self.token}"
-                response = requests.get(url)
-                if response.status_code == 200:
-                    domains = response.json().get('data', [])
-                    self.ddns_domain_combo.clear()
-                    self.ddns_domain_combo.addItem("选择域名")
-                    for domain in domains:
-                        full_domain = f"{domain['record']}.{domain['domain']}"
-                        self.ddns_domain_combo.addItem(full_domain)
-                else:
-                    self.logger.error("获取用户域名失败")
-            except Exception as content:
-                self.logger.error(f"加载用户域名时发生错误: {str(content)}")
-
     def switch_tab(self, tab_name):
         if tab_name == "user_info":
             self.content_stack.setCurrentIndex(0)
@@ -4509,12 +4266,10 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
             self.content_stack.setCurrentIndex(2)
         elif tab_name == "node":
             self.content_stack.setCurrentIndex(3)
-        elif tab_name == "ddns":
-            self.content_stack.setCurrentIndex(4)
         elif tab_name == "ping":
-            self.content_stack.setCurrentIndex(5)
+            self.content_stack.setCurrentIndex(4)
         elif tab_name == "ip_tools":
-            self.content_stack.setCurrentIndex(6)
+            self.content_stack.setCurrentIndex(5)
 
         # 更新所有按钮的样式
         for button in self.tab_buttons:
@@ -4660,7 +4415,9 @@ if __name__ == '__main__':
         while main_thread:
             main_thread = main_thread.tb_next
         sys.__excepthook__(exctype, value, main_thread)
+
     sys.excepthook = exception_hook
+
     try:
         app = QApplication(sys.argv)
         main_window = MainWindow()
