@@ -1814,6 +1814,11 @@ class MainWindow(QMainWindow):
         self.log_display.setReadOnly(True)
         self.log_display.setFixedHeight(100)
 
+        # 添加进程锁
+        self.process_lock = threading.Lock()
+        self.tunnel_lock = threading.Lock()
+        self.output_lock = threading.Lock()
+
         # 加载程序设置
         self.load_app_settings()
 
@@ -2381,10 +2386,92 @@ class MainWindow(QMainWindow):
         self.details_button.setEnabled(False)
         button_layout.addWidget(self.details_button)
 
+        self.uptime_button = QPushButton("查看在线率")
+        self.uptime_button.clicked.connect(self.show_node_uptime)
+        self.uptime_button.setEnabled(False)
+        button_layout.addWidget(self.uptime_button)
+
         layout.addLayout(button_layout)
 
         self.content_stack.addWidget(node_widget)
 
+    def show_node_uptime(self):
+        if not hasattr(self, 'selected_node'):
+            QMessageBox.warning(self, "警告", "请先选择一个节点")
+            return
+
+        dialog = QDialog(self)
+        dialog.setWindowTitle("节点在线率")
+        dialog.setMinimumWidth(400)
+        layout = QVBoxLayout(dialog)
+
+        # 时间输入框
+        time_layout = QHBoxLayout()
+        time_input = QLineEdit()
+        time_input.setPlaceholderText("输入天数(1-90)")
+        time_input.setValidator(QIntValidator(1, 90))
+        time_layout.addWidget(QLabel("查询天数:"))
+        time_layout.addWidget(time_input)
+        layout.addLayout(time_layout)
+
+        # 结果显示区域
+        result_text = QTextEdit()
+        result_text.setReadOnly(True)
+        layout.addWidget(result_text)
+
+        def query_uptime():
+            try:
+                days = int(time_input.text())
+                if not 1 <= days <= 90:
+                    raise ValueError("天数必须在1-90之间")
+
+                url = "http://cf-v2.uapis.cn/node_uptime"
+                params = {
+                    "time": days,
+                    "node": self.selected_node['node_name']
+                }
+                headers = get_headers()
+                response = requests.get(url, headers=headers, params=params)
+                data = response.json()
+
+                if data['code'] == 200:
+                    node_data = data['data'][0]
+                    history = node_data['history_uptime']
+
+                    # 基本信息
+                    result = f"节点: {node_data['node_name']}\n"
+                    result += f"节点组: {node_data['group']}\n"
+                    result += f"当前状态: {'在线' if node_data['state'] == 'online' else '离线'}\n"
+
+                    # 计算并显示平均在线率
+                    avg_uptime = sum(record['uptime'] for record in history) / len(history)
+                    result += f"平均在线率: {avg_uptime:.2f}%\n\n"
+
+                    # 历史在线率记录
+                    result += "历史在线率:\n"
+                    for record in history:
+                        result += f"{record['recorded_at']}: {record['uptime']}%\n"
+
+                    result_text.setPlainText(result)
+                else:
+                    result_text.setPlainText(f"获取数据失败: {data.get('msg', '未知错误')}")
+
+            except ValueError as ve:
+                result_text.setPlainText(f"输入错误: {str(ve)}")
+            except Exception as e:
+                result_text.setPlainText(f"查询失败: {str(e)}")
+
+        # 查询按钮
+        query_button = QPushButton("让我看看")
+        query_button.clicked.connect(query_uptime)
+        layout.addWidget(query_button)
+
+        # 关闭按钮
+        close_button = QPushButton("看好啦")
+        close_button.clicked.connect(dialog.close)
+        layout.addWidget(close_button)
+
+        dialog.exec()
 
     def setup_ping_page(self):
         ping_widget = QWidget()
@@ -2807,6 +2894,7 @@ class MainWindow(QMainWindow):
         self.sender().setSelected(True)
         self.selected_node = node_info
         self.details_button.setEnabled(True)
+        self.uptime_button.setEnabled(True)
 
     def show_node_details(self):
         if hasattr(self, 'selected_node'):
@@ -2819,6 +2907,10 @@ class MainWindow(QMainWindow):
         details = f"""节点名称: {node_info.get('node_name', 'N/A')}
 状态: {'在线' if node_info.get('state') == 'online' else '离线'}
 节点组: {node_info.get('nodegroup', 'N/A')}
+是否允许udp: {'允许' if node_info.get('udp') == 'true' else '不允许'}
+是否有防御: {'有' if node_info.get('fangyu') == 'true' else '无'}
+是否允许建站: {'允许' if node_info.get('web') == 'true' else '不允许'}
+是否需要过白: {'需要' if node_info.get('toowhite') == 'true' else '不需要'}
 带宽使用率: {node_info.get('bandwidth_usage_percent', 'N/A')}%
 CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
 当前连接数: {node_info.get('cur_counts', 'N/A')}
@@ -2838,39 +2930,51 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
 
     def start_tunnel(self, tunnel_info):
         try:
-            # 首先检查节点是否在线
+            # 检查节点状态
             if not is_node_online(tunnel_info['node']):
-                QMessageBox.warning(self, "警告", f"节点 {tunnel_info['node']} 当前不在线，无法启动隧道。")
-                self.logger.warning(f"尝试启动隧道失败: 节点 {tunnel_info['node']} 不在线")
+                QMessageBox.warning(self, "警告", f"节点 {tunnel_info['node']} 当前不在线")
                 return
 
-            frpc_path = get_absolute_path("frpc.exe")
-            cmd = [
-                frpc_path,
-                "-u", self.token,
-                "-p", str(tunnel_info['id'])
-            ]
+            with self.process_lock:
+                # 检查隧道是否已启动
+                if tunnel_info['name'] in self.tunnel_processes:
+                    self.logger.warning(f"隧道 {tunnel_info['name']} 已在运行")
+                    return
 
-            process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                creationflags=subprocess.CREATE_NO_WINDOW
-            )
-            self.logger.info(f"frpc已启动，使用节点: {tunnel_info['node']}")
-            self.tunnel_processes[tunnel_info['name']] = process
+                try:
+                    frpc_path = get_absolute_path("frpc.exe")
+                    cmd = [
+                        frpc_path,
+                        "-u", self.token,
+                        "-p", str(tunnel_info['id'])
+                    ]
 
-            # 捕获输出并存储
-            self.capture_output(tunnel_info['name'], process)
+                    process = subprocess.Popen(
+                        cmd,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        creationflags=subprocess.CREATE_NO_WINDOW
+                    )
 
-            # 更新UI状态
-            self.update_tunnel_card_status(tunnel_info['name'], True)
+                    self.tunnel_processes[tunnel_info['name']] = process
+                    self.logger.info(f"隧道 {tunnel_info['name']} 启动成功")
 
-            # 启动状态检查
-            QTimer.singleShot(3000, lambda: self.check_tunnel_status(tunnel_info['name']))
-        except Exception as content:
-            self.logger.exception(f"启动隧道时发生错误: {str(content)}")
-            QMessageBox.warning(self, "错误", f"启动隧道失败: {str(content)}")
+                    # 启动输出捕获
+                    self.capture_output(tunnel_info['name'], process)
+
+                    # 更新UI状态
+                    self.update_tunnel_card_status(tunnel_info['name'], True)
+
+                    # 启动状态检查
+                    QTimer.singleShot(3000, lambda: self.check_tunnel_status(tunnel_info['name']))
+
+                except Exception as e:
+                    self.logger.error(f"启动隧道失败: {str(e)}")
+                    raise
+
+        except Exception as e:
+            self.logger.error(f"启动隧道时发生错误: {str(e)}")
+            QMessageBox.warning(self, "错误", f"启动隧道失败: {str(e)}")
 
     def obfuscate_sensitive_data(self, text):
         obfuscated_text = re.sub(re.escape(self.token), '*******你的token********', text, flags=re.IGNORECASE)
@@ -3028,22 +3132,30 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                 break
 
     def stop_tunnel(self, tunnel_info):
-        try:
-            process = self.tunnel_processes.get(tunnel_info['name'])
-            if process:
-                process.terminate()
-                process.wait(timeout=5)
-                if process.poll() is None:
-                    process.kill()
-                del self.tunnel_processes[tunnel_info['name']]
-                self.logger.info(f"隧道 {tunnel_info['name']} 已停止")
-            else:
-                self.logger.warning(f"未找到隧道 {tunnel_info['name']} 的运行进程")
+        with self.process_lock:
+            try:
+                process = self.tunnel_processes.get(tunnel_info['name'])
+                if process:
+                    # 尝试正常终止进程
+                    process.terminate()
+                    try:
+                        process.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        # 如果超时则强制结束
+                        process.kill()
+                        process.wait()
 
-            # 更新UI状态
-            self.update_tunnel_card_status(tunnel_info['name'], False)
-        except Exception as content:
-            self.logger.exception(f"停止隧道时发生错误: {str(content)}")
+                    del self.tunnel_processes[tunnel_info['name']]
+                    self.logger.info(f"隧道 {tunnel_info['name']} 已停止")
+
+                    # 更新UI状态
+                    self.update_tunnel_card_status(tunnel_info['name'], False)
+                else:
+                    self.logger.warning(f"未找到隧道 {tunnel_info['name']} 的运行进程")
+
+            except Exception as e:
+                self.logger.error(f"停止隧道时发生错误: {str(e)}")
+                raise
 
     def check_tunnel_status(self, tunnel_name):
         process = self.tunnel_processes.get(tunnel_name)
