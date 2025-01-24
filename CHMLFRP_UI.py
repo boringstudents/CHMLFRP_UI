@@ -2966,7 +2966,7 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
                     self.update_tunnel_card_status(tunnel_info['name'], True)
 
                     # 启动状态检查
-                    QTimer.singleShot(3000, lambda: self.check_tunnel_status(tunnel_info['name']))
+                    QTimer.singleShot(0, lambda: self.check_tunnel_status(tunnel_info['name']))
 
                 except Exception as e:
                     self.logger.error(f"启动隧道失败: {str(e)}")
@@ -3163,7 +3163,7 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
             # 进程仍在运行
             self.update_tunnel_card_status(tunnel_name, True)
             # 继续检查
-            QTimer.singleShot(3000, lambda: self.check_tunnel_status(tunnel_name))
+            QTimer.singleShot(0, lambda: self.check_tunnel_status(tunnel_name))
         else:
             # 进程已停止
             self.update_tunnel_card_status(tunnel_name, False)
