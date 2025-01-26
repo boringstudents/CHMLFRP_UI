@@ -83,8 +83,8 @@ if is_empty:
 
 # ------------------------------以下为程序信息--------------------
 # 程序信息
-APP_NAME = "CHMLFRP_UI" # 程序名称
-APP_VERSION = "1.5.3" # 程序版本
+APP_NAME = "CUL" # 程序名称
+APP_VERSION = "1.5.4" # 程序版本
 PY_VERSION = "3.13.1" # Python 版本
 WINDOWS_VERSION = "Windows NT 10.0" # 系统版本
 Number_of_tunnels = 0 # 隧道数量

@@ -1,17 +1,17 @@
-# **CHMLFRP_UI**
+# **CUL-CHMLFRP启动器**
 ### 基于v2 api开发的chmlfrp ui版本的第三方客户端
 
+CUL原名CHMLFRP_UI
+
+CUL顾名思义为CHMLFRP-UI-Launcher
 
 下载地址: 蓝奏云：[https://wwvn.lanzoul.com/b00pzv3oyj](https://wwvn.lanzoul.com/b00pzv3oyj) 密码:ff50
 
 下载解压运行即可(仅支持win10以上版本)，如有bug请提出谢谢!
+
 有bug请投稿至boring_student@qq.com谢谢
 
-| 目标 | 预计实现时间 |
-| ------- | ------- |
-| 找一个合适的程序名称，总不能一直叫CHMLFRP_UI吧 | 不道a |
-
-已经是非常完美了
+肯定没bug，有的话找吃了
 
 ## 相关链接
 [https://github.com/Qianyiaz/ChmlFrp_Professional_Launcher](https://github.com/Qianyiaz/ChmlFrp_Professional_Launcher)  #千依🅥的cpl
@@ -37,3 +37,6 @@
 
 以下我以官方api文档真实测试出的数据
 [https://github.com/boringstudents/chmlfrp_v2api](https://github.com/boringstudents/chmlfrp_v2api)
+
+## chmlfrp官方bug链接
+[http://chmlfrpbug.owo.vin/](http://chmlfrpbug.owo.vin/)
