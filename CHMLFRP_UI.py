@@ -13,7 +13,6 @@ import threading
 import time
 import traceback
 import winreg
-import zipfile
 from concurrent.futures import *
 from datetime import datetime
 from logging.handlers import *
@@ -84,7 +83,7 @@ if is_empty:
 # ------------------------------以下为程序信息--------------------
 # 程序信息
 APP_NAME = "CUL" # 程序名称
-APP_VERSION = "1.5.4" # 程序版本
+APP_VERSION = "1.5.5" # 程序版本
 PY_VERSION = "3.13.1" # Python 版本
 WINDOWS_VERSION = "Windows NT 10.0" # 系统版本
 Number_of_tunnels = 0 # 隧道数量
@@ -4136,39 +4135,16 @@ CPU使用率: {node_info.get('cpu_usage', 'N/A')}%
 
         if missing_files:
             self.logger.info("正在下载所需文件...")
-            url = "https://www.chmlfrp.cn/dw/ChmlFrp-0.51.2_240715_windows_amd64.zip"
+            url = "https://chmlfrp.cn/dw/windows/amd64/frpc.exe"
             try:
                 response = requests.get(url, stream=True)
                 response.raise_for_status()  # 检查是否成功获取
-                zip_path = get_absolute_path("ChmlFrp.zip")
+                zip_path = get_absolute_path("frpc.exe")
                 with open(zip_path, "wb") as file_contents:
                     for chunk in response.iter_content(chunk_size=8192):
                         file_contents.write(chunk)
 
-                extracted_folder = None
-                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                    for file in zip_ref.namelist():
-                        if file.endswith('frpc.exe'):
-                            extracted_folder = file.split('/')[0]
-                            zip_ref.extract(file)
-
-                if extracted_folder:
-                    src = os.path.join(extracted_folder, 'frpc.exe')
-                    dst = get_absolute_path('frpc.exe')
-                    if os.path.exists(src):
-                        if os.path.exists(dst):
-                            os.remove(dst)  # 如果文件已存在，先删除
-                        shutil.move(src, dst)
-                        self.logger.info("成功移动文件: frpc.exe")
-
-                    # 清理解压出来的文件夹
-                    shutil.rmtree(extracted_folder)
-                    self.logger.info(f"已删除解压文件夹: {extracted_folder}")
-
-                # 删除下载的zip文件
-                os.remove(zip_path)
-
-                self.logger.info("文件下载、提取和清理完成")
+                self.logger.info("文件下载完成")
             except Exception as content:
                 self.logger.error(f"下载或处理文件时发生错误: {str(content)}")
 
