@@ -11,8 +11,6 @@ CUL顾名思义为CHMLFRP-UI-Launcher
 
 肯定没bug，有的话找吃了
 
----
-
 # **flag**
 
 | 序号 | 内容 |
@@ -61,8 +59,6 @@ CUL顾名思义为CHMLFRP-UI-Launcher
 
 这是官方api v2文档[https://docs.apiv2.chmlfrp.com](https://docs.apiv2.chmlfrp.com)
 
----
-
 ## chmlfrp官方bug链接
 [http://bug.chmlfrp.com](http://bug.chmlfrp.com)
 
@@ -80,8 +76,6 @@ CUL顾名思义为CHMLFRP-UI-Launcher
 | **[requests](https://requests.readthedocs.io/)** | [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) | `Python Software Foundation` | HTTP 请求库 |
 | **[mcstatus](https://github.com/py-mine/mcstatus)** | [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) | `py-mine` | Minecraft 服务器状态查询 |
 | **[pyperclip](https://github.com/asweigart/pyperclip)** | [BSD-3-Clause](https://opensource.org/licenses/BSD-3-Clause) | `Al Sweigart` | 剪贴板操作库 |
-
----
 
 ### Windows 扩展
 | 库名称 | 协议 | 项目链接 |
