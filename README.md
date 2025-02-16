@@ -1,5 +1,5 @@
 # **CUL-CHMLFRP启动器**
-### 基于v2 api开发的chmlfrp ui版本的第三方客户端
+### 基于PyQt6开发的chmlfrp的第三方客户端
 
 CUL原名CHMLFRP_UI
 
@@ -9,10 +9,7 @@ CUL顾名思义为CHMLFRP-UI-Launcher
 
 下载解压运行即可(仅支持win10以上版本)，如有bug请提出谢谢!
 
-有bug请投稿至boring_student@qq.com谢谢
-
 肯定没bug，有的话找吃了
-
 
 **flag**
 
