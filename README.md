@@ -13,6 +13,29 @@ CUL顾名思义为CHMLFRP-UI-Launcher
 
 肯定没bug，有的话找吃了
 
+
+**flag**
+
+| 序号 | 内容 |
+| ------- | ------- |
+| 1 | 将ip工具和ping工具合并为“百宝箱”并加入dns防污染和ddns |
+| 2 | 加入模版管理模块 |
+| 3 | 远程github DNS防污染 |
+| 5 | 可能的更新检测 |
+| 5 | 可能的web管理端 |
+
+**模版管理模块**
+
+| 序号 | 内容 |
+| ------- | ------- |
+| 1 | 隧道添加模版
+| 2 | 隧道编辑
+| 3 | 隧道启动备用节点模版
+| 4 | 隧道启动备用节点+自动解析切换模版
+| 5 | 节点备用模版
+| 6 | 域名添加模版
+
+
 ## 相关链接
 [https://cpl.chmlfrp.com](https://cpl.chmlfrp.com)  #千依🅥的cpl
 
@@ -34,9 +57,6 @@ CUL顾名思义为CHMLFRP-UI-Launcher
 这是群友的api文档[https://docs.apiv1.chmlfrp.com](https://docs.apiv1.chmlfrp.com)
 
 这是官方api v2文档[https://docs.apiv2.chmlfrp.com](https://docs.apiv2.chmlfrp.com)
-
-以下我以官方api文档真实测试出的数据
-[https://github.com/boringstudents/chmlfrp_v2api](https://github.com/boringstudents/chmlfrp_v2api)
 
 ## chmlfrp官方bug链接
 [http://bug.chmlfrp.com](http://bug.chmlfrp.com)
