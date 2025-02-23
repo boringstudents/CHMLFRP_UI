@@ -35,7 +35,7 @@ jobs:
           --include-package=PyQt6 `
           --include-package-data=PyQt6 `
           --include-qt-plugins=styles,platforms,qml `
-          --plugin-enable=pyqt6,upx `
+          --plugin-enable=pyqt6 `
           --follow-import-to=PyQt6,PyQt6.QtCore,PyQt6.QtGui,PyQt6.QtWidgets `
           --remove-output `
           --include-package=mcstatus `
