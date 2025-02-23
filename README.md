@@ -69,6 +69,7 @@ import dns.resolver
 import socket
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 # 定义DNS服务器列表
 dns_servers = [
@@ -99,6 +100,15 @@ dns_servers = [
     "218.30.118.6",  # dns派
 ]
 
+# 定义需要更新的域名列表
+domains = [
+    "github.com",
+    "api.github.com",
+    "githubstatus.com",
+    "gist.github.com",
+    "vscode-auth.github.com",
+]
+
 # 定义DNS查询函数
 def query_dns(domain, dns_server):
     resolver = dns.resolver.Resolver()
@@ -109,7 +119,7 @@ def query_dns(domain, dns_server):
     try:
         answers = resolver.resolve(domain, "A")
         return [ip.address for ip in answers]
-    except Exception:
+    except Exception as e:
         return []
 
 # 定义IP连通性测试函数（使用TCP连接测试）
@@ -120,20 +130,19 @@ def test_tcp_connectivity(ip, port=443, timeout=5):
         result = sock.connect_ex((ip, port))
         sock.close()
         return result == 0
-    except socket.error:
+    except socket.error as e:
         return False
 
-# 修改hosts文件
+# 更新hosts文件
 def update_hosts_file(domain, ips):
     hosts_path = "/etc/hosts" if sys.platform != "win32" else "C:\\Windows\\System32\\drivers\\etc\\hosts"
     try:
-        # 打开文件时强制指定编码为 utf-8
         with open(hosts_path, "r+", encoding="utf-8") as hosts_file:
             lines = hosts_file.readlines()
             hosts_file.seek(0)
             hosts_file.truncate()
 
-            # 移除旧的github.com记录
+            # 移除旧的域名记录
             new_lines = []
             for line in lines:
                 if domain not in line:
@@ -144,59 +153,46 @@ def update_hosts_file(domain, ips):
                 new_lines.append(f"{ip} {domain}\n")
             
             hosts_file.writelines(new_lines)
-        
-        print(f"成功更新 {domain} 的解析到 hosts 文件！")
     except Exception as e:
-        print(f"更新 hosts 文件失败: {e}")
+        print(f"更新 hosts 文件失败：{e}")
 
-def sart():
-    domain = "github.com"
+def process_domain(domain):
     all_ips = set()
-
+    
     # 获取所有IP地址
-    for server in dns_servers:
-        ips = query_dns(domain, server)
-        all_ips.update(ips)
-
-    # 输出所有不重复的IP
-    print("所有获取到的IP：")
-    for ip in all_ips:
-        print(f"ip: {ip}")
-    print("----------------------")
-
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = [executor.submit(query_dns, domain, server) for server in dns_servers]
+        for future in futures:
+            ips = future.result()
+            all_ips.update(ips)
+    
     # 测试每个IP的连通性
-    print("连接测试结果：")
+    sorted_ips = sorted(all_ips)
     working_ips = []
-    for ip in all_ips:
-        result = test_tcp_connectivity(ip)
-        if result:
-            working_ips.append(ip)
-            print(f"IP: {ip} - 成功连接到 `github.com`")
-        else:
-            print(f"IP: {ip} - 连接失败")
-
-    print("----------------------")
-    print("可用的IP列表：")
-    for ip in working_ips:
-        print(f"ip: {ip}")
-
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = [executor.submit(test_tcp_connectivity, ip) for ip in sorted_ips]
+        for ip, future in zip(sorted_ips, futures):
+            result = future.result()
+            if result:
+                working_ips.append(ip)
+    
     # 更新 hosts 文件
-    if working_ips:
-        update_hosts_file(domain, working_ips)
-    else:
-        print("没有可用的IP地址，无法更新 hosts 文件。")
+    update_hosts_file(domain, working_ips)
 
 
+def start():
+    for domain in domains:
+        process_domain(domain)
 
 if __name__ == "__main__":
     ci = 0
     while True:
-        ci = ci +1
-        sart()
+        ci += 1
+        start()
         print(f"次数: {ci}")
         print("----------------------")
         time.sleep(50)
-    
+
 
 ```
 
