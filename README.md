@@ -1,5 +1,5 @@
 # **CUL-CHMLFRP启动器**
-### 基于PyQt6开发的chmlfrp的第三方客户端
+### 基于PyQt6开发的chmlfrp的第三方启动器图形化客户端
 
 CUL原名CHMLFRP_UI
 
