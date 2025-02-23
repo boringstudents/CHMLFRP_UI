@@ -63,6 +63,142 @@ CUL顾名思义为CHMLFRP-UI-Launcher
 [http://bug.chmlfrp.com](http://bug.chmlfrp.com)
 
 ---
+dns防污染（测试代码）
+```
+import dns.resolver
+import socket
+import sys
+import time
+
+# 定义DNS服务器列表
+dns_servers = [
+    "1.1.1.1",  # Cloudflare DNS
+    "1.0.0.1",  # Cloudflare DNS
+    "8.8.8.8",  # Google Public DNS
+    "8.8.4.4",  # Google Public DNS
+    "9.9.9.9",  # Quad9 DNS
+    "149.112.112.112",  # Quad9 DNS
+    "94.140.14.14",  # AdGuard DNS
+    "94.140.15.15",  # AdGuard DNS
+    "77.88.8.8",  # Yandex DNS
+    "77.88.8.1",  # Yandex DNS
+    "223.5.5.5",  # 阿里 DNS
+    "223.6.6.6",  # 阿里 DNS
+    "119.29.29.29",  # 腾讯DNS
+    "183.254.116.116",  # 腾讯DNS
+    "180.76.76.76",  # 百度DNS
+    "114.114.114.114",  # 114DNS
+    "210.2.4.8",  # CNNIC
+    "117.50.10.10",  # OneDNS
+    "52.80.52.52",  # OneDNS
+    "218.30.118.6",  # 360 安全DNS
+    "123.125.81.6",  # 360 安全DNS
+    "140.207.198.6",  # 360 安全DNS
+    "101.226.4.6",  # 360 安全DNS
+    "210.2.4.8",  # 中国互联网中心dns
+    "218.30.118.6",  # dns派
+]
+
+# 定义DNS查询函数
+def query_dns(domain, dns_server):
+    resolver = dns.resolver.Resolver()
+    resolver.nameservers = [dns_server]
+    resolver.timeout = 1
+    resolver.lifetime = 1
+
+    try:
+        answers = resolver.resolve(domain, "A")
+        return [ip.address for ip in answers]
+    except Exception:
+        return []
+
+# 定义IP连通性测试函数（使用TCP连接测试）
+def test_tcp_connectivity(ip, port=443, timeout=5):
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        result = sock.connect_ex((ip, port))
+        sock.close()
+        return result == 0
+    except socket.error:
+        return False
+
+# 修改hosts文件
+def update_hosts_file(domain, ips):
+    hosts_path = "/etc/hosts" if sys.platform != "win32" else "C:\\Windows\\System32\\drivers\\etc\\hosts"
+    try:
+        # 打开文件时强制指定编码为 utf-8
+        with open(hosts_path, "r+", encoding="utf-8") as hosts_file:
+            lines = hosts_file.readlines()
+            hosts_file.seek(0)
+            hosts_file.truncate()
+
+            # 移除旧的github.com记录
+            new_lines = []
+            for line in lines:
+                if domain not in line:
+                    new_lines.append(line)
+            
+            # 添加新的IP记录
+            for ip in ips:
+                new_lines.append(f"{ip} {domain}\n")
+            
+            hosts_file.writelines(new_lines)
+        
+        print(f"成功更新 {domain} 的解析到 hosts 文件！")
+    except Exception as e:
+        print(f"更新 hosts 文件失败: {e}")
+
+def sart():
+    domain = "github.com"
+    all_ips = set()
+
+    # 获取所有IP地址
+    for server in dns_servers:
+        ips = query_dns(domain, server)
+        all_ips.update(ips)
+
+    # 输出所有不重复的IP
+    print("所有获取到的IP：")
+    for ip in all_ips:
+        print(f"ip: {ip}")
+    print("----------------------")
+
+    # 测试每个IP的连通性
+    print("连接测试结果：")
+    working_ips = []
+    for ip in all_ips:
+        result = test_tcp_connectivity(ip)
+        if result:
+            working_ips.append(ip)
+            print(f"IP: {ip} - 成功连接到 `github.com`")
+        else:
+            print(f"IP: {ip} - 连接失败")
+
+    print("----------------------")
+    print("可用的IP列表：")
+    for ip in working_ips:
+        print(f"ip: {ip}")
+
+    # 更新 hosts 文件
+    if working_ips:
+        update_hosts_file(domain, working_ips)
+    else:
+        print("没有可用的IP地址，无法更新 hosts 文件。")
+
+
+
+if __name__ == "__main__":
+    ci = 0
+    while True:
+        ci = ci +1
+        sart()
+        print(f"次数: {ci}")
+        print("----------------------")
+        time.sleep(50)
+    
+
+```
 
 ## 开源致谢
 
