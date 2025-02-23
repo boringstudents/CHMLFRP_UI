@@ -25,17 +25,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install nuitka
-          pip install upx
           pip install -r requirements.txt
-
-      - name: Install UPX
-        run: |
-          choco install upx -y
-
-      - name: Get UPX binary path
-        run: |
-          $UPXPath = (Get-Command upx).Source
-          echo "UPX_PATH=$UPXPath" >> $GITHUB_ENV
 
       - name: Build executable with Nuitka
         run: |
@@ -43,7 +33,6 @@ jobs:
           --include-data-files=./favicon.ico=./favicon.ico `
           --include-data-files=./frpc.exe=./frpc.exe `
           --include-package=PyQt6 `
-          --upx-binary=$UPX_PATH `
           --include-package-data=PyQt6 `
           --include-qt-plugins=styles,platforms,qml `
           --plugin-enable=pyqt6,upx `
